@@ -1,0 +1,98 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: InvestmentGen
+      - generic [ref=e6]: v
+    - navigation "Primary" [ref=e7]:
+      - link "Home" [ref=e8] [cursor=pointer]:
+        - /url: /
+      - link "Manage" [ref=e12] [cursor=pointer]:
+        - /url: /
+      - link "Apply" [ref=e13] [cursor=pointer]:
+        - /url: /
+      - link "Review" [ref=e14] [cursor=pointer]:
+        - /url: /
+    - button "Workspace settings" [ref=e15] [cursor=pointer]
+  - generic [ref=e18]:
+    - complementary "Workspace sections" [ref=e19]:
+      - navigation [ref=e20]:
+        - link "Dashboard" [ref=e21] [cursor=pointer]:
+          - /url: /
+        - generic "Source documents" [ref=e24]
+        - generic "Concept grid" [ref=e27]
+        - generic "Funding pathway" [ref=e30]
+        - generic "Review workflow" [ref=e33]
+        - generic "Audience segments" [ref=e36]
+        - generic "Draft archive" [ref=e39]
+    - region [ref=e42]:
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - heading "Manage investment cases" [level=1] [ref=e46]
+            - generic "Concept-first funding workflow" [ref=e47]: i
+          - paragraph [ref=e48]: Track source sets, candidate concepts, funding-pathway evidence, and donor-facing drafts.
+        - generic "List tools" [ref=e49]:
+          - generic [ref=e50]:
+            - searchbox "Advanced" [ref=e53]
+            - generic [ref=e54]: Advanced
+          - generic [ref=e55]:
+            - button "Export" [ref=e56] [cursor=pointer]
+            - button "Broadcast" [ref=e59] [cursor=pointer]
+          - paragraph [ref=e60]: Displaying 1 - 1 of 1
+      - generic "Project filters" [ref=e61]:
+        - button "All source sets" [ref=e62] [cursor=pointer]
+        - button "All output types" [ref=e63] [cursor=pointer]
+        - button "Current" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - generic [ref=e67]: Name
+          - textbox "Name" [ref=e68]:
+            - /placeholder: e.g. Maternal health fund
+        - generic [ref=e69]:
+          - generic [ref=e70]: Description
+          - textbox "Description" [ref=e71]:
+            - /placeholder: Optional source-set context
+        - button "New project" [ref=e72] [cursor=pointer]
+      - generic [ref=e73]:
+        - button "Action" [ref=e74] [cursor=pointer]
+        - paragraph [ref=e75]: Funding recipient and investment vehicle stay unresolved until source evidence identifies them.
+      - table [ref=e77]:
+        - rowgroup [ref=e78]:
+          - row [ref=e79]:
+            - columnheader [ref=e80]:
+              - checkbox "Select all projects" [ref=e81]
+            - columnheader "Settings" [ref=e82]
+            - columnheader "Project" [ref=e84]
+            - columnheader "Source documents" [ref=e85]
+            - columnheader "Concepts" [ref=e86]
+            - columnheader "Funding pathway" [ref=e87]
+            - columnheader "Status" [ref=e88]
+            - columnheader "Updated" [ref=e89]
+            - columnheader "Next step" [ref=e90]
+        - rowgroup [ref=e91]:
+          - row [ref=e92]:
+            - cell [ref=e93]:
+              - checkbox "Select MATERNAL & NEWBORN HEALTH" [ref=e94]
+            - cell [ref=e95]:
+              - button "Project actions for MATERNAL & NEWBORN HEALTH" [ref=e96] [cursor=pointer]
+            - cell "M& MATERNAL & NEWBORN HEALTH" [ref=e99]:
+              - generic [ref=e100]:
+                - generic [ref=e101]: M&
+                - link "MATERNAL & NEWBORN HEALTH" [ref=e103] [cursor=pointer]:
+                  - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/documents
+            - cell "7 1 parsed" [ref=e104]:
+              - strong [ref=e105]: "7"
+              - generic [ref=e106]: 1 parsed
+            - cell "0 candidate concepts" [ref=e107]:
+              - strong [ref=e108]: "0"
+              - generic [ref=e109]: candidate concepts
+            - cell "unresolved Extract concepts first" [ref=e110]:
+              - generic [ref=e111]: unresolved
+              - generic [ref=e112]: Extract concepts first
+            - cell "parsed Ready to extract concepts" [ref=e113]:
+              - generic [ref=e114]: parsed
+              - generic [ref=e115]: Ready to extract concepts
+            - cell "Jul 15, 2026" [ref=e116]
+            - cell [ref=e117]:
+              - link "Review" [ref=e118] [cursor=pointer]:
+                - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities

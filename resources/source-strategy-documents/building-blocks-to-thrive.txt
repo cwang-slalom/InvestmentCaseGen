@@ -1,0 +1,7 @@
+Placeholder source strategy document.
+
+Role: input.
+
+Use this file to test whether the AI workflow can identify one or more
+concepts with financing potential from strategy material. Replace this
+placeholder with the full source strategy text before running evaluations.

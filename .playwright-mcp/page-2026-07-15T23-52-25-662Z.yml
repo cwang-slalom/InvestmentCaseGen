@@ -1,0 +1,139 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]: InvestmentGen
+        - generic [ref=e6]: v
+      - navigation "Primary" [ref=e7]:
+        - link "Home" [ref=e8] [cursor=pointer]:
+          - /url: /
+        - link "Studio" [ref=e12] [cursor=pointer]:
+          - /url: /
+        - link "Materials" [ref=e13] [cursor=pointer]:
+          - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/upload
+        - link "Concepts" [ref=e14] [cursor=pointer]:
+          - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities
+        - link "Cases" [ref=e15] [cursor=pointer]:
+          - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities/548730da-8775-4e39-a3c6-e321b2cec76e
+        - link "Visuals" [ref=e16] [cursor=pointer]:
+          - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities/548730da-8775-4e39-a3c6-e321b2cec76e/drafts/06cce8e1-4e54-4298-be40-745cf6f45b46
+      - link "Workspace settings" [ref=e17] [cursor=pointer]:
+        - /url: "#workflow-principles"
+    - generic [ref=e20]:
+      - complementary "Workspace sections" [ref=e21]:
+        - navigation [ref=e22]:
+          - link "Dashboard" [ref=e23] [cursor=pointer]:
+            - /url: /
+          - link "Source documents" [ref=e26] [cursor=pointer]:
+            - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/documents
+          - link "Concept grid" [ref=e29] [cursor=pointer]:
+            - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities
+          - link "Donor case builder" [ref=e32] [cursor=pointer]:
+            - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities/548730da-8775-4e39-a3c6-e321b2cec76e
+          - link "Narrative review" [ref=e35] [cursor=pointer]:
+            - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities/548730da-8775-4e39-a3c6-e321b2cec76e
+          - link "Donor audience" [ref=e38] [cursor=pointer]:
+            - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities/548730da-8775-4e39-a3c6-e321b2cec76e
+          - link "Outputs" [ref=e41] [cursor=pointer]:
+            - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities/548730da-8775-4e39-a3c6-e321b2cec76e/drafts/06cce8e1-4e54-4298-be40-745cf6f45b46
+      - region [ref=e44]:
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - heading "AI donor case studio" [level=1] [ref=e48]
+              - generic "Concept-first funding workflow" [ref=e49]: i
+            - paragraph [ref=e50]: Use AI to transform foundation materials and Jenn's starting point into donor-friendly investment cases with stronger narrative, language, behavioral science framing, and visual direction.
+          - form "List tools" [ref=e51]:
+            - generic [ref=e52]:
+              - searchbox "Search" [ref=e55]
+              - button "Search" [ref=e56] [cursor=pointer]
+            - generic [ref=e57]:
+              - link "Export" [ref=e58] [cursor=pointer]:
+                - /url: /api/projects/export
+              - link "Broadcast" [ref=e61] [cursor=pointer]:
+                - /url: mailto:?subject=InvestmentGen%20AI%20donor%20case%20studio&body=Current%20InvestmentGen%20workspace%20summary%3A%0A1%20project(s)%0A10%20foundation%20material(s)%0A7%20investable%20concept(s)%0A3%20donor%20case%20draft(s)%0A%0AGoal%3A%20turn%20foundation%20materials%20and%20Jenn's%20starting%20point%20into%20donor-friendly%20investment%20cases%20with%20stronger%20narrative%2C%20language%2C%20behavioral%20science%20framing%2C%20and%20visual%20guidance.
+            - paragraph [ref=e62]: Displaying 1 - 1 of 1
+        - region "AI investment case workflow" [ref=e63]:
+          - generic [ref=e64]:
+            - paragraph [ref=e65]: Source-grounded AI workflow
+            - heading "From foundation material to donor-ready case" [level=2] [ref=e66]
+            - paragraph [ref=e67]: Keep source evidence intact while improving the case story, donor language, decision psychology, and visual brief for reviewers.
+          - generic [ref=e68]:
+            - link "Upload materials" [ref=e69] [cursor=pointer]:
+              - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/upload
+            - link "Identify concepts" [ref=e70] [cursor=pointer]:
+              - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities
+            - link "Strengthen narrative" [ref=e71] [cursor=pointer]:
+              - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities/548730da-8775-4e39-a3c6-e321b2cec76e
+            - link "Review outputs" [ref=e72] [cursor=pointer]:
+              - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities/548730da-8775-4e39-a3c6-e321b2cec76e/drafts/06cce8e1-4e54-4298-be40-745cf6f45b46
+        - generic "Project filters" [ref=e73]:
+          - link "All workspaces" [ref=e74] [cursor=pointer]:
+            - /url: /
+          - link "Needs source material" [ref=e75] [cursor=pointer]:
+            - /url: /?source=needs_materials
+          - link "Ready for case draft" [ref=e76] [cursor=pointer]:
+            - /url: /?workflow=ready_to_draft
+          - link "Has outputs" [ref=e77] [cursor=pointer]:
+            - /url: /?workflow=has_drafts
+        - generic [ref=e78]:
+          - generic [ref=e79]:
+            - generic [ref=e80]: Name
+            - textbox "Name" [ref=e81]:
+              - /placeholder: e.g. Maternal health fund
+          - generic [ref=e82]:
+            - generic [ref=e83]: Description
+            - textbox "Description" [ref=e84]:
+              - /placeholder: Optional source-set context
+          - button "New project" [ref=e85] [cursor=pointer]
+        - generic [ref=e86]:
+          - group [ref=e87]:
+            - generic "Actions" [ref=e88] [cursor=pointer]
+          - paragraph [ref=e89]: Funding recipient and investment vehicle stay unresolved until source evidence identifies them.
+        - table [ref=e91]:
+          - rowgroup [ref=e92]:
+            - row [ref=e93]:
+              - columnheader [ref=e94]:
+                - checkbox "Select all projects" [ref=e95]
+              - columnheader "Settings" [ref=e96]
+              - columnheader "Workspace" [ref=e98]
+              - columnheader "Materials" [ref=e99]
+              - columnheader "Concepts" [ref=e100]
+              - columnheader "Outputs" [ref=e101]
+              - columnheader "Evidence status" [ref=e102]
+              - columnheader "Pipeline" [ref=e103]
+              - columnheader "Updated" [ref=e104]
+              - columnheader "Next action" [ref=e105]
+          - rowgroup [ref=e106]:
+            - row [ref=e107]:
+              - cell [ref=e108]:
+                - checkbox "Select MATERNAL & NEWBORN HEALTH" [ref=e109]
+              - cell [ref=e110]:
+                - group [ref=e111]:
+                  - generic "Project actions for MATERNAL & NEWBORN HEALTH" [ref=e112] [cursor=pointer]
+              - cell "M& MATERNAL & NEWBORN HEALTH" [ref=e115]:
+                - generic [ref=e116]:
+                  - generic [ref=e117]: M&
+                  - link "MATERNAL & NEWBORN HEALTH" [ref=e119] [cursor=pointer]:
+                    - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/documents
+              - cell "10 4 parsed" [ref=e120]:
+                - strong [ref=e121]: "10"
+                - generic [ref=e122]: 4 parsed
+              - cell "7 investable concepts" [ref=e123]:
+                - strong [ref=e124]: "7"
+                - generic [ref=e125]: investable concepts
+              - cell "3 donor outputs" [ref=e126]:
+                - strong [ref=e127]: "3"
+                - generic [ref=e128]: donor outputs
+              - cell "source grounded Recipient or vehicle has evidence" [ref=e129]:
+                - generic [ref=e130]: source grounded
+                - generic [ref=e131]: Recipient or vehicle has evidence
+              - cell "active 7 case concepts" [ref=e132]:
+                - generic [ref=e133]: active
+                - generic [ref=e134]: 7 case concepts
+              - cell "Jul 15, 2026" [ref=e135]
+              - cell [ref=e136]:
+                - link "Open" [ref=e137] [cursor=pointer]:
+                  - /url: /projects/d81b2304-894b-4032-86ca-1e4330cf833b/opportunities
+  - button "Open Next.js Dev Tools" [ref=e143] [cursor=pointer]
+  - alert [ref=e147]

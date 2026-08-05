@@ -1,0 +1,28 @@
+{
+  "output": "/Users/c.wang/GPD/InvestmentGen/outputs/manual-20260720-roadmap/presentations/client-roadmap/output/investment-case-generator-roadmap.pptx",
+  "outputBytes": 17963,
+  "slideCount": 1,
+  "slideSize": {
+    "width": 1280,
+    "height": 720
+  },
+  "previewDir": "/Users/c.wang/GPD/InvestmentGen/outputs/manual-20260720-roadmap/presentations/client-roadmap/preview",
+  "previewPaths": [
+    "/Users/c.wang/GPD/InvestmentGen/outputs/manual-20260720-roadmap/presentations/client-roadmap/preview/slide-01.png"
+  ],
+  "layoutDir": "/Users/c.wang/GPD/InvestmentGen/outputs/manual-20260720-roadmap/presentations/client-roadmap/layout",
+  "layoutResults": [
+    {
+      "layoutPath": "/Users/c.wang/GPD/InvestmentGen/outputs/manual-20260720-roadmap/presentations/client-roadmap/layout/slide-01.layout.json"
+    }
+  ],
+  "contactSheet": "/Users/c.wang/GPD/InvestmentGen/outputs/manual-20260720-roadmap/presentations/client-roadmap/preview/contact-sheet.png",
+  "slides": [
+    {
+      "index": 1,
+      "requestedSlideNumber": 1,
+      "modulePath": "/Users/c.wang/GPD/InvestmentGen/outputs/manual-20260720-roadmap/presentations/client-roadmap/slides/slide-01.mjs",
+      "exportName": "slide01"
+    }
+  ]
+}

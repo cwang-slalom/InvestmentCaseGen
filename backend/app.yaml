@@ -1,0 +1,9 @@
+command:
+  - python
+  - -m
+  - uvicorn
+  - app.main:app
+
+env:
+  - name: MODEL_PROVIDER_MODE
+    value: deterministic

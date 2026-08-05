@@ -1,0 +1,25 @@
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - region [ref=e3]:
+      - generic [ref=e4]:
+        - paragraph [ref=e5]: Investment Case Generator
+        - heading "Investment Case Generator" [level=1] [ref=e6]
+        - paragraph [ref=e7]: Turn strategy documents into source-grounded investor and donor materials.
+      - generic [ref=e8]:
+        - link "Continue with Microsoft" [ref=e9] [cursor=pointer]:
+          - /url: /api/auth/microsoft/start?next=%2Fcreate
+        - generic [ref=e10]: or
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - generic [ref=e14]: Email
+            - textbox "Email" [active] [ref=e15]:
+              - /placeholder: you@example.com
+          - generic [ref=e16]:
+            - generic [ref=e17]: Password
+            - textbox "Password" [ref=e18]
+          - generic [ref=e19]:
+            - checkbox "Remember me" [ref=e20]
+            - generic [ref=e21]: Remember me
+          - button "Login" [ref=e22] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e28] [cursor=pointer]
+  - alert [ref=e32]

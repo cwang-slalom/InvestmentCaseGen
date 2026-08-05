@@ -1,0 +1,9 @@
+workspace_name: example-client-workspace
+brand_guidance: "Use approved client guidance only when supplied."
+allowed_sources:
+  - "Approved uploaded source documents"
+  - "Approved Knowledge Base records"
+default_external_web_search: false
+private_contacts: []
+notes:
+  - "Do not place private contacts or current project status into core-system.md."

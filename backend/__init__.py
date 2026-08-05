@@ -1,0 +1,1 @@
+"""InvestmentGen backend package."""

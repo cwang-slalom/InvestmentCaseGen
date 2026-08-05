@@ -1,0 +1,32 @@
+{
+  "name": "investment-case-generator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "dev:backend": "cd backend && .venv/bin/python -m uvicorn app.main:app --reload --port 8000",
+    "build": "npm --prefix frontend run build",
+    "start": "python -m backend.main",
+    "lint": "eslint frontend/src --max-warnings=0",
+    "typecheck": "tsc -p frontend/tsconfig.json --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run lint && npm run test"
+  },
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.23.0",
+    "@types/node": "22.13.14",
+    "@types/react": "19.0.12",
+    "@types/react-dom": "19.0.4",
+    "eslint": "9.23.0",
+    "prettier": "^3.9.5",
+    "typescript": "5.8.2",
+    "typescript-eslint": "^8.64.0",
+    "vite": "^7.3.0",
+    "vitest": "^4.1.10"
+  }
+}

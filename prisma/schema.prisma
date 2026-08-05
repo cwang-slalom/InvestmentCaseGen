@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PARSED
+  FAILED
+  REJECTED
+}
+
+enum SystemRole {
+  ADMIN
+  MEMBER
+}
+
+enum ProjectAccessRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model User {
+  id           String              @id
+  email        String              @unique
+  name         String
+  passwordHash String
+  systemRole   SystemRole          @default(MEMBER)
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  memberships  ProjectMembership[]
+  sessions     AuthSession[]
+
+  @@index([systemRole])
+  @@index([active])
+}
+
+model AuthSession {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Project {
+  id            String              @id
+  name          String
+  description   String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  memberships   ProjectMembership[]
+  documents     SourceDocument[]
+  opportunities OpportunityRecord[]
+  drafts        DraftRecord[]
+
+  @@index([createdAt])
+}
+
+model ProjectMembership {
+  id        String            @id
+  projectId String
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      ProjectAccessRole
+  createdAt DateTime          @default(now())
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([role])
+}
+
+model SourceDocument {
+  id                 String         @id
+  projectId          String
+  project            Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  filename           String
+  mimeType           String
+  fileExtension      String
+  sizeBytes          Int
+  storagePath        String
+  parserType         String
+  status             DocumentStatus @default(UPLOADED)
+  warningsJson       String         @default("[]")
+  parserMetadataJson String         @default("{}")
+  errorMessage       String?
+  textHash           String?
+  characterCount     Int            @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  chunks             SourceChunk[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model SourceChunk {
+  id               String         @id
+  sourceDocumentId String
+  sourceDocument   SourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  chunkIndex       Int
+  text             String
+  charStart        Int
+  charEnd          Int
+  citationJson     String
+  metadataJson     String         @default("{}")
+  createdAt        DateTime       @default(now())
+
+  @@unique([sourceDocumentId, chunkIndex])
+  @@index([sourceDocumentId])
+}
+
+model OpportunityRecord {
+  id                    String   @id
+  projectId             String
+  project               Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title                 String
+  overallStatus         String
+  opportunityJson       String
+  assessmentJson        String?
+  validationJson        String?
+  reviewMetadataJson    String?
+  sourceDocumentIdsJson String   @default("[]")
+  extractionRunId       String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([overallStatus])
+}
+
+model GenerationRecord {
+  id                   String   @id
+  projectId            String?
+  opportunityId        String?
+  runType              String
+  modelProvider        String
+  modelName            String
+  promptVersion        String
+  status               String
+  storedPayloadMode    String
+  redactedResponseJson String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([opportunityId])
+  @@index([runType])
+}
+
+model GenerationRun {
+  id                   String   @id
+  projectId            String?
+  opportunityId        String?
+  runType              String
+  promptName           String
+  promptVersion        String
+  modelProvider        String
+  modelName            String
+  inputChunkIdsJson    String   @default("[]")
+  validationResultJson String?
+  status               String
+  storedPayloadMode    String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([opportunityId])
+  @@index([runType])
+}
+
+model DraftRecord {
+  id                  String   @id
+  projectId           String
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  opportunityRecordId String
+  opportunityId       String
+  outputType          String
+  investorSegment     String
+  draftJson           String
+  generationRunId     String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([opportunityRecordId])
+  @@index([opportunityId])
+  @@index([outputType])
+}

@@ -1,0 +1,1046 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - paragraph [ref=e5]: Donor-Facing Draft
+        - heading "The Beginnings Fund Phase 1 Countries" [level=1] [ref=e6]
+        - paragraph [ref=e7]: Opportunity Spotlight · General Donor · Catalytic Philanthropy
+        - paragraph [ref=e8]: Signed in as Admin User - owner
+      - navigation "Draft navigation" [ref=e9]:
+        - link "Back to dashboard" [ref=e10] [cursor=pointer]:
+          - /url: /
+        - link "Opportunity" [ref=e11] [cursor=pointer]:
+          - /url: /projects/38aff104-c2bc-458c-90a7-52a47ed1cf33/opportunities/opp-beginnings-fund-phase-1
+        - link "Export DOCX" [ref=e12] [cursor=pointer]:
+          - /url: /api/projects/38aff104-c2bc-458c-90a7-52a47ed1cf33/opportunities/opp-beginnings-fund-phase-1/drafts/f40c16ea-e631-4db0-b44a-99426928bf88/export/docx
+        - button "Sign out" [ref=e14] [cursor=pointer]
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - paragraph [ref=e18]: Validation
+          - heading "Claim and citation checks" [level=2] [ref=e19]
+        - generic [ref=e20]:
+          - paragraph [ref=e21]:
+            - generic [ref=e22]: passed
+          - paragraph [ref=e23]: No validation findings.
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - paragraph [ref=e26]: Evaluation
+          - heading "Product-quality scorecard" [level=2] [ref=e27]
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - strong [ref=e30]: 4.8/5
+            - generic [ref=e31]: overall product quality
+          - generic [ref=e32]:
+            - generic [ref=e33]:
+              - strong [ref=e34]: 5/5
+              - generic [ref=e35]: factual support
+            - generic [ref=e36]:
+              - strong [ref=e37]: 5/5
+              - generic [ref=e38]: citation coverage
+            - generic [ref=e39]:
+              - strong [ref=e40]: 5/5
+              - generic [ref=e41]: role distinction
+            - generic [ref=e42]:
+              - strong [ref=e43]: 5/5
+              - generic [ref=e44]: unresolved gap visibility
+            - generic [ref=e45]:
+              - strong [ref=e46]: 5/5
+              - generic [ref=e47]: completeness
+            - generic [ref=e48]:
+              - strong [ref=e49]: 5/5
+              - generic [ref=e50]: source faithfulness
+            - generic [ref=e51]:
+              - strong [ref=e52]: 4/5
+              - generic [ref=e53]: donor persuasiveness
+            - generic [ref=e54]:
+              - strong [ref=e55]: 4/5
+              - generic [ref=e56]: edit readiness
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - paragraph [ref=e59]: Variant
+          - heading "Saved narrative variant" [level=2] [ref=e60]
+        - generic [ref=e61]:
+          - generic [ref=e63]:
+            - heading "Saved format" [level=4] [ref=e64]
+            - paragraph [ref=e65]: Opportunity Spotlight
+          - generic [ref=e67]:
+            - heading "Variant" [level=4] [ref=e68]
+            - paragraph [ref=e69]: Untitled variant
+          - generic [ref=e71]:
+            - heading "Audience profile" [level=4] [ref=e72]
+            - paragraph [ref=e73]: General Donor
+          - generic [ref=e75]:
+            - heading "Narrative angle" [level=4] [ref=e76]
+            - paragraph [ref=e77]: Catalytic Philanthropy
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - paragraph [ref=e80]: Audience
+          - heading "Tailoring lens" [level=2] [ref=e81]
+        - generic [ref=e82]:
+          - generic [ref=e84]:
+            - heading "Audience familiarity" [level=4] [ref=e85]
+            - paragraph [ref=e86]: New to topic
+          - generic [ref=e88]:
+            - heading "Funding scale" [level=4] [ref=e89]
+            - paragraph [ref=e90]: Exploratory
+          - generic [ref=e92]:
+            - heading "Tone" [level=4] [ref=e93]
+            - paragraph [ref=e94]: Balanced
+    - region [ref=e95]:
+      - generic [ref=e96]:
+        - generic [ref=e97]:
+          - paragraph [ref=e98]: Donor follow-ups
+          - heading "Proactive updates" [level=2] [ref=e99]
+        - generic [ref=e100]: "0"
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - generic [ref=e103]: Donor or funder
+          - generic [ref=e105]:
+            - textbox "Donor or funder" [ref=e106]:
+              - /placeholder: Optional
+            - button "Dictate donor or funder" [ref=e107] [cursor=pointer]
+        - generic [ref=e111]:
+          - generic [ref=e112]: Follow-up
+          - generic [ref=e114]:
+            - textbox "Follow-up" [ref=e115]:
+              - /placeholder: Paste the question, concern, or requested change.
+            - button "Dictate follow-up" [ref=e116] [cursor=pointer]
+        - button "Apply follow-up" [ref=e120] [cursor=pointer]
+      - paragraph [ref=e121]: No donor follow-ups recorded.
+    - generic [ref=e122]:
+      - generic [ref=e123]:
+        - paragraph [ref=e124]: Narrative
+        - heading "Strengthening notes" [level=2] [ref=e125]
+      - list [ref=e126]:
+        - listitem [ref=e127]: Tailored framing for General Donor.
+        - listitem [ref=e128]: Gemini authored draft section language.
+        - listitem [ref=e129]: Refined the problem statement to emphasize the stark reality of maternal and newborn mortality alongside the 45% facility tool availability gap.
+        - listitem [ref=e130]: Polished outputs and outcomes to clearly distinguish between near-term deliverables and systemic changes.
+        - listitem [ref=e131]: Enhanced the investor relevance section to highlight the leverage potential of a pooled platform with major global health funders.
+        - listitem [ref=e132]: Structured the visual brief to provide clear, actionable design directions for human review without inventing data.
+        - listitem [ref=e133]: Maintained strict transparency regarding unresolved implementing partners and funding vehicles while elevating the overall investment proposition.
+        - listitem [ref=e134]: AI narrative suggestions reviewed for safe framing.
+    - generic [ref=e135]:
+      - generic [ref=e136]:
+        - generic [ref=e137]:
+          - generic [ref=e138]:
+            - generic [ref=e139]:
+              - paragraph [ref=e140]: Section
+              - heading "Problem Statement" [level=2] [ref=e141]
+            - button "Regenerate" [ref=e143] [cursor=pointer]
+          - generic [ref=e144]: Every day, mothers and newborns across Sub-Saharan Africa face life-threatening complications during pregnancy, childbirth, and the postpartum period that are entirely preventable. While the clinical solutions to these complications are well-established, they are not reaching the clinics and delivery rooms where they are needed most. Essential life-saving tools, diagnostics, and medicines are available in only approximately 45% of health facilities, which are further crippled by frequent stockouts, severe understaffing, and a lack of foundational infrastructure like real-time data, functional referral pathways, and reliable emergency transport. [S4]
+        - complementary [ref=e145]:
+          - heading "Evidence" [level=4] [ref=e146]
+          - generic [ref=e147]:
+            - heading "Source facts" [level=4] [ref=e148]
+            - generic [ref=e149]:
+              - paragraph [ref=e150]: Far too many moms and newborns in Africa struggle to survive addressable pregnancy-, birth-, and postpartum-related complications. Essential tools that can prevent deaths are only available in approximately 45% of facilities, which face frequent stockouts. Facilities are often understaffed and lack foundational tools like real-time data, functional referral pathways, and reliable emergency transport.
+              - paragraph [ref=e151]:
+                - generic [ref=e152]: source provided
+                - generic [ref=e153]: factual
+                - generic [ref=e154]: supported
+              - list [ref=e155]:
+                - listitem [ref=e156]:
+                  - strong [ref=e157]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+          - generic [ref=e158]:
+            - heading "Generated framing" [level=4] [ref=e159]
+            - paragraph [ref=e160]: None in this section.
+          - generic [ref=e161]:
+            - heading "Unresolved or weak support" [level=4] [ref=e162]
+            - paragraph [ref=e163]: None in this section.
+      - generic [ref=e164]:
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - generic [ref=e167]:
+              - paragraph [ref=e168]: Section
+              - heading "Proposed Activities" [level=2] [ref=e169]
+            - button "Regenerate" [ref=e171] [cursor=pointer]
+          - generic [ref=e172]: "To address these systemic bottlenecks, the initiative will deploy an integrated, multi-pillar intervention strategy: - **Catalytic Procurement:** Deliver high-quality, affordable maternal and newborn health products directly to the facilities where the vast majority of deaths occur. [S4] - **Workforce Strengthening:** Support comprehensive workforce planning, recruitment, and clinical training for frontline healthcare workers. [S4] - **Health Systems Infrastructure:** Build and integrate real-time quality data systems, reliable emergency transport networks, and functional referral pathways. [S4]"
+        - complementary [ref=e173]:
+          - heading "Evidence" [level=4] [ref=e174]
+          - generic [ref=e175]:
+            - heading "Source facts" [level=4] [ref=e176]
+            - generic [ref=e177]:
+              - paragraph [ref=e178]: Implement an integrated approach leveraging catalytic procurement to deliver products to facilities where most maternal and newborn deaths take place; support workforce planning, recruitment, and training for healthcare workers; and build quality data, emergency transport, and referral systems.
+              - paragraph [ref=e179]:
+                - generic [ref=e180]: source provided
+                - generic [ref=e181]: factual
+                - generic [ref=e182]: supported
+              - list [ref=e183]:
+                - listitem [ref=e184]:
+                  - strong [ref=e185]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+          - generic [ref=e186]:
+            - heading "Generated framing" [level=4] [ref=e187]
+            - paragraph [ref=e188]: None in this section.
+          - generic [ref=e189]:
+            - heading "Unresolved or weak support" [level=4] [ref=e190]
+            - paragraph [ref=e191]: None in this section.
+      - generic [ref=e192]:
+        - generic [ref=e193]:
+          - generic [ref=e194]:
+            - generic [ref=e195]:
+              - paragraph [ref=e196]: Section
+              - heading "Outputs" [level=2] [ref=e197]
+            - button "Regenerate" [ref=e199] [cursor=pointer]
+          - generic [ref=e200]: "- **Product Availability:** Target hospitals and clinics equipped with a consistent, sufficient volume of high-quality, affordable maternal and newborn health products. [S4] - **Procurement Systems:** Sustainable, long-term procurement pathways established to prevent future stockouts. [S4] - **Workforce Capacity:** Frontline healthcare workers trained and equipped with the clinical skills required to deliver high-quality care. [S4] - **Infrastructure Deployment:** Functional, on-demand data systems and emergency transport networks active in target areas. [S4]"
+        - complementary [ref=e201]:
+          - heading "Evidence" [level=4] [ref=e202]
+          - generic [ref=e203]:
+            - heading "Source facts" [level=4] [ref=e204]
+            - generic [ref=e205]:
+              - paragraph [ref=e206]: Hospitals equipped with a sufficient volume of high-quality, affordable products and sustainable procurement pathways established.
+              - paragraph [ref=e207]:
+                - generic [ref=e208]: source provided
+                - generic [ref=e209]: factual
+                - generic [ref=e210]: supported
+              - list [ref=e211]:
+                - listitem [ref=e212]:
+                  - strong [ref=e213]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+            - generic [ref=e214]:
+              - paragraph [ref=e215]: Healthcare workers equipped with the skills and training they need to deliver care.
+              - paragraph [ref=e216]:
+                - generic [ref=e217]: source provided
+                - generic [ref=e218]: factual
+                - generic [ref=e219]: supported
+              - list [ref=e220]:
+                - listitem [ref=e221]:
+                  - strong [ref=e222]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+            - generic [ref=e223]:
+              - paragraph [ref=e224]: Data and emergency transport systems available on-demand.
+              - paragraph [ref=e225]:
+                - generic [ref=e226]: source provided
+                - generic [ref=e227]: factual
+                - generic [ref=e228]: supported
+              - list [ref=e229]:
+                - listitem [ref=e230]:
+                  - strong [ref=e231]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+          - generic [ref=e232]:
+            - heading "Generated framing" [level=4] [ref=e233]
+            - paragraph [ref=e234]: None in this section.
+          - generic [ref=e235]:
+            - heading "Unresolved or weak support" [level=4] [ref=e236]
+            - paragraph [ref=e237]: None in this section.
+      - generic [ref=e238]:
+        - generic [ref=e239]:
+          - generic [ref=e240]:
+            - generic [ref=e241]:
+              - paragraph [ref=e242]: Section
+              - heading "Outcomes" [level=2] [ref=e243]
+            - button "Regenerate" [ref=e245] [cursor=pointer]
+          - generic [ref=e246]: "- **Reduced Stockouts:** Drastic reduction in product stockouts at the facility level, ensuring life-saving commodities are always available during emergencies. [S4] - **Improved Quality of Care:** Enhanced clinical decision-making and safer deliveries managed by skilled, well-supported healthcare workers. [S4] - **Rapid Referral Execution:** Significantly reduced transit and response times for obstetric and neonatal emergencies through active transport and data systems. [S4]"
+        - complementary [ref=e247]:
+          - heading "Evidence" [level=4] [ref=e248]
+          - generic [ref=e249]:
+            - heading "Source facts" [level=4] [ref=e250]
+            - generic [ref=e251]:
+              - paragraph [ref=e252]: Hospitals equipped with a sufficient volume of high-quality, affordable products and sustainable procurement pathways established.
+              - paragraph [ref=e253]:
+                - generic [ref=e254]: source provided
+                - generic [ref=e255]: factual
+                - generic [ref=e256]: supported
+              - list [ref=e257]:
+                - listitem [ref=e258]:
+                  - strong [ref=e259]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+            - generic [ref=e260]:
+              - paragraph [ref=e261]: Healthcare workers equipped with the skills and training they need to deliver care.
+              - paragraph [ref=e262]:
+                - generic [ref=e263]: source provided
+                - generic [ref=e264]: factual
+                - generic [ref=e265]: supported
+              - list [ref=e266]:
+                - listitem [ref=e267]:
+                  - strong [ref=e268]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+            - generic [ref=e269]:
+              - paragraph [ref=e270]: Data and emergency transport systems available on-demand.
+              - paragraph [ref=e271]:
+                - generic [ref=e272]: source provided
+                - generic [ref=e273]: factual
+                - generic [ref=e274]: supported
+              - list [ref=e275]:
+                - listitem [ref=e276]:
+                  - strong [ref=e277]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+          - generic [ref=e278]:
+            - heading "Generated framing" [level=4] [ref=e279]
+            - paragraph [ref=e280]: None in this section.
+          - generic [ref=e281]:
+            - heading "Unresolved or weak support" [level=4] [ref=e282]
+            - paragraph [ref=e283]: None in this section.
+      - generic [ref=e284]:
+        - generic [ref=e285]:
+          - generic [ref=e286]:
+            - generic [ref=e287]:
+              - paragraph [ref=e288]: Section
+              - heading "Long-Term Impact" [level=2] [ref=e289]
+            - button "Regenerate" [ref=e291] [cursor=pointer]
+          - generic [ref=e292]: "- **Lives Saved:** Prevent **300,000+ maternal and newborn deaths** by 2030 across Phase 1 countries. [S4] - **Population Reach:** Reach and protect **30M+ mothers and babies** with high-quality care by 2030. [S4]"
+        - complementary [ref=e293]:
+          - heading "Evidence" [level=4] [ref=e294]
+          - generic [ref=e295]:
+            - heading "Source facts" [level=4] [ref=e296]
+            - generic [ref=e297]:
+              - paragraph [ref=e298]: 300,000+ deaths prevented and 30M+ moms and babies reached by 2030 across phase 1 countries.
+              - paragraph [ref=e299]:
+                - generic [ref=e300]: source provided
+                - generic [ref=e301]: factual
+                - generic [ref=e302]: supported
+              - list [ref=e303]:
+                - listitem [ref=e304]:
+                  - strong [ref=e305]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+          - generic [ref=e306]:
+            - heading "Generated framing" [level=4] [ref=e307]
+            - paragraph [ref=e308]: None in this section.
+          - generic [ref=e309]:
+            - heading "Unresolved or weak support" [level=4] [ref=e310]
+            - paragraph [ref=e311]: None in this section.
+      - generic [ref=e312]:
+        - generic [ref=e313]:
+          - generic [ref=e314]:
+            - generic [ref=e315]:
+              - paragraph [ref=e316]: Section
+              - heading "Target Geography and Population" [level=2] [ref=e317]
+            - button "Regenerate" [ref=e319] [cursor=pointer]
+          - generic [ref=e320]: "- **Geography:** Sub-Saharan Africa (with specific Phase 1 implementation exemplified by Lilongwe, Blantyre, and Mzimba districts in Malawi). [S4] [S5] - **Target Population:** Vulnerable mothers and newborns. [S4]"
+        - complementary [ref=e321]:
+          - heading "Evidence" [level=4] [ref=e322]
+          - generic [ref=e323]:
+            - heading "Source facts" [level=4] [ref=e324]
+            - generic [ref=e325]:
+              - paragraph [ref=e326]: "Target geography: Sub-Saharan Africa."
+              - paragraph [ref=e327]:
+                - generic [ref=e328]: source provided
+                - generic [ref=e329]: factual
+                - generic [ref=e330]: supported
+              - list [ref=e331]:
+                - listitem [ref=e332]:
+                  - strong [ref=e333]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+            - generic [ref=e334]:
+              - paragraph [ref=e335]: "Beneficiary population: Mothers and Newborns."
+              - paragraph [ref=e336]:
+                - generic [ref=e337]: source provided
+                - generic [ref=e338]: factual
+                - generic [ref=e339]: supported
+              - list [ref=e340]:
+                - listitem [ref=e341]:
+                  - strong [ref=e342]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+          - generic [ref=e343]:
+            - heading "Generated framing" [level=4] [ref=e344]
+            - paragraph [ref=e345]: None in this section.
+          - generic [ref=e346]:
+            - heading "Unresolved or weak support" [level=4] [ref=e347]
+            - paragraph [ref=e348]: None in this section.
+      - generic [ref=e349]:
+        - generic [ref=e350]:
+          - generic [ref=e351]:
+            - generic [ref=e352]:
+              - paragraph [ref=e353]: Section
+              - heading "Implementing Partner(s)" [level=2] [ref=e354]
+            - button "Regenerate" [ref=e356] [cursor=pointer]
+          - generic [ref=e357]: "**Implementing organization:** Not established in the provided source materials. **Delivery partner:** Not established in the provided source materials."
+        - complementary [ref=e358]:
+          - heading "Evidence" [level=4] [ref=e359]
+          - generic [ref=e360]:
+            - heading "Source facts" [level=4] [ref=e361]
+            - paragraph [ref=e362]: None in this section.
+          - generic [ref=e363]:
+            - heading "Generated framing" [level=4] [ref=e364]
+            - paragraph [ref=e365]: None in this section.
+          - generic [ref=e366]:
+            - heading "Unresolved or weak support" [level=4] [ref=e367]
+            - generic [ref=e368]:
+              - paragraph [ref=e369]: Implementing organization is not established in the provided source materials.
+              - paragraph [ref=e370]:
+                - generic [ref=e371]: unresolved
+                - generic [ref=e372]: factual
+                - generic [ref=e373]: not checked
+              - paragraph [ref=e374]: No citation attached.
+            - generic [ref=e375]:
+              - paragraph [ref=e376]: Delivery partner is not established in the provided source materials.
+              - paragraph [ref=e377]:
+                - generic [ref=e378]: unresolved
+                - generic [ref=e379]: factual
+                - generic [ref=e380]: not checked
+              - paragraph [ref=e381]: No citation attached.
+          - generic [ref=e382]:
+            - heading "Warnings" [level=4] [ref=e383]
+            - list [ref=e384]:
+              - listitem [ref=e385]: Implementing organization is not established in the provided source materials.
+              - listitem [ref=e386]: Delivery partner is not established in the provided source materials.
+      - generic [ref=e387]:
+        - generic [ref=e388]:
+          - generic [ref=e389]:
+            - generic [ref=e390]:
+              - paragraph [ref=e391]: Section
+              - heading "Potential Funding Recipient or Investment Vehicle" [level=2] [ref=e392]
+            - button "Regenerate" [ref=e394] [cursor=pointer]
+          - generic [ref=e395]: "**Funding recipient:** Not established in the provided source materials. **Investment vehicle:** Not established in the provided source materials."
+        - complementary [ref=e396]:
+          - heading "Evidence" [level=4] [ref=e397]
+          - generic [ref=e398]:
+            - heading "Source facts" [level=4] [ref=e399]
+            - paragraph [ref=e400]: None in this section.
+          - generic [ref=e401]:
+            - heading "Generated framing" [level=4] [ref=e402]
+            - paragraph [ref=e403]: None in this section.
+          - generic [ref=e404]:
+            - heading "Unresolved or weak support" [level=4] [ref=e405]
+            - generic [ref=e406]:
+              - paragraph [ref=e407]: Funding recipient is not established in the provided source materials.
+              - paragraph [ref=e408]:
+                - generic [ref=e409]: unresolved
+                - generic [ref=e410]: factual
+                - generic [ref=e411]: not checked
+              - paragraph [ref=e412]: No citation attached.
+            - generic [ref=e413]:
+              - paragraph [ref=e414]: Investment vehicle is not established in the provided source materials.
+              - paragraph [ref=e415]:
+                - generic [ref=e416]: unresolved
+                - generic [ref=e417]: factual
+                - generic [ref=e418]: not checked
+              - paragraph [ref=e419]: No citation attached.
+          - generic [ref=e420]:
+            - heading "Warnings" [level=4] [ref=e421]
+            - list [ref=e422]:
+              - listitem [ref=e423]: Funding recipient is not established in the provided source materials.
+              - listitem [ref=e424]: Investment vehicle is not established in the provided source materials.
+      - generic [ref=e425]:
+        - generic [ref=e426]:
+          - generic [ref=e427]:
+            - generic [ref=e428]:
+              - paragraph [ref=e429]: Section
+              - heading "Timeline" [level=2] [ref=e430]
+            - button "Regenerate" [ref=e432] [cursor=pointer]
+          - generic [ref=e433]: "- **Timeline:** Phase 1 Execution Timeframe (e.g., Malawi implementation is scheduled for a five-year period from 2025 to 2030; other Phase 1 country timelines require confirmation). [S4] [S5]"
+        - complementary [ref=e434]:
+          - heading "Evidence" [level=4] [ref=e435]
+          - generic [ref=e436]:
+            - heading "Source facts" [level=4] [ref=e437]
+            - generic [ref=e438]:
+              - paragraph [ref=e439]: Phase 1 Execution Timeframe
+              - paragraph [ref=e440]:
+                - generic [ref=e441]: source provided
+                - generic [ref=e442]: factual
+                - generic [ref=e443]: supported
+              - list [ref=e444]:
+                - listitem [ref=e445]:
+                  - strong [ref=e446]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+          - generic [ref=e447]:
+            - heading "Generated framing" [level=4] [ref=e448]
+            - paragraph [ref=e449]: None in this section.
+          - generic [ref=e450]:
+            - heading "Unresolved or weak support" [level=4] [ref=e451]
+            - paragraph [ref=e452]: None in this section.
+      - generic [ref=e453]:
+        - generic [ref=e454]:
+          - generic [ref=e455]:
+            - generic [ref=e456]:
+              - paragraph [ref=e457]: Section
+              - heading "Total Cost" [level=2] [ref=e458]
+            - button "Regenerate" [ref=e460] [cursor=pointer]
+          - generic [ref=e461]: "- **Total Cost:** **$525M** initial fund target for Phase 1 countries. [S4]"
+        - complementary [ref=e462]:
+          - heading "Evidence" [level=4] [ref=e463]
+          - generic [ref=e464]:
+            - heading "Source facts" [level=4] [ref=e465]
+            - generic [ref=e466]:
+              - paragraph [ref=e467]: Total cost is $525M initial fund target for phase 1 countries.
+              - paragraph [ref=e468]:
+                - generic [ref=e469]: source provided
+                - generic [ref=e470]: numerical
+                - generic [ref=e471]: supported
+              - list [ref=e472]:
+                - listitem [ref=e473]:
+                  - strong [ref=e474]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+          - generic [ref=e475]:
+            - heading "Generated framing" [level=4] [ref=e476]
+            - paragraph [ref=e477]: None in this section.
+          - generic [ref=e478]:
+            - heading "Unresolved or weak support" [level=4] [ref=e479]
+            - paragraph [ref=e480]: None in this section.
+      - generic [ref=e481]:
+        - generic [ref=e482]:
+          - generic [ref=e483]:
+            - generic [ref=e484]:
+              - paragraph [ref=e485]: Section
+              - heading "Current Funding" [level=2] [ref=e486]
+            - button "Regenerate" [ref=e488] [cursor=pointer]
+          - generic [ref=e489]: "- **Current Funding:** Nearly **$495M** already committed in Fund One. [S6]"
+        - complementary [ref=e490]:
+          - heading "Evidence" [level=4] [ref=e491]
+          - generic [ref=e492]:
+            - heading "Source facts" [level=4] [ref=e493]
+            - generic [ref=e494]:
+              - paragraph [ref=e495]: Current funding is Nearly $495M committed in Fund One.
+              - paragraph [ref=e496]:
+                - generic [ref=e497]: source provided
+                - generic [ref=e498]: numerical
+                - generic [ref=e499]: supported
+              - list [ref=e500]:
+                - listitem [ref=e501]:
+                  - strong [ref=e502]: "[S6]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 6
+          - generic [ref=e503]:
+            - heading "Generated framing" [level=4] [ref=e504]
+            - paragraph [ref=e505]: None in this section.
+          - generic [ref=e506]:
+            - heading "Unresolved or weak support" [level=4] [ref=e507]
+            - paragraph [ref=e508]: None in this section.
+      - generic [ref=e509]:
+        - generic [ref=e510]:
+          - generic [ref=e511]:
+            - generic [ref=e512]:
+              - paragraph [ref=e513]: Section
+              - heading "Funding Gap" [level=2] [ref=e514]
+            - button "Regenerate" [ref=e516] [cursor=pointer]
+          - generic [ref=e517]: "- **Funding Gap:** **$30M** current gap to reach the target. [S4]"
+        - complementary [ref=e518]:
+          - heading "Evidence" [level=4] [ref=e519]
+          - generic [ref=e520]:
+            - heading "Source facts" [level=4] [ref=e521]
+            - generic [ref=e522]:
+              - paragraph [ref=e523]: Funding gap is $30M current gap to target.
+              - paragraph [ref=e524]:
+                - generic [ref=e525]: source provided
+                - generic [ref=e526]: numerical
+                - generic [ref=e527]: supported
+              - list [ref=e528]:
+                - listitem [ref=e529]:
+                  - strong [ref=e530]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+          - generic [ref=e531]:
+            - heading "Generated framing" [level=4] [ref=e532]
+            - paragraph [ref=e533]: None in this section.
+          - generic [ref=e534]:
+            - heading "Unresolved or weak support" [level=4] [ref=e535]
+            - paragraph [ref=e536]: None in this section.
+      - generic [ref=e537]:
+        - generic [ref=e538]:
+          - generic [ref=e539]:
+            - generic [ref=e540]:
+              - paragraph [ref=e541]: Section
+              - heading "Scientific and Technical Risk" [level=2] [ref=e542]
+            - button "Regenerate" [ref=e544] [cursor=pointer]
+          - generic [ref=e545]: "**Scientific and Technical Risk:** Not established in the provided source materials."
+        - complementary [ref=e546]:
+          - heading "Evidence" [level=4] [ref=e547]
+          - generic [ref=e548]:
+            - heading "Source facts" [level=4] [ref=e549]
+            - paragraph [ref=e550]: None in this section.
+          - generic [ref=e551]:
+            - heading "Generated framing" [level=4] [ref=e552]
+            - paragraph [ref=e553]: None in this section.
+          - generic [ref=e554]:
+            - heading "Unresolved or weak support" [level=4] [ref=e555]
+            - generic [ref=e556]:
+              - paragraph [ref=e557]: Scientific and Technical Risk is not established in the provided source materials.
+              - paragraph [ref=e558]:
+                - generic [ref=e559]: unresolved
+                - generic [ref=e560]: factual
+                - generic [ref=e561]: not checked
+              - paragraph [ref=e562]: No citation attached.
+          - generic [ref=e563]:
+            - heading "Warnings" [level=4] [ref=e564]
+            - list [ref=e565]:
+              - listitem [ref=e566]: Scientific and Technical Risk is not established in the provided source materials.
+      - generic [ref=e567]:
+        - generic [ref=e568]:
+          - generic [ref=e569]:
+            - generic [ref=e570]:
+              - paragraph [ref=e571]: Section
+              - heading "Regulatory Risk" [level=2] [ref=e572]
+            - button "Regenerate" [ref=e574] [cursor=pointer]
+          - generic [ref=e575]: "- **Regulatory Risk (Medium):** While the tools and products delivered are WHO-prequalified (minimizing basic regulatory hurdles), regulatory pathways and quality assurance processes vary significantly across countries. Creating enabling regulatory environments at national and local levels introduces operational complexity. [S6]"
+        - complementary [ref=e576]:
+          - heading "Evidence" [level=4] [ref=e577]
+          - generic [ref=e578]:
+            - heading "Source facts" [level=4] [ref=e579]
+            - generic [ref=e580]:
+              - paragraph [ref=e581]: Regulatory pathways and quality assurance processes vary across countries. Creating enabling regulatory environments at national and local levels to deliver priority products introduces complexity.
+              - paragraph [ref=e582]:
+                - generic [ref=e583]: source provided
+                - generic [ref=e584]: factual
+                - generic [ref=e585]: supported
+              - list [ref=e586]:
+                - listitem [ref=e587]:
+                  - strong [ref=e588]: "[S6]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 6
+          - generic [ref=e589]:
+            - heading "Generated framing" [level=4] [ref=e590]
+            - paragraph [ref=e591]: None in this section.
+          - generic [ref=e592]:
+            - heading "Unresolved or weak support" [level=4] [ref=e593]
+            - paragraph [ref=e594]: None in this section.
+      - generic [ref=e595]:
+        - generic [ref=e596]:
+          - generic [ref=e597]:
+            - generic [ref=e598]:
+              - paragraph [ref=e599]: Section
+              - heading "Organizational and Operational Risk" [level=2] [ref=e600]
+            - button "Regenerate" [ref=e602] [cursor=pointer]
+          - generic [ref=e603]: "- **Organizational & Operational Risk (Medium/High):** Existing delivery ecosystems are highly fragmented. Because each priority country requires a bespoke, localized approach, execution is operationally complex. [S6]"
+        - complementary [ref=e604]:
+          - heading "Evidence" [level=4] [ref=e605]
+          - generic [ref=e606]:
+            - heading "Source facts" [level=4] [ref=e607]
+            - generic [ref=e608]:
+              - paragraph [ref=e609]: Existing delivery ecosystems are fragmented, and each priority country requires a bespoke approach, making the execution operationally complex.
+              - paragraph [ref=e610]:
+                - generic [ref=e611]: source provided
+                - generic [ref=e612]: factual
+                - generic [ref=e613]: supported
+              - list [ref=e614]:
+                - listitem [ref=e615]:
+                  - strong [ref=e616]: "[S6]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 6
+          - generic [ref=e617]:
+            - heading "Generated framing" [level=4] [ref=e618]
+            - paragraph [ref=e619]: None in this section.
+          - generic [ref=e620]:
+            - heading "Unresolved or weak support" [level=4] [ref=e621]
+            - paragraph [ref=e622]: None in this section.
+      - generic [ref=e623]:
+        - generic [ref=e624]:
+          - generic [ref=e625]:
+            - generic [ref=e626]:
+              - paragraph [ref=e627]: Section
+              - heading "Commercial and Demand Risk" [level=2] [ref=e628]
+            - button "Regenerate" [ref=e630] [cursor=pointer]
+          - generic [ref=e631]: "**Commercial and Demand Risk:** Not established in the provided source materials."
+        - complementary [ref=e632]:
+          - heading "Evidence" [level=4] [ref=e633]
+          - generic [ref=e634]:
+            - heading "Source facts" [level=4] [ref=e635]
+            - paragraph [ref=e636]: None in this section.
+          - generic [ref=e637]:
+            - heading "Generated framing" [level=4] [ref=e638]
+            - paragraph [ref=e639]: None in this section.
+          - generic [ref=e640]:
+            - heading "Unresolved or weak support" [level=4] [ref=e641]
+            - generic [ref=e642]:
+              - paragraph [ref=e643]: Commercial and Demand Risk is not established in the provided source materials.
+              - paragraph [ref=e644]:
+                - generic [ref=e645]: unresolved
+                - generic [ref=e646]: factual
+                - generic [ref=e647]: not checked
+              - paragraph [ref=e648]: No citation attached.
+          - generic [ref=e649]:
+            - heading "Warnings" [level=4] [ref=e650]
+            - list [ref=e651]:
+              - listitem [ref=e652]: Commercial and Demand Risk is not established in the provided source materials.
+      - generic [ref=e653]:
+        - generic [ref=e654]:
+          - generic [ref=e655]:
+            - generic [ref=e656]:
+              - paragraph [ref=e657]: Section
+              - heading "Reputational and Stakeholder Risk" [level=2] [ref=e658]
+            - button "Regenerate" [ref=e660] [cursor=pointer]
+          - generic [ref=e661]: "**Reputational and Stakeholder Risk:** Not established in the provided source materials."
+        - complementary [ref=e662]:
+          - heading "Evidence" [level=4] [ref=e663]
+          - generic [ref=e664]:
+            - heading "Source facts" [level=4] [ref=e665]
+            - paragraph [ref=e666]: None in this section.
+          - generic [ref=e667]:
+            - heading "Generated framing" [level=4] [ref=e668]
+            - paragraph [ref=e669]: None in this section.
+          - generic [ref=e670]:
+            - heading "Unresolved or weak support" [level=4] [ref=e671]
+            - generic [ref=e672]:
+              - paragraph [ref=e673]: Reputational and Stakeholder Risk is not established in the provided source materials.
+              - paragraph [ref=e674]:
+                - generic [ref=e675]: unresolved
+                - generic [ref=e676]: factual
+                - generic [ref=e677]: not checked
+              - paragraph [ref=e678]: No citation attached.
+          - generic [ref=e679]:
+            - heading "Warnings" [level=4] [ref=e680]
+            - list [ref=e681]:
+              - listitem [ref=e682]: Reputational and Stakeholder Risk is not established in the provided source materials.
+      - generic [ref=e683]:
+        - generic [ref=e684]:
+          - generic [ref=e685]:
+            - generic [ref=e686]:
+              - paragraph [ref=e687]: Section
+              - heading "Investor Relevance" [level=2] [ref=e688]
+            - button "Regenerate" [ref=e690] [cursor=pointer]
+          - generic [ref=e691]: This opportunity offers general donors an extraordinary leverage ratio. By contributing to a **$30M funding gap**, donors unlock and align with **$495M in committed capital** within a highly collaborative, pooled platform anchored by major global health funders. [S4] [S6] Your investment directly de-risks commercial viability in underserved markets by creating predictable demand through subsidized product introduction, establishing sustainable local markets, and building resilient health systems that will save over 300,000 lives. [S4] [S6]
+        - complementary [ref=e692]:
+          - heading "Evidence" [level=4] [ref=e693]
+          - generic [ref=e694]:
+            - heading "Source facts" [level=4] [ref=e695]
+            - generic [ref=e696]:
+              - paragraph [ref=e697]: The opportunity allows donors to leverage a highly collaborative, pooled platform anchored by major global health funders. It directly de-risks commercial viability by creating predictable demand through subsidized product introduction and building sustainable local markets.
+              - paragraph [ref=e698]:
+                - generic [ref=e699]: derived from sources
+                - generic [ref=e700]: factual
+                - generic [ref=e701]: supported
+              - list [ref=e702]:
+                - listitem [ref=e703]:
+                  - strong [ref=e704]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+                - listitem [ref=e705]:
+                  - strong [ref=e706]: "[S6]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 6
+          - generic [ref=e707]:
+            - heading "Generated framing" [level=4] [ref=e708]
+            - generic [ref=e709]:
+              - paragraph [ref=e710]: For a broad donor audience, the case should emphasize credible impact, visible gaps, and practical next steps.
+              - paragraph [ref=e711]:
+                - generic [ref=e712]: generated framing
+                - generic [ref=e713]: narrative framing
+                - generic [ref=e714]: not checked
+              - paragraph [ref=e715]: No citation attached.
+          - generic [ref=e716]:
+            - heading "Unresolved or weak support" [level=4] [ref=e717]
+            - paragraph [ref=e718]: None in this section.
+      - generic [ref=e719]:
+        - generic [ref=e720]:
+          - generic [ref=e721]:
+            - generic [ref=e722]:
+              - paragraph [ref=e723]: Section
+              - heading "Supporting Evidence" [level=2] [ref=e724]
+            - button "Regenerate" [ref=e726] [cursor=pointer]
+          - generic [ref=e727]: "- **[S4]** *12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4*: Details the problem statement, proposed activities, outputs, outcomes, long-term impact targets (300k deaths prevented, 30M reached), and the $525M target / $30M gap. - **[S5]** *12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 5*: Provides the Malawi country example ($40M investment, 2025-2030, targeting Lilongwe, Blantyre, and Mzimba districts). - **[S6]** *12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 6*: Details the $495M committed funding, low scientific/technical risk (proven, WHO-prequalified tools), regulatory complexities, and operational fragmentation."
+        - complementary [ref=e728]:
+          - heading "Evidence" [level=4] [ref=e729]
+          - generic [ref=e730]:
+            - heading "Source facts" [level=4] [ref=e731]
+            - generic [ref=e732]:
+              - paragraph [ref=e733]: "[S1] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 1, MATERNAL & NEWBORN HEALTH: MATERNAL & NEWBORN HEALTH Opportunity Spotlights"
+              - paragraph [ref=e734]:
+                - generic [ref=e735]: source provided
+                - generic [ref=e736]: factual
+                - generic [ref=e737]: supported
+              - list [ref=e738]:
+                - listitem [ref=e739]:
+                  - strong [ref=e740]: "[S1]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 1
+            - generic [ref=e741]:
+              - paragraph [ref=e742]: "[S2] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 2: Maternal & Newborn Health: Opportunity Spotlights Rubric: Risk assessment (I/II) Low Medium High Scientific & technical risk Technology/intervention is past development and has already been scaled in relevant settings (e.g., product that is through R&D and has achieved regulatory approvals, digital technology that has already been proven to work and is in use) Technology/intervention is grounded in strong evidence but has some validation work remaining (e.g., product in later stages of clinica"
+              - paragraph [ref=e743]:
+                - generic [ref=e744]: source provided
+                - generic [ref=e745]: factual
+                - generic [ref=e746]: supported
+              - list [ref=e747]:
+                - listitem [ref=e748]:
+                  - strong [ref=e749]: "[S2]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 2
+            - generic [ref=e750]:
+              - paragraph [ref=e751]: "[S3] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 3: 02 Rubric: Risk assessment (II/II) Low Medium High Commercial & demand risk There is a serviceable market that is monetizable and accessible (e.g., products are eligible for purchase via well-established procurement channels) There is strong evidence that end buyer(s) are able and willing to pay at the target price points There is a serviceable market that is monetizable but less accessible (e.g., less clarity on whether products will be eligible for purchase via established channels) There is"
+              - paragraph [ref=e752]:
+                - generic [ref=e753]: source provided
+                - generic [ref=e754]: factual
+                - generic [ref=e755]: supported
+              - list [ref=e756]:
+                - listitem [ref=e757]:
+                  - strong [ref=e758]: "[S3]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 3
+            - generic [ref=e759]:
+              - paragraph [ref=e760]: "[S4] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4: Opportunity spotlight: The Beginnings Fund phase 1 countries (I/III) Maternal & Newborn Health: Opportunity Spotlights Problem Statement Far too many moms and newborns in Africa struggle to survive addressable pregnancy-, birth-, and postpartum-related complications. The major causes of maternal and neonatal deaths are known, but the diagnostics, medicines, equipment, and interventions that save lives are not reaching the moms and babies that need them. This is driven by challenges across produc"
+              - paragraph [ref=e761]:
+                - generic [ref=e762]: source provided
+                - generic [ref=e763]: factual
+                - generic [ref=e764]: supported
+              - list [ref=e765]:
+                - listitem [ref=e766]:
+                  - strong [ref=e767]: "[S4]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 4
+            - generic [ref=e768]:
+              - paragraph [ref=e769]: "[S5] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 5: Malawi spotlight: Example of Beginnings Fund work in phase 1 countries (II/III) Maternal & Newborn Health: Opportunity Spotlights In partnership with the Government of Malawi, The Beginnings Fund is investing $40 million over five years (2025-2030) to dramatically reduce maternal and newborn deaths by strengthening the country’s workforce, facilities, commodities, and emergency referral systems. These investments will target Lilongwe, Blantyre and Mzimba districts, which account for 44% of the n"
+              - paragraph [ref=e770]:
+                - generic [ref=e771]: source provided
+                - generic [ref=e772]: factual
+                - generic [ref=e773]: supported
+              - list [ref=e774]:
+                - listitem [ref=e775]:
+                  - strong [ref=e776]: "[S5]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 5
+            - generic [ref=e777]:
+              - paragraph [ref=e778]: "[S6] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 6, • That said, Beginnings Fund is well-positioned to take on that complexity: Maternal & Newborn Health: Opportunity Spotlights Scientific & technical risk • The Beginnings Fund supports delivery of proven maternal and newborn interventions with extensive clinical evidence (i.e., all phases of R&D complete) and minimal scientific discovery risk. Regulatory risk • Beginnings Fund tools are WHO-prequalified, which minimizes risk created by moving new products through regulatory processes. • That said, regulatory pathways and quality assurance processes vary across countrie"
+              - paragraph [ref=e779]:
+                - generic [ref=e780]: source provided
+                - generic [ref=e781]: factual
+                - generic [ref=e782]: supported
+              - list [ref=e783]:
+                - listitem [ref=e784]:
+                  - strong [ref=e785]: "[S6]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 6
+            - generic [ref=e786]:
+              - paragraph [ref=e787]: "[S7] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 7: Maternal & Newborn Health: Opportunity Spotlights Opportunity spotlight: Deepen ongoing work in Mali and Niger (I/II) Problem Statement In West Africa, fragile health systems are collapsing under the strain of conflict, climate shocks, and recurring disease outbreaks. Many clinics – especially in crisis-affected areas – are overwhelmed or have shut down, leaving mothers and newborns most at risk. In many regions, care is either unavailable or too far to reach. As a result, West Africa now bears"
+              - paragraph [ref=e788]:
+                - generic [ref=e789]: source provided
+                - generic [ref=e790]: factual
+                - generic [ref=e791]: supported
+              - list [ref=e792]:
+                - listitem [ref=e793]:
+                  - strong [ref=e794]: "[S7]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 7
+            - generic [ref=e795]:
+              - paragraph [ref=e796]: "[S8] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 8: Maternal & Newborn Health: Opportunity Spotlights 07 Scientific & technical risk • The products being delivered (e.g., misoprostol, maternal azithromycin, low-dose calcium, MMS, and clean delivery kits) are WHO-recommended, evidence-based interventions that have already been widely proven and scaled. • The work does not rely on novel technologies or untested delivery models, and scientific or technical uncertainty does not present a barrier to scale. Regulatory risk • This work delivers proven"
+              - paragraph [ref=e797]:
+                - generic [ref=e798]: source provided
+                - generic [ref=e799]: factual
+                - generic [ref=e800]: supported
+              - list [ref=e801]:
+                - listitem [ref=e802]:
+                  - strong [ref=e803]: "[S8]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 8
+            - generic [ref=e804]:
+              - paragraph [ref=e805]: "[S9] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 9: Maternal & Newborn Health: Opportunity Spotlights Opportunity spotlight: IP sensors (I/II) Problem Statement Depending on human resource availability, intrapartum care can rely on intermittent monitoring and subjective interpretation. Given human resource constraints in low- and middle-income country (LMIC) contexts, adverse intrapartum events like fetal distress and obstructed labor are frequently missed or misinterpreted. This can drive both preventable stillbirths and inappropriate escalation"
+              - paragraph [ref=e806]:
+                - generic [ref=e807]: source provided
+                - generic [ref=e808]: factual
+                - generic [ref=e809]: supported
+              - list [ref=e810]:
+                - listitem [ref=e811]:
+                  - strong [ref=e812]: "[S9]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 9
+            - generic [ref=e813]:
+              - paragraph [ref=e814]: "[S10] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 10: Maternal & Newborn Health: Opportunity Spotlights 09 Scientific & technical risk • Underlying sensing technologies have been used in observational studies in both pregnant and surgical populations, but robust evidence is still required to confirm effectiveness when used for clinical decision-making (i.e., does continuous vital monitoring with AI assistance drive a step change in outcomes vs. standard of care?). This is being done through the IMPALA trial to test Sibel's ANNE® Maternal System. Re"
+              - paragraph [ref=e815]:
+                - generic [ref=e816]: source provided
+                - generic [ref=e817]: factual
+                - generic [ref=e818]: supported
+              - list [ref=e819]:
+                - listitem [ref=e820]:
+                  - strong [ref=e821]: "[S10]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 10
+            - generic [ref=e822]:
+              - paragraph [ref=e823]: "[S11] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 11: Maternal & Newborn Health: Opportunity Spotlights Opportunity spotlight: PE Dx – non-invasive screening (I/II) Problem Statement Preeclampsia (PE) is a hypertensive disorder of pregnancy that typically arises after 20 weeks, signaled by high blood pressure, high levels of protein in urine that indicate kidney damage (proteinuria), or other signs of organ damage. If not detected and managed in time, progression to eclampsia, organ failure, or other complications can lead to the death of mom and b"
+              - paragraph [ref=e824]:
+                - generic [ref=e825]: source provided
+                - generic [ref=e826]: factual
+                - generic [ref=e827]: supported
+              - list [ref=e828]:
+                - listitem [ref=e829]:
+                  - strong [ref=e830]: "[S11]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 11
+            - generic [ref=e831]:
+              - paragraph [ref=e832]: "[S12] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 12: Maternal & Newborn Health: Opportunity Spotlights Scientific & technical risk • Remidio's retinal imaging device has already been developed and clinically validated for eye care use cases, with deployment underway (e.g., government of Kerala launched a government-led AI-assisted chronic eye disease screening program). Because the technology exists to capture the retinal images, the remaining open question is whether those images can be used to predict PE risk. • A growing body of evidence sugges"
+              - paragraph [ref=e833]:
+                - generic [ref=e834]: source provided
+                - generic [ref=e835]: factual
+                - generic [ref=e836]: supported
+              - list [ref=e837]:
+                - listitem [ref=e838]:
+                  - strong [ref=e839]: "[S12]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 12
+            - generic [ref=e840]:
+              - paragraph [ref=e841]: "[S13] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 13, CEO, LEPZI: Maternal & Newborn Health: Opportunity Spotlights Opportunity spotlight: PE Dx – biomarker-based Dx (I/II) Problem Statement Preeclampsia (PE) is persistent high blood pressure during pregnancy (typically after 20 weeks) or the postpartum period. If not detected and managed in time, progression to eclampsia, organ failure, or other complications can lead to the death of mom and baby. Two biomarker molecules (PIGF and sFlt-1) have been approved for PE risk assessment in the US, but these types of"
+              - paragraph [ref=e842]:
+                - generic [ref=e843]: source provided
+                - generic [ref=e844]: factual
+                - generic [ref=e845]: supported
+              - list [ref=e846]:
+                - listitem [ref=e847]:
+                  - strong [ref=e848]: "[S13]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 13
+            - generic [ref=e849]:
+              - paragraph [ref=e850]: "[S14] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 14: Maternal & Newborn Health: Opportunity Spotlights 13 Scientific & technical risk • The biomarkers being measured have already been established as a means of PE detection, so the novelty here is the fingerstick point-of-care device that creates a new delivery format. The device is undergoing prototype development and validation now, with stability and clinical validation readouts expected in March 2027. The next activity (which is the scope of this opportunity) is a multi-center implementation st"
+              - paragraph [ref=e851]:
+                - generic [ref=e852]: source provided
+                - generic [ref=e853]: factual
+                - generic [ref=e854]: supported
+              - list [ref=e855]:
+                - listitem [ref=e856]:
+                  - strong [ref=e857]: "[S14]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 14
+            - generic [ref=e858]:
+              - paragraph [ref=e859]: "[S15] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 15, ingredient (API) development: Maternal & Newborn Health: Opportunity Spotlights Problem Statement Respiratory distress syndrome (RDS) is a leading cause of neonatal mortality among preterm infants, driven by the absence of pulmonary surfactant needed for lung expansion at birth. While surfactant therapy can dramatically reduce mortality, only liquid animal-derived products are currently on the market, and access in sub-Saharan Africa remains extremely limited due to high costs and the need for invasive delivery (e.g., intuba"
+              - paragraph [ref=e860]:
+                - generic [ref=e861]: source provided
+                - generic [ref=e862]: factual
+                - generic [ref=e863]: supported
+              - list [ref=e864]:
+                - listitem [ref=e865]:
+                  - strong [ref=e866]: "[S15]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 15
+            - generic [ref=e867]:
+              - paragraph [ref=e868]: "[S16] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 16: Maternal & Newborn Health: Opportunity Spotlights 15 Scientific & technical risk • Lee’s is advancing the reformulation of a product that has already been developed and approved by the FDA, which significantly de-risks the product development pathway. The primary technical risk relates to demonstrating (through the bridging study) that the new formulation is clinically comparable to the previously approved product. Regulatory risk • Regulatory pathways for lung surfactant are relatively well-es"
+              - paragraph [ref=e869]:
+                - generic [ref=e870]: source provided
+                - generic [ref=e871]: factual
+                - generic [ref=e872]: supported
+              - list [ref=e873]:
+                - listitem [ref=e874]:
+                  - strong [ref=e875]: "[S16]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 16
+            - generic [ref=e876]:
+              - paragraph [ref=e877]: "[S17] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 17: Maternal & Newborn Health: Opportunity Spotlights Problem Statement Respiratory distress syndrome (RDS) is a leading cause of neonatal mortality among preterm infants, driven by the absence of pulmonary surfactant needed for lung expansion at birth. While surfactant therapy can dramatically reduce mortality, only liquid animal-derived products are currently on the market, and access in sub-Saharan Africa remains extremely limited due to high costs and the need for invasive delivery (e.g., intuba"
+              - paragraph [ref=e878]:
+                - generic [ref=e879]: source provided
+                - generic [ref=e880]: factual
+                - generic [ref=e881]: supported
+              - list [ref=e882]:
+                - listitem [ref=e883]:
+                  - strong [ref=e884]: "[S17]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 17
+            - generic [ref=e885]:
+              - paragraph [ref=e886]: "[S18] 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 18: Maternal & Newborn Health: Opportunity Spotlights 17 Scientific & technical risk • Dry powder lung surfactant remains in preclinical development, with no candidates yet evaluated in humans. This represents the earliest-stage and highest-risk phase of the clinical development cycle. • That said, the preclinical animal testing has shown exciting results to date (e.g., targeted delivery of the surfactant therapy produced five to 12 times faster oxygenation recovery and provided double the improveme"
+              - paragraph [ref=e887]:
+                - generic [ref=e888]: source provided
+                - generic [ref=e889]: factual
+                - generic [ref=e890]: supported
+              - list [ref=e891]:
+                - listitem [ref=e892]:
+                  - strong [ref=e893]: "[S18]"
+                  - text: 12185-GF_Proponent-Labs-MNH-SPOTLIGHT-single-pages.pdf, page 18
+          - generic [ref=e894]:
+            - heading "Generated framing" [level=4] [ref=e895]
+            - paragraph [ref=e896]: None in this section.
+          - generic [ref=e897]:
+            - heading "Unresolved or weak support" [level=4] [ref=e898]
+            - paragraph [ref=e899]: None in this section.
+      - generic [ref=e900]:
+        - generic [ref=e901]:
+          - generic [ref=e902]:
+            - generic [ref=e903]:
+              - paragraph [ref=e904]: Section
+              - heading "Donor Language and Behavioral Framing" [level=2] [ref=e905]
+            - button "Regenerate" [ref=e907] [cursor=pointer]
+          - generic [ref=e908]: "- **Salience & Proximity:** Frame the $30M gap not as an isolated fundraising target, but as the final key to unlocking a massive, pre-positioned $495M global health engine. [S4] [S6] - **Concrete Human Stakes:** Keep the focus on the 300,000+ preventable deaths and the 45% facility equipment gap to make the need immediate and tangible. [S4] - **Action-Oriented Next Step:** Invite donors to participate in a co-investment briefing to close the final $30M gap and activate Phase 1 country deployments. [S4] - Applied 'salience' and 'social proof' by positioning the $30M gap as the final, highly leveraged piece alongside $495M in already-committed capital from major global health funders. - Utilized 'loss-aversion framing' by emphasizing that clinical solutions already exist and are WHO-prequalified, meaning lives are being lost solely due to preventable delivery and equipment gaps."
+        - complementary [ref=e909]:
+          - heading "Evidence" [level=4] [ref=e910]
+          - generic [ref=e911]:
+            - heading "Source facts" [level=4] [ref=e912]
+            - paragraph [ref=e913]: None in this section.
+          - generic [ref=e914]:
+            - heading "Generated framing" [level=4] [ref=e915]
+            - generic [ref=e916]:
+              - paragraph [ref=e917]: "Language direction: keep the donor case concrete, specific, and easy to act on."
+              - paragraph [ref=e918]:
+                - generic [ref=e919]: generated framing
+                - generic [ref=e920]: narrative framing
+                - generic [ref=e921]: not checked
+              - paragraph [ref=e922]: No citation attached.
+            - generic [ref=e923]:
+              - paragraph [ref=e924]: "Behavioral framing: make the decision salient, show credible urgency, and end with a clear next action without adding unsupported facts."
+              - paragraph [ref=e925]:
+                - generic [ref=e926]: generated framing
+                - generic [ref=e927]: narrative framing
+                - generic [ref=e928]: not checked
+              - paragraph [ref=e929]: No citation attached.
+            - generic [ref=e930]:
+              - paragraph [ref=e931]: Applied 'salience' and 'social proof' by positioning the $30M gap as the final, highly leveraged piece alongside $495M in already-committed capital from major global health funders.
+              - paragraph [ref=e932]:
+                - generic [ref=e933]: generated framing
+                - generic [ref=e934]: narrative framing
+                - generic [ref=e935]: not checked
+              - paragraph [ref=e936]: No citation attached.
+            - generic [ref=e937]:
+              - paragraph [ref=e938]: Utilized 'loss-aversion framing' by emphasizing that clinical solutions already exist and are WHO-prequalified, meaning lives are being lost solely due to preventable delivery and equipment gaps.
+              - paragraph [ref=e939]:
+                - generic [ref=e940]: generated framing
+                - generic [ref=e941]: narrative framing
+                - generic [ref=e942]: not checked
+              - paragraph [ref=e943]: No citation attached.
+          - generic [ref=e944]:
+            - heading "Unresolved or weak support" [level=4] [ref=e945]
+            - paragraph [ref=e946]: None in this section.
+      - generic [ref=e947]:
+        - generic [ref=e948]:
+          - generic [ref=e949]:
+            - generic [ref=e950]:
+              - paragraph [ref=e951]: Section
+              - heading "Visual Brief" [level=2] [ref=e952]
+            - button "Regenerate" [ref=e954] [cursor=pointer]
+          - generic [ref=e955]: "Visual lead: show the problem, the proposed intervention, and the donor decision as a simple evidence-backed story. Evidence callouts: use only source-supported claims and preserve citation labels next to proof points. Funding visual: show sourced cost, current funding, and funding gap only where the values have citation support. Capital pathway visual: separate implementer, fund recipient, investment vehicle, delivery partner, beneficiary, and donor audience. Beneficiary visual: use source-supported beneficiary language to make the human stakes concrete."
+        - complementary [ref=e956]:
+          - heading "Evidence" [level=4] [ref=e957]
+          - generic [ref=e958]:
+            - heading "Source facts" [level=4] [ref=e959]
+            - paragraph [ref=e960]: None in this section.
+          - generic [ref=e961]:
+            - heading "Generated framing" [level=4] [ref=e962]
+            - generic [ref=e963]:
+              - paragraph [ref=e964]: "Visual lead: show the problem, the proposed intervention, and the donor decision as a simple evidence-backed story."
+              - paragraph [ref=e965]:
+                - generic [ref=e966]: generated framing
+                - generic [ref=e967]: narrative framing
+                - generic [ref=e968]: not checked
+              - paragraph [ref=e969]: No citation attached.
+            - generic [ref=e970]:
+              - paragraph [ref=e971]: "Evidence callouts: use only source-supported claims and preserve citation labels next to proof points."
+              - paragraph [ref=e972]:
+                - generic [ref=e973]: generated framing
+                - generic [ref=e974]: narrative framing
+                - generic [ref=e975]: not checked
+              - paragraph [ref=e976]: No citation attached.
+            - generic [ref=e977]:
+              - paragraph [ref=e978]: "Funding visual: show sourced cost, current funding, and funding gap only where the values have citation support."
+              - paragraph [ref=e979]:
+                - generic [ref=e980]: generated framing
+                - generic [ref=e981]: narrative framing
+                - generic [ref=e982]: not checked
+              - paragraph [ref=e983]: No citation attached.
+            - generic [ref=e984]:
+              - paragraph [ref=e985]: "Capital pathway visual: separate implementer, fund recipient, investment vehicle, delivery partner, beneficiary, and donor audience."
+              - paragraph [ref=e986]:
+                - generic [ref=e987]: generated framing
+                - generic [ref=e988]: narrative framing
+                - generic [ref=e989]: not checked
+              - paragraph [ref=e990]: No citation attached.
+            - generic [ref=e991]:
+              - paragraph [ref=e992]: "Beneficiary visual: use source-supported beneficiary language to make the human stakes concrete."
+              - paragraph [ref=e993]:
+                - generic [ref=e994]: generated framing
+                - generic [ref=e995]: narrative framing
+                - generic [ref=e996]: not checked
+              - paragraph [ref=e997]: No citation attached.
+          - generic [ref=e998]:
+            - heading "Unresolved or weak support" [level=4] [ref=e999]
+            - paragraph [ref=e1000]: None in this section.
+      - generic [ref=e1001]:
+        - generic [ref=e1002]:
+          - generic [ref=e1003]:
+            - generic [ref=e1004]:
+              - paragraph [ref=e1005]: Section
+              - heading "Missing Information" [level=2] [ref=e1006]
+            - button "Regenerate" [ref=e1008] [cursor=pointer]
+          - generic [ref=e1009]: "- **Phase 1 Country List:** The complete list of Phase 1 countries (beyond the Malawi example) is not specified in the source text. [S4] [S5] - **Implementing Partners:** The specific organizations executing the work on the ground in each country are not identified. [S6] - **Funding Recipient/Entity:** The legal entity or fiscal sponsor designated to receive and manage the $30M gap funding is not established."
+        - complementary [ref=e1010]:
+          - heading "Evidence" [level=4] [ref=e1011]
+          - generic [ref=e1012]:
+            - heading "Source facts" [level=4] [ref=e1013]
+            - paragraph [ref=e1014]: None in this section.
+          - generic [ref=e1015]:
+            - heading "Generated framing" [level=4] [ref=e1016]
+            - generic [ref=e1017]:
+              - paragraph [ref=e1018]: Missing information is recorded for this opportunity.
+              - paragraph [ref=e1019]:
+                - generic [ref=e1020]: generated framing
+                - generic [ref=e1021]: narrative framing
+                - generic [ref=e1022]: not checked
+              - paragraph [ref=e1023]: No citation attached.
+          - generic [ref=e1024]:
+            - heading "Unresolved or weak support" [level=4] [ref=e1025]
+            - paragraph [ref=e1026]: None in this section.
+          - generic [ref=e1027]:
+            - heading "Gaps" [level=4] [ref=e1028]
+            - list [ref=e1029]:
+              - listitem [ref=e1030]: The specific list of countries included in 'Phase 1' (other than the Malawi example) is not explicitly detailed in the overview text.
+              - listitem [ref=e1031]: concept owner is not established in the provided source materials.
+              - listitem [ref=e1032]: sponsoring team is not established in the provided source materials.
+              - listitem [ref=e1033]: implementing organization is not established in the provided source materials.
+              - listitem [ref=e1034]: delivery partner is not established in the provided source materials.
+              - listitem [ref=e1035]: investment manager is not established in the provided source materials.
+              - listitem [ref=e1036]: fiscal sponsor is not established in the provided source materials.
+              - listitem [ref=e1037]: evidence strength requires stronger source evidence.
+              - listitem [ref=e1038]: implementation readiness requires stronger source evidence.
+              - listitem [ref=e1039]: delivery organization strength requires stronger source evidence.
+              - listitem [ref=e1040]: scalability requires stronger source evidence.
+  - button "Open Next.js Dev Tools" [ref=e1046] [cursor=pointer]
+  - alert [ref=e1050]

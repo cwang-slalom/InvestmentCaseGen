@@ -1,0 +1,1 @@
+export { assessOpportunityInvestability } from "./investability";

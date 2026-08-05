@@ -1,0 +1,8 @@
+command:
+  - python
+  - -m
+  - backend.main
+
+env:
+  - name: MODEL_PROVIDER_MODE
+    value: deterministic

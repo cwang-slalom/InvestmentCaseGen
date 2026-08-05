@@ -1,0 +1,21 @@
+[project]
+name = "investmentgen-backend"
+version = "0.1.0"
+description = "FastAPI backend for the Investment Case Generator MVP."
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.116,<1.0",
+  "pydantic-settings>=2.10,<3.0",
+  "uvicorn[standard]>=0.35,<1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.27,<1.0",
+  "pytest>=8.0,<9.0",
+  "psycopg[binary]>=3.2,<4.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

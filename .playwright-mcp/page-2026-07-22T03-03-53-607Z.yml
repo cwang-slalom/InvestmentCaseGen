@@ -1,0 +1,150 @@
+- generic [active] [ref=f1e1]:
+  - main [ref=f1e2]:
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - paragraph [ref=f1e6]: Investment Case Generator
+        - heading "Create new case" [level=1] [ref=f1e7]
+        - paragraph [ref=f1e8]: Signed in as Admin User (admin@example.com)
+      - generic [ref=f1e9]:
+        - link "Back to dashboard" [ref=f1e10] [cursor=pointer]:
+          - /url: /
+        - button "Sign out" [ref=f1e12] [cursor=pointer]
+    - generic [ref=f1e14]:
+      - region [ref=f1e15]:
+        - generic [ref=f1e16]:
+          - paragraph [ref=f1e17]: New output
+          - heading "Upload source material and generate the first donor-facing draft." [level=2] [ref=f1e18]
+          - paragraph [ref=f1e19]: The generated document keeps source facts separate from narrative framing and remains a draft for human review.
+      - region [ref=f1e20]:
+        - heading "Review process" [level=2] [ref=f1e21]
+        - list [ref=f1e22]:
+          - listitem [ref=f1e23]:
+            - generic [ref=f1e24]: "1"
+            - generic [ref=f1e25]:
+              - heading "Upload source" [level=3] [ref=f1e26]
+              - paragraph [ref=f1e27]: PDF, DOCX, PPTX, TXT, or Markdown
+          - listitem [ref=f1e28]:
+            - generic [ref=f1e29]: "2"
+            - generic [ref=f1e30]:
+              - heading "Configure audience" [level=3] [ref=f1e31]
+              - paragraph [ref=f1e32]: Donor segment, scale, tone, and notes
+          - listitem [ref=f1e33]:
+            - generic [ref=f1e34]: "3"
+            - generic [ref=f1e35]:
+              - heading "Generate draft" [level=3] [ref=f1e36]
+              - paragraph [ref=f1e37]: Concept, citations, gaps, narrative, and DOCX export
+      - generic [ref=f1e38]:
+        - generic [ref=f1e39]:
+          - paragraph [ref=f1e40]: Source package
+          - heading "Case setup" [level=2] [ref=f1e41]
+        - generic [ref=f1e42]:
+          - generic [ref=f1e43]: Source document
+          - button "Source document" [ref=f1e44]
+        - generic [ref=f1e45]:
+          - generic [ref=f1e46]:
+            - generic [ref=f1e47]: Case name
+            - generic [ref=f1e49]:
+              - textbox "Case name" [ref=f1e50]:
+                - /placeholder: Optional, defaults to file name
+              - button "Dictate case name" [ref=f1e51] [cursor=pointer]
+          - generic [ref=f1e55]:
+            - generic [ref=f1e56]: Audience profile
+            - combobox "Audience profile" [ref=f1e57]:
+              - option "General Donor"
+              - option "Philanthropic Foundation"
+              - option "US Foundation Program Officer" [selected]
+              - option "US Major Donor"
+              - option "DAF Advisor"
+              - option "Impact Investor"
+              - option "Government Donor"
+              - option "Corporate Philanthropy"
+        - generic [ref=f1e58]:
+          - generic [ref=f1e59]: Case description
+          - generic [ref=f1e61]:
+            - textbox "Case description" [ref=f1e62]:
+              - /placeholder: Optional context for the workspace
+            - button "Dictate case description" [ref=f1e63] [cursor=pointer]
+        - generic [ref=f1e67]:
+          - generic [ref=f1e68]:
+            - generic [ref=f1e69]: Audience familiarity
+            - combobox "Audience familiarity" [ref=f1e70]:
+              - option "New to topic" [selected]
+              - option "Familiar with issue"
+              - option "Technical expert"
+          - generic [ref=f1e71]:
+            - generic [ref=f1e72]: Funding scale
+            - combobox "Funding scale" [ref=f1e73]:
+              - option "Exploratory" [selected]
+              - option "Major donor"
+              - option "Big bet"
+        - generic [ref=f1e74]:
+          - generic [ref=f1e75]:
+            - generic [ref=f1e76]: Tone
+            - combobox "Tone" [ref=f1e77]:
+              - option "Balanced" [selected]
+              - option "Warm"
+              - option "Direct"
+              - option "Visionary"
+          - generic [ref=f1e78]:
+            - generic [ref=f1e79]: Saved format
+            - combobox "Saved format" [ref=f1e80]:
+              - option "Investment Prospectus" [selected]
+              - option "Donor One-Pager"
+              - option "Concept Note"
+              - option "Board Brief"
+              - option "High-Net-Worth Donor Teaser"
+              - option "Executive Investment Case"
+              - option "Opportunity Spotlight"
+        - generic [ref=f1e81]:
+          - generic [ref=f1e82]:
+            - generic [ref=f1e83]: Variant name
+            - generic [ref=f1e85]:
+              - textbox "Variant name" [ref=f1e86]:
+                - /placeholder: Optional saved variant label
+              - button "Dictate variant name" [ref=f1e87] [cursor=pointer]
+          - generic [ref=f1e91]:
+            - generic [ref=f1e92]: Narrative angle
+            - combobox "Narrative angle" [ref=f1e93]:
+              - option "Catalytic Philanthropy" [selected]
+              - option "Systems Change"
+              - option "Scale Pathway"
+              - option "Innovation"
+              - option "Policy Leverage"
+              - option "Proof of Concept"
+              - option "Evidence and Diligence"
+              - option "Beneficiary Urgency"
+        - generic [ref=f1e94]:
+          - generic [ref=f1e95]:
+            - generic [ref=f1e96]: Intended audience
+            - generic [ref=f1e98]:
+              - textbox "Intended audience" [ref=f1e99]:
+                - /placeholder: Optional funder, donor type, or meeting context
+              - button "Dictate intended audience" [ref=f1e100] [cursor=pointer]
+          - generic [ref=f1e104]:
+            - generic [ref=f1e105]: Call to action
+            - generic [ref=f1e107]:
+              - textbox "Call to action" [ref=f1e108]:
+                - /placeholder: Optional next conversation or donor action
+              - button "Dictate call to action" [ref=f1e109] [cursor=pointer]
+        - generic [ref=f1e113]:
+          - generic [ref=f1e114]: Tailoring notes
+          - generic [ref=f1e116]:
+            - textbox "Tailoring notes" [ref=f1e117]:
+              - /placeholder: Optional audience nuance
+            - button "Dictate tailoring notes" [ref=f1e118] [cursor=pointer]
+        - generic [ref=f1e122]:
+          - generic [ref=f1e123]: Positioning notes
+          - generic [ref=f1e125]:
+            - textbox "Positioning notes" [ref=f1e126]:
+              - /placeholder: Optional narrative direction; not treated as source evidence
+            - button "Dictate positioning notes" [ref=f1e127] [cursor=pointer]
+        - generic [ref=f1e131]:
+          - checkbox "Strengthen narrative and behavioral framing" [checked] [ref=f1e132]
+          - generic [ref=f1e133]: Strengthen narrative and behavioral framing
+        - generic [ref=f1e134]:
+          - checkbox "Allow external web search for draft generation" [ref=f1e135]
+          - generic [ref=f1e136]: Allow external web search for draft generation
+        - paragraph [ref=f1e137]: 25 MB maximum upload size.
+        - button "Generate document" [ref=f1e138] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=f1e144] [cursor=pointer]
+  - alert [ref=f1e148]
