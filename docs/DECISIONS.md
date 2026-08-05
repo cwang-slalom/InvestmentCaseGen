@@ -4,6 +4,16 @@ Planning checkpoint date: 2026-07-14
 
 ## Decisions
 
+## 2026-08-05: Databricks Root Deployment Uses Backend Package Imports
+
+The Databricks App is deployed from the repository root so the root build can
+compile `frontend/dist` and `python -m backend.main` can start the FastAPI
+process. Python modules under `backend/app/` therefore use package-relative
+imports instead of assuming a top-level `app` package. Runtime dependencies use
+plain `uvicorn`, because the app does not need WebSocket support and Databricks
+base images can already include packages with tighter `websockets`
+constraints.
+
 ## 2026-08-05: Phase 1 Uses Vite And FastAPI As The Single Public Runtime
 
 The Phase 1 proof of concept uses React, TypeScript, Vite, FastAPI, and Python.
@@ -30,10 +40,9 @@ requiring Vertex Gemini. Lakebase is the Databricks-native Postgres-compatible
 persistence target for migrated FastAPI endpoints. The existing source-grounded
 prompt, schema-validation, and validated-output-only rules still apply.
 
-The first Databricks deployment should be backend-only from the `backend/`
-folder plus the top-level `prompts/` directory. Deploying the repository root
-would also trigger the Next.js build because `package.json` is present, which
-is unnecessary for proving the backend runtime.
+The first Databricks backend smoke test used a backend-only source folder, but
+the Phase 1 app deployment now uses the repository root so Vite assets and the
+FastAPI runtime are built and served from one app.
 
 ## 2026-08-03: Create Flow Uses A Four-Step Source-Grounded Wizard
 

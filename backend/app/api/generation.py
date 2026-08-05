@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 
-from app.models.generation import FindingUpdate, GenerateRequest, GeneratedSection, GenerationResult
-from app.repositories.memory import case_repository, generation_store
-from app.services.generation import get_generation_backend
+from ..models.generation import FindingUpdate, GenerateRequest, GeneratedSection, GenerationResult
+from ..repositories.memory import case_repository, generation_store
+from ..services.generation import get_generation_backend
 
 router = APIRouter(prefix="/api", tags=["generation"])
 

@@ -1,17 +1,17 @@
 from abc import ABC, abstractmethod
 
-from app.models.audience import AudienceProfile
-from app.models.extraction import ExtractionResult
-from app.models.generation import GenerationResult
-from app.models.opportunity import Opportunity
-from app.models.project import (
+from ..models.audience import AudienceProfile
+from ..models.extraction import ExtractionResult
+from ..models.generation import GenerationResult
+from ..models.opportunity import Opportunity
+from ..models.project import (
     OpportunityAudienceUpdate,
     Project,
     ProjectCreate,
     ReviewSetupUpdate,
     TaskUpdate,
 )
-from app.models.source import SourceDocument
+from ..models.source import SourceDocument
 
 
 class CaseRepository(ABC):

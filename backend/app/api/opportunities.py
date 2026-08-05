@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from app.models.opportunity import Opportunity
-from app.repositories.memory import opportunity_repository
+from ..models.opportunity import Opportunity
+from ..repositories.memory import opportunity_repository
 
 router = APIRouter(prefix="/api/opportunities", tags=["opportunities"])
 

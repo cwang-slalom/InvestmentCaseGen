@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from app.models.extraction import ExtractedField
+from ..models.extraction import ExtractedField
 
 
 PROTECTED_FACT_PATTERN = re.compile(

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.services.generation import get_generation_backend
+from ..services.generation import get_generation_backend
 
 router = APIRouter(prefix="/api", tags=["health"])
 

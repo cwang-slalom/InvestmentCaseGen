@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from app.models.audience import AudienceProfile
-from app.repositories.memory import audience_repository
+from ..models.audience import AudienceProfile
+from ..repositories.memory import audience_repository
 
 router = APIRouter(prefix="/api/audiences", tags=["audiences"])
 

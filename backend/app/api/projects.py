@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from app.models.extraction import ExtractionResult, ExtractionReviewUpdate
-from app.models.project import OpportunityAudienceUpdate, Project, ProjectCreate, ReviewSetupUpdate, TaskUpdate
-from app.repositories.memory import case_repository
+from ..models.extraction import ExtractionResult, ExtractionReviewUpdate
+from ..models.project import OpportunityAudienceUpdate, Project, ProjectCreate, ReviewSetupUpdate, TaskUpdate
+from ..repositories.memory import case_repository
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 

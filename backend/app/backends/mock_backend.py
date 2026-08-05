@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from app.fixtures import AUDIENCES, OPPORTUNITIES, generated_example
-from app.models.base import BackendHealth, CitationRef
-from app.models.generation import GeneratedOutput, GeneratedSection, GenerationResult
-from app.models.opportunity import Opportunity
-from app.models.project import Project
-from app.repositories.memory import case_repository
-from app.services.integrity import protected_fact_tokens
+from ..fixtures import AUDIENCES, OPPORTUNITIES, generated_example
+from ..models.base import BackendHealth, CitationRef
+from ..models.generation import GeneratedOutput, GeneratedSection, GenerationResult
+from ..models.opportunity import Opportunity
+from ..models.project import Project
+from ..repositories.memory import case_repository
+from ..services.integrity import protected_fact_tokens
 
 from .base import GenerationBackend
 

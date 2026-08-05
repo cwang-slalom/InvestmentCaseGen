@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 
-from app.models.extraction import ExtractionResult
-from app.repositories.memory import case_repository
-from app.services.extraction import source_processor
+from ..models.extraction import ExtractionResult
+from ..repositories.memory import case_repository
+from ..services.extraction import source_processor
 
 router = APIRouter(prefix="/api/sources", tags=["sources"])
 

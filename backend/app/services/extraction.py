@@ -3,9 +3,9 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from app.fixtures import default_extraction
-from app.models.extraction import ExtractionResult
-from app.repositories.base import SourceProcessor
+from ..fixtures import default_extraction
+from ..models.extraction import ExtractionResult
+from ..repositories.base import SourceProcessor
 
 
 class MockSourceProcessor(SourceProcessor):

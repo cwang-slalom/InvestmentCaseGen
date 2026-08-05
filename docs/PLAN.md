@@ -4,6 +4,9 @@ Planning checkpoint date: 2026-07-14
 
 ## 2026-08-05 Phase 1 Databricks Apps Vertical Slice
 
+- Fix Databricks root deployment startup by using package-relative imports
+  inside `backend.app` and avoiding optional Uvicorn WebSocket dependencies
+  that conflict with Databricks preinstalled packages.
 - Build the Phase 1 proof of concept as a React/TypeScript/Vite frontend served
   by FastAPI from one public process.
 - Replace the runtime dependency on Next.js route handlers and Prisma/SQLite

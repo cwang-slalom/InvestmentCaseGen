@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 
-from app.models.base import BackendHealth
-from app.models.generation import GeneratedSection, GenerationResult
-from app.models.project import Project
+from ..models.base import BackendHealth
+from ..models.generation import GeneratedSection, GenerationResult
+from ..models.project import Project
 
 
 class GenerationBackend(ABC):

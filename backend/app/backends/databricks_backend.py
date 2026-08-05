@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from app.config import Settings
-from app.models.base import BackendHealth
-from app.models.generation import GeneratedSection, GenerationResult
-from app.models.project import Project
+from ..config import Settings
+from ..models.base import BackendHealth
+from ..models.generation import GeneratedSection, GenerationResult
+from ..models.project import Project
 
 from .base import GenerationBackend
 

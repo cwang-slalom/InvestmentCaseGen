@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from app.fixtures import DEMO_NOTICE, SOURCES
-from app.services.extraction import source_processor
-from app.services.generation import get_generation_backend
+from ..fixtures import DEMO_NOTICE, SOURCES
+from ..services.extraction import source_processor
+from ..services.generation import get_generation_backend
 
 router = APIRouter(prefix="/api", tags=["config"])
 

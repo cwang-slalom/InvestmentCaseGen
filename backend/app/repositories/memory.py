@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from fastapi import HTTPException
 
-from app.fixtures import (
+from ..fixtures import (
     AUDIENCES,
     DEMO_NOTICE,
     OPPORTUNITIES,
@@ -15,11 +15,11 @@ from app.fixtures import (
     recent_projects,
     source_readiness,
 )
-from app.models.audience import AudienceProfile
-from app.models.extraction import ExtractionResult
-from app.models.generation import GenerationResult
-from app.models.opportunity import Opportunity
-from app.models.project import (
+from ..models.audience import AudienceProfile
+from ..models.extraction import ExtractionResult
+from ..models.generation import GenerationResult
+from ..models.opportunity import Opportunity
+from ..models.project import (
     OpportunityAudienceState,
     OpportunityAudienceUpdate,
     Project,
@@ -29,8 +29,8 @@ from app.models.project import (
     TaskState,
     TaskUpdate,
 )
-from app.models.source import SourceDocument
-from app.repositories.base import AudienceRepository, CaseRepository, GenerationStore, OpportunityRepository
+from ..models.source import SourceDocument
+from .base import AudienceRepository, CaseRepository, GenerationStore, OpportunityRepository
 
 
 def utc_now() -> str:
