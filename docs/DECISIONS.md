@@ -143,6 +143,21 @@ Root `app.yaml` now sets `MODEL_PROVIDER_MODE=databricks` and resolves
 `serving-endpoint`, matching the client app resource instead of using the prior
 deterministic default.
 
+## 2026-08-06: Databricks Claude Payloads Omit Unsupported Temperature
+
+The approved Databricks Claude endpoint rejects the OpenAI-compatible
+`temperature` parameter, so `DatabricksModelServingProvider` now omits
+temperature whenever the Databricks model identifier indicates Claude or
+Anthropic. Non-Claude Databricks chat models still receive `temperature: 0.2`
+to preserve deterministic behavior where the serving endpoint supports it.
+
+The Generate page now treats backend generation errors as failed generation
+state rather than continuing to show synthetic queued/in-progress cards. Users
+can adjust functional output selections directly from the Generate page until a
+generation request starts or a generation is saved. The UI still enforces at
+least one selected functional output and labels roadmap-only outputs as coming
+soon instead of implying that their disabled checkboxes are broken.
+
 ## 2026-08-04: Databricks Is A Supported Backend Runtime
 
 For clients that only have Databricks available, the FastAPI backend can run as

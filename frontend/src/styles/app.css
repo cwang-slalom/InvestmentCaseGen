@@ -1638,6 +1638,11 @@ button.status-pill:hover {
   background: #f4f2ff;
 }
 
+.output-tile.disabled {
+  background: #f8f9fc;
+  color: #7781a0;
+}
+
 .output-tile input {
   width: auto;
   margin: 0 0 6px;
@@ -1651,6 +1656,13 @@ button.status-pill:hover {
 .output-tile small {
   font-size: 11px;
   margin-top: 4px;
+}
+
+.output-selection-hint {
+  margin: 10px 0 0;
+  color: #6b7899;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .new-opportunity-grid {
@@ -2232,6 +2244,10 @@ button.status-pill:hover {
   color: #6b7899;
 }
 
+.stage-row.failed > span {
+  color: #c42828;
+}
+
 .stage-row strong,
 .stage-row em {
   font-size: 12px;
@@ -2250,6 +2266,10 @@ button.status-pill:hover {
   color: #465783;
 }
 
+.stage-row.failed em {
+  color: #c42828;
+}
+
 .progress-ring {
   --progress: 65%;
   position: relative;
@@ -2259,6 +2279,10 @@ button.status-pill:hover {
   place-items: center;
   border-radius: 50%;
   background: conic-gradient(#3b2df4 var(--progress), #e7e7f2 0);
+}
+
+.progress-ring.failed {
+  background: conic-gradient(#c42828 var(--progress), #f4dede 0);
 }
 
 .progress-ring::after {
@@ -2326,6 +2350,10 @@ button.status-pill:hover {
   margin: 0;
 }
 
+.generated-output-card > input:disabled {
+  cursor: not-allowed;
+}
+
 .generated-output-card .generated-icon {
   grid-row: 1 / span 4;
   width: 34px;
@@ -2359,6 +2387,30 @@ button.status-pill:hover {
   color: #34436a;
   font-size: 12px;
   font-style: normal;
+}
+
+.generated-output-card.failed {
+  border-color: #efb8b8;
+  background: #fff8f8;
+}
+
+.generated-output-card.failed em {
+  color: #b51f1f;
+  font-weight: 800;
+}
+
+.generated-output-card.not-selected {
+  background: #fafbfe;
+}
+
+.generated-output-card.not-selected strong,
+.generated-output-card.not-selected small {
+  color: #6f7a98;
+}
+
+.output-lock-note {
+  color: #6b7899;
+  font-size: 11px;
 }
 
 .generated-output-card.completed > .icon:last-child {

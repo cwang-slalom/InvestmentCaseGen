@@ -2,6 +2,22 @@
 
 Planning checkpoint date: 2026-07-14
 
+## 2026-08-06 Databricks Claude Parameter And Output Selection Recovery
+
+- Omit `temperature` from Databricks Model Serving chat-completions payloads
+  for Claude/Anthropic model identifiers because the approved Claude endpoint
+  rejects that parameter.
+- Preserve the existing low-temperature payload for non-Claude Databricks
+  chat models so deterministic generation remains preferred where supported.
+- Make the Generate page show failed generation state explicitly instead of
+  continuing to present queued/in-progress output cards after a backend error.
+- Allow users to adjust functional output selections directly on the Generate
+  page until generation starts or an output package is saved, while still
+  requiring at least one selected functional output.
+- Clarify disabled output checkboxes in Step 2 and Step 4: future outputs are
+  roadmap-only, and the last selected functional output is locked to keep the
+  request valid.
+
 ## 2026-08-06 UI Claude Generation Wiring
 
 - Route the Phase 1 UI generation API through the Databricks Model Serving

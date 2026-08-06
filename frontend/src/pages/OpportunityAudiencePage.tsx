@@ -500,25 +500,34 @@ function SetupPanel({
         <h3>4. Outputs to generate</h3>
         <p>You can generate multiple coordinated outputs from this opportunity.</p>
         <div className="output-grid">
-          {functionalOutputs.map((output) => (
-            <label className={`output-tile ${selectedOutputs.includes(output.id) ? "selected" : ""}`} key={output.id}>
-              <input
-                type="checkbox"
-                checked={selectedOutputs.includes(output.id)}
-                onChange={() => onToggleOutput(output.id)}
-                disabled={selectedOutputs.length === 1 && selectedOutputs.includes(output.id)}
-              />
-              <strong>{output.label}</strong>
-              <small>{output.description}</small>
-            </label>
-          ))}
+          {functionalOutputs.map((output) => {
+            const lockedAsLastSelection = selectedOutputs.length === 1 && selectedOutputs.includes(output.id);
+            return (
+              <label
+                className={`output-tile ${selectedOutputs.includes(output.id) ? "selected" : ""}`}
+                key={output.id}
+                title={lockedAsLastSelection ? "At least one output is required." : undefined}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedOutputs.includes(output.id)}
+                  onChange={() => onToggleOutput(output.id)}
+                  disabled={lockedAsLastSelection}
+                />
+                <strong>{output.label}</strong>
+                <small>{output.description}</small>
+              </label>
+            );
+          })}
           {futureOutputs.slice(0, 2).map((label) => (
-            <label className="output-tile" key={label}>
+            <label className="output-tile disabled" key={label} title="Reserved for a later workflow.">
               <input type="checkbox" disabled />
               <strong>{label}</strong>
+              <small>Coming soon</small>
             </label>
           ))}
         </div>
+        <p className="output-selection-hint">At least one functional output must stay selected. Disabled roadmap outputs are shown for context.</p>
         <button className="ghost-link" type="button" onClick={onViewOutputOptions}>View all output options</button>
       </div>
     </section>
@@ -683,21 +692,28 @@ function OpportunityAudienceDrawer({
           <p className="eyebrow">Output package</p>
           <h3>All output options</h3>
           <div className="output-option-list">
-            {functionalOutputs.map((output) => (
-              <label className={`drawer-card output-option ${selectedOutputs.includes(output.id) ? "selected" : ""}`} key={output.id}>
-                <input
-                  type="checkbox"
-                  checked={selectedOutputs.includes(output.id)}
-                  disabled={selectedOutputs.length === 1 && selectedOutputs.includes(output.id)}
-                  onChange={() => onToggleOutput(output.id)}
-                />
-                <span>
-                  <strong>{output.label}</strong>
-                  <small>{output.description}</small>
-                </span>
-                <em>Available</em>
-              </label>
-            ))}
+            {functionalOutputs.map((output) => {
+              const lockedAsLastSelection = selectedOutputs.length === 1 && selectedOutputs.includes(output.id);
+              return (
+                <label
+                  className={`drawer-card output-option ${selectedOutputs.includes(output.id) ? "selected" : ""}`}
+                  key={output.id}
+                  title={lockedAsLastSelection ? "At least one output is required." : undefined}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedOutputs.includes(output.id)}
+                    disabled={lockedAsLastSelection}
+                    onChange={() => onToggleOutput(output.id)}
+                  />
+                  <span>
+                    <strong>{output.label}</strong>
+                    <small>{output.description}</small>
+                  </span>
+                  <em>{lockedAsLastSelection ? "Required" : "Available"}</em>
+                </label>
+              );
+            })}
             {futureOutputs.map((label) => (
               <div className="drawer-card output-option disabled" key={label}>
                 <input type="checkbox" disabled />

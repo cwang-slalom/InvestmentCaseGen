@@ -369,7 +369,7 @@ class DatabricksModelServingProvider:
         system_prompt: str,
         task_prompt: str,
     ) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "model": self.model_name,
             "messages": [
                 {"role": "system", "content": system_prompt},
@@ -378,9 +378,15 @@ class DatabricksModelServingProvider:
                     "content": self._structured_prompt(request, task_prompt),
                 },
             ],
-            "temperature": 0.2,
             "max_tokens": self.settings.model_max_output_tokens,
         }
+        if self._supports_temperature_parameter():
+            payload["temperature"] = 0.2
+        return payload
+
+    def _supports_temperature_parameter(self) -> bool:
+        normalized = self.model_name.lower()
+        return "claude" not in normalized and "anthropic" not in normalized
 
     def _structured_prompt(
         self,

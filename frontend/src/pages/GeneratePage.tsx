@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { api } from "../api/client";
 import { Icon, type IconName } from "../components/Icons";
 import { functionalOutputs, futureOutputs, generationStages } from "../state/options";
-import type { AppConfig, FieldValue, GenerationResult, Project } from "../types";
+import { toggleOutput } from "../state/workflow";
+import type { AppConfig, FieldValue, GenerationResult, OutputType, Project } from "../types";
 
 type GeneratePageProps = {
   project: Project;
@@ -17,15 +18,19 @@ type GeneratePageProps = {
 export function GeneratePage({ project, config, generation, onProject, onGeneration, onNavigate }: GeneratePageProps) {
   const [error, setError] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [selectionSaving, setSelectionSaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const timerRef = useRef<number | null>(null);
   const generationPromiseRef = useRef<Promise<GenerationResult | null> | null>(null);
   const selectedOutputs = project.opportunityAudience?.selectedOutputs || [];
   const currentGeneration = generation?.projectId === project.id ? generation : null;
   const liveModelReady = config?.mode === "live";
+  const hasGeneration = Boolean(project.generationId || currentGeneration?.generationId);
   const complete = Boolean(project.generationId || currentGeneration?.status === "completed");
-  const progress = !liveModelReady ? 0 : complete ? 100 : generating ? 78 : 65;
-  const outputCards = generationOutputCards(selectedOutputs, complete, liveModelReady);
+  const generationFailed = liveModelReady && Boolean(error) && !generating && !complete;
+  const progress = complete ? 100 : !liveModelReady ? 0 : generationFailed ? 65 : generating ? 78 : 65;
+  const canEditOutputs = !generating && !selectionSaving && !hasGeneration;
+  const outputCards = generationOutputCards(selectedOutputs, complete, liveModelReady, generationFailed, generating, canEditOutputs);
   const approachFields = project.reviewSetup?.approachFields || [];
   const narrativeStyle = settingValue(approachFields, "narrative_style");
   const tone = settingValue(approachFields, "tone");
@@ -62,6 +67,33 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
     generationPromiseRef.current = request;
     return request;
   }, [config?.backend.message, liveModelReady, onGeneration, onProject, project.generationId, project.id]);
+
+  const toggleOutputSelection = useCallback(async (output: OutputType) => {
+    const opportunityAudience = project.opportunityAudience;
+    if (!opportunityAudience || !canEditOutputs) return;
+
+    const nextOutputs = toggleOutput(selectedOutputs, output);
+    if (nextOutputs === selectedOutputs) return;
+
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    setSelectionSaving(true);
+    setError("");
+    try {
+      const updated = await api.updateOpportunityAudience(project.id, {
+        sourceMode: opportunityAudience.sourceMode,
+        opportunityId: opportunityAudience.opportunityId || null,
+        audienceId: opportunityAudience.audienceId || null,
+        intendedOutcome: opportunityAudience.intendedOutcome || null,
+        suggestions: opportunityAudience.suggestions,
+        selectedOutputs: nextOutputs,
+      });
+      onProject(updated);
+    } catch (apiError) {
+      setError(apiError instanceof Error ? apiError.message : "Output selection could not be updated.");
+    } finally {
+      setSelectionSaving(false);
+    }
+  }, [canEditOutputs, onProject, project.id, project.opportunityAudience, selectedOutputs]);
 
   useEffect(() => {
     if (!liveModelReady) return;
@@ -104,19 +136,25 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
           <div className="progress-content">
             <div className="stage-list">
               {generationStages.map((stage, index) => {
-                const status = !liveModelReady ? "queued" : complete ? "completed" : index < 2 ? "completed" : index === 2 ? "in-progress" : "queued";
+                const status = generationStageStatus(index, complete, liveModelReady, generationFailed);
                 return (
                   <div className={`stage-row ${status}`} key={stage}>
-                    <span>{status === "completed" ? <Icon name="check" /> : <Icon name={status === "in-progress" ? "circle-check" : "clock"} />}</span>
+                    <span>
+                      {status === "completed" ? (
+                        <Icon name="check" />
+                      ) : (
+                        <Icon name={status === "failed" ? "warning" : status === "in-progress" ? "circle-check" : "clock"} />
+                      )}
+                    </span>
                     <strong>{stage}</strong>
-                    <em>{status === "completed" ? "Completed" : status === "in-progress" ? "In progress" : "Queued"}</em>
+                    <em>{generationStatusLabel(status)}</em>
                   </div>
                 );
               })}
             </div>
-            <div className="progress-ring" style={{ "--progress": `${progress}%` } as CSSProperties}>
+            <div className={`progress-ring ${generationFailed ? "failed" : ""}`} style={{ "--progress": `${progress}%` } as CSSProperties}>
               <span>{progress}%</span>
-              <small>{!liveModelReady ? "Model required" : complete ? "Completed" : "In progress"}</small>
+              <small>{progressStatusLabel(complete, liveModelReady, generationFailed)}</small>
             </div>
           </div>
           <p className="duration-note">This usually takes 2-4 minutes.</p>
@@ -132,15 +170,23 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
         </section>
 
         <section className="panel outputs-generation-panel">
-          <h3>Outputs being generated ({outputCards.length})</h3>
+          <h3>{complete ? "Generated outputs" : generating ? "Outputs being generated" : generationFailed ? "Generation failed" : "Outputs selected"} ({selectedOutputs.length})</h3>
           <div className="generated-output-grid">
             {outputCards.map((output) => (
               <article className={`generated-output-card ${output.status}`} key={output.label}>
                 <span className={`generated-icon ${output.tone}`}><Icon name={output.icon} /></span>
-                <input type="checkbox" checked={output.checked} readOnly />
+                <input
+                  type="checkbox"
+                  checked={output.checked}
+                  disabled={output.disabled}
+                  onChange={() => output.id && void toggleOutputSelection(output.id)}
+                  title={output.disabledReason || undefined}
+                  aria-label={`${output.checked ? "Remove" : "Add"} ${output.label}`}
+                />
                 <strong>{output.label}</strong>
                 {output.description && <small>{output.description}</small>}
                 <em>{output.statusLabel}</em>
+                {output.disabledReason && <small className="output-lock-note">{output.disabledReason}</small>}
                 {output.percent && <div className="mini-progress"><span style={{ width: output.percent }} /></div>}
                 {output.percent && <b>{output.percent}</b>}
                 {output.done && <Icon name="check" />}
@@ -155,6 +201,11 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
             <p>Evidence density: {evidenceDensity}&nbsp;&nbsp;•&nbsp;&nbsp;External web search: {externalWebSearch}</p>
             <button type="button" onClick={() => setSettingsOpen(true)}>View all settings <Icon name="arrow" /></button>
           </div>
+          {!complete && (
+            <p className="output-selection-hint">
+              You can adjust functional outputs here until generation starts. At least one output must stay selected.
+            </p>
+          )}
         </section>
       </div>
 
@@ -188,8 +239,8 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
           <button className="secondary-button large" type="button" onClick={() => onNavigate("/projects")}>
             Save and exit
           </button>
-          <button className="primary-button large" type="button" disabled={!liveModelReady || generating} onClick={viewResults}>
-            {!liveModelReady ? "Configure model to generate" : generating ? "Generating results..." : "View results"}
+          <button className="primary-button large" type="button" disabled={(!liveModelReady && !hasGeneration) || generating || selectionSaving} onClick={viewResults}>
+            {hasGeneration ? "View results" : !liveModelReady ? "Configure model to generate" : generating ? "Generating results..." : generationFailed ? "Retry generation" : "View results"}
           </button>
         </div>
       </div>
@@ -207,6 +258,59 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
 
 function settingValue(fields: FieldValue[] | undefined, id: string) {
   return fields?.find((field) => field.id === id)?.value || "Unresolved";
+}
+
+function generationStageStatus(index: number, complete: boolean, liveModelReady: boolean, generationFailed: boolean) {
+  if (complete) return "completed";
+  if (!liveModelReady) return "queued";
+  if (generationFailed) return index < 2 ? "completed" : index === 2 ? "failed" : "queued";
+  return index < 2 ? "completed" : index === 2 ? "in-progress" : "queued";
+}
+
+function generationStatusLabel(status: string) {
+  if (status === "completed") return "Completed";
+  if (status === "failed") return "Failed";
+  if (status === "in-progress") return "In progress";
+  return "Queued";
+}
+
+function progressStatusLabel(complete: boolean, liveModelReady: boolean, generationFailed: boolean) {
+  if (complete) return "Completed";
+  if (!liveModelReady) return "Model required";
+  if (generationFailed) return "Failed";
+  return "In progress";
+}
+
+function outputCardStatus(
+  checked: boolean,
+  complete: boolean,
+  liveModelReady: boolean,
+  generationFailed: boolean,
+  active: boolean,
+  selectedIndex: number,
+) {
+  if (!checked) return "not-selected";
+  if (complete) return "completed";
+  if (generationFailed) return "failed";
+  if (!liveModelReady) return "queued";
+  if (active && selectedIndex < 2) return "in-progress";
+  return "queued";
+}
+
+function outputCardStatusLabel(
+  checked: boolean,
+  complete: boolean,
+  liveModelReady: boolean,
+  generationFailed: boolean,
+  active: boolean,
+  selectedIndex: number,
+) {
+  if (!checked) return "Not selected";
+  if (complete) return "Completed";
+  if (generationFailed) return "Failed";
+  if (!liveModelReady) return "Model required";
+  if (!active) return "Selected";
+  return selectedIndex < 2 ? "In progress" : "Queued";
 }
 
 function GenerationSettingsDrawer({
@@ -281,35 +385,74 @@ function GenerationSettingsDrawer({
   );
 }
 
-function generationOutputCards(selectedOutputs: string[], complete: boolean, liveModelReady: boolean) {
-  const functionalCards = functionalOutputs.map((output, index) => ({
-    label: output.label,
-    description: output.description,
-    checked: selectedOutputs.includes(output.id),
-    icon: output.id === "talking_points" ? "file" : "document",
-    tone: output.id === "talking_points" ? "green" : "blue",
-    status: !liveModelReady ? "queued" : complete ? "completed" : index === 0 ? "in-progress" : index === 1 ? "in-progress" : index === 2 ? "completed" : "queued",
-    statusLabel: !liveModelReady ? "Model required" : complete ? "Completed" : index === 0 ? "In progress" : index === 1 ? "In progress" : index === 2 ? "Completed" : "Queued",
-    percent: !liveModelReady || complete ? "" : index === 0 ? "65%" : index === 1 ? "55%" : "",
-    done: liveModelReady && (complete || index === 2),
-  }));
+function generationOutputCards(
+  selectedOutputs: string[],
+  complete: boolean,
+  liveModelReady: boolean,
+  generationFailed: boolean,
+  generating: boolean,
+  canEditOutputs: boolean,
+) {
+  const selectedProgressSlots = functionalOutputs
+    .filter((output) => selectedOutputs.includes(output.id))
+    .map((output) => output.id);
+
+  const functionalCards = functionalOutputs.map((output) => {
+    const checked = selectedOutputs.includes(output.id);
+    const selectedIndex = selectedProgressSlots.indexOf(output.id);
+    const lockedAsLastSelection = checked && selectedOutputs.length === 1;
+    const disabledReason = !canEditOutputs
+      ? complete
+        ? "Generated outputs are locked."
+        : generating
+          ? "Generation is already running."
+          : undefined
+      : lockedAsLastSelection
+        ? "At least one output is required."
+        : undefined;
+    const disabled = Boolean(disabledReason);
+    const active = checked && liveModelReady && generating && !generationFailed;
+    const percent = active && selectedIndex < 2 ? `${65 - selectedIndex * 10}%` : "";
+    const status = outputCardStatus(checked, complete, liveModelReady, generationFailed, active, selectedIndex);
+    const statusLabel = outputCardStatusLabel(checked, complete, liveModelReady, generationFailed, active, selectedIndex);
+
+    return {
+      id: output.id,
+      label: output.label,
+      description: output.description,
+      checked,
+      disabled,
+      disabledReason,
+      icon: output.id === "talking_points" ? "file" : "document",
+      tone: output.id === "talking_points" ? "green" : "blue",
+      status,
+      statusLabel,
+      percent,
+      done: checked && liveModelReady && complete,
+    };
+  });
 
   const futureCards = futureOutputs.map((label) => ({
     label,
     description: label === "Technical annex (Internal)" ? "" : undefined,
     checked: false,
+    disabled: true,
+    disabledReason: "Reserved for a later workflow.",
     icon: "document",
     tone: "blue",
-    status: "queued",
-    statusLabel: "Queued",
+    status: "not-selected",
+    statusLabel: "Coming soon",
     percent: "",
     done: false,
   }));
 
   return [...functionalCards, ...futureCards] as Array<{
+    id?: OutputType;
     label: string;
     description?: string;
     checked: boolean;
+    disabled: boolean;
+    disabledReason?: string;
     icon: IconName;
     tone: string;
     status: string;

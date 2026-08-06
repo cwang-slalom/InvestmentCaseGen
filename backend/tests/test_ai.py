@@ -214,11 +214,11 @@ def test_vertex_provider_validates_model_output_against_schema() -> None:
 
 
 class CapturingDatabricksProvider(DatabricksModelServingProvider):
-    def __init__(self, response_text: str):
+    def __init__(self, response_text: str, model_name: str = "system.ai.test-model"):
         super().__init__(
             Settings(
                 databricks_host="https://workspace.cloud.databricks.com",
-                databricks_model_serving_endpoint="system.ai.test-model",
+                databricks_model_serving_endpoint=model_name,
                 databricks_token="token-1",
             ),
         )
@@ -269,6 +269,7 @@ def test_databricks_provider_loads_backend_prompt_bundle() -> None:
     )
     assert provider.payload is not None
     assert provider.payload["model"] == "system.ai.test-model"
+    assert provider.payload["temperature"] == 0.2
     assert provider.payload["messages"][0]["role"] == "system"
     assert "Source-Grounded Investment Case System Prompt" in (
         provider.payload["messages"][0]["content"]
@@ -279,6 +280,32 @@ def test_databricks_provider_loads_backend_prompt_bundle() -> None:
     assert response.redacted_response_json is not None
     assert response.redacted_response_json["externalWebSearchRequested"] is True
     assert response.redacted_response_json["externalWebSearchApplied"] is False
+
+
+def test_databricks_provider_omits_temperature_for_claude_models() -> None:
+    prompt = load_prompt("generate-investment-case")
+    provider = CapturingDatabricksProvider(
+        '{"ok": true}',
+        model_name="us.anthropic.claude-opus-5",
+    )
+
+    provider.generate_structured(
+        StructuredGenerationRequest(
+            operation="render_executive_investment_case",
+            promptVersion=prompt.version,
+            input={"value": "hello"},
+            jsonSchema={
+                "type": "object",
+                "required": ["ok"],
+                "properties": {"ok": {"type": "boolean"}},
+            },
+            metadata={"promptName": "generate-investment-case"},
+        ),
+    )
+
+    assert provider.payload is not None
+    assert provider.payload["model"] == "us.anthropic.claude-opus-5"
+    assert "temperature" not in provider.payload
 
 
 def test_databricks_provider_uses_configured_gateway_base_url() -> None:
