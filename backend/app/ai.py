@@ -268,21 +268,32 @@ class VertexGeminiProvider:
 
     def _parse_json_candidate(self, text: str) -> Any:
         stripped = text.strip()
-        try:
-            return json.loads(stripped)
-        except json.JSONDecodeError:
-            pass
+        candidates = [stripped] if stripped else []
 
         if "```" in stripped:
             fenced = stripped.split("```", 2)[1]
             if fenced.lstrip().startswith("json"):
                 fenced = fenced.lstrip()[4:]
-            return json.loads(fenced.strip())
+            candidates.append(fenced.strip())
 
         first = stripped.find("{")
         last = stripped.rfind("}")
         if first >= 0 and last > first:
-            return json.loads(stripped[first : last + 1])
+            candidates.append(stripped[first : last + 1])
+
+        decode_errors: list[json.JSONDecodeError] = []
+        for candidate in candidates:
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError as error:
+                decode_errors.append(error)
+
+        if decode_errors:
+            error = decode_errors[-1]
+            raise ValueError(
+                "Model response was not valid JSON: "
+                f"{error.msg} at line {error.lineno}, column {error.colno}.",
+            ) from error
 
         raise ValueError("Model response did not contain valid JSON.")
 
@@ -328,27 +339,41 @@ class DatabricksModelServingProvider:
         if not text:
             raise ValueError("Databricks Model Serving returned no text candidate.")
 
-        output = self._parse_json_candidate(text)
+        output, repair_response_json = self._parse_or_repair_json_candidate(request, text)
         validate_json_schema_output(output, request.json_schema)
+
+        redacted_response_json = {
+            "promptName": task_prompt.name,
+            "promptVersion": task_prompt.version,
+            "systemPromptVersion": system_prompt.version,
+            "finishReasons": [
+                choice.get("finish_reason")
+                for choice in response_json.get("choices", [])
+                if isinstance(choice, dict)
+            ],
+            "usageMetadata": response_json.get("usage"),
+            "externalWebSearchApplied": False,
+            "externalWebSearchRequested": request.external_web_search,
+            "jsonRepairAttempted": repair_response_json is not None,
+        }
+        if repair_response_json is not None:
+            redacted_response_json.update(
+                {
+                    "jsonRepairFinishReasons": [
+                        choice.get("finish_reason")
+                        for choice in repair_response_json.get("choices", [])
+                        if isinstance(choice, dict)
+                    ],
+                    "jsonRepairUsageMetadata": repair_response_json.get("usage"),
+                }
+            )
 
         return StructuredGenerationResponse(
             output=output,
             modelProvider=self.provider_name,
             modelName=self.model_name,
             storedPayloadMode="validated_outputs_only",
-            redactedResponseJson={
-                "promptName": task_prompt.name,
-                "promptVersion": task_prompt.version,
-                "systemPromptVersion": system_prompt.version,
-                "finishReasons": [
-                    choice.get("finish_reason")
-                    for choice in response_json.get("choices", [])
-                    if isinstance(choice, dict)
-                ],
-                "usageMetadata": response_json.get("usage"),
-                "externalWebSearchApplied": False,
-                "externalWebSearchRequested": request.external_web_search,
-            },
+            redactedResponseJson=redacted_response_json,
         )
 
     def _host(self) -> str:
@@ -404,6 +429,8 @@ class DatabricksModelServingProvider:
                 "",
                 "Return only valid JSON for this operation.",
                 "Do not include Markdown fences or explanatory prose.",
+                "Encode markdown section bodies as JSON strings. Escape line breaks as \\n and escape internal quotes.",
+                "Never use raw multi-line strings inside JSON values.",
                 f"Operation: {request.operation}",
                 "",
                 "Structured output schema:",
@@ -503,6 +530,76 @@ class DatabricksModelServingProvider:
                 ) from error
             raise ValueError(f"Databricks request failed: {error.reason}") from error
 
+    def _parse_or_repair_json_candidate(
+        self,
+        request: StructuredGenerationRequest,
+        text: str,
+    ) -> tuple[Any, dict[str, Any] | None]:
+        try:
+            return self._parse_json_candidate(text), None
+        except ValueError as parse_error:
+            repair_response_json = self._post_json(
+                self._chat_completions_url(),
+                self._json_repair_payload(request, text, parse_error),
+                headers={
+                    "authorization": f"Bearer {self._access_token()}",
+                    "content-type": "application/json",
+                },
+            )
+            repaired_text = self._chat_response_text(repair_response_json)
+            if not repaired_text:
+                raise ValueError(
+                    "Databricks Model Serving returned malformed JSON and the JSON repair pass returned no text candidate.",
+                ) from parse_error
+            try:
+                return self._parse_json_candidate(repaired_text), repair_response_json
+            except ValueError as repair_error:
+                raise ValueError(
+                    "Databricks Model Serving returned malformed JSON and the JSON repair pass did not produce valid JSON: "
+                    f"{repair_error}",
+                ) from parse_error
+
+    def _json_repair_payload(
+        self,
+        request: StructuredGenerationRequest,
+        malformed_text: str,
+        parse_error: ValueError,
+    ) -> dict[str, Any]:
+        return {
+            "model": self.model_name,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You repair malformed JSON syntax only. Return only valid JSON. "
+                        "Do not add facts, remove facts, summarize, or rewrite content."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": "\n".join(
+                        [
+                            "The previous response was intended to match this JSON schema but failed to parse.",
+                            f"Parse error: {parse_error}",
+                            "",
+                            "Repair instructions:",
+                            "- Return only one valid JSON object.",
+                            "- Preserve all ids, titles, citations, unresolved labels, and factual wording.",
+                            "- Fix only JSON syntax, escaping, commas, brackets, and string delimiters.",
+                            "- Encode markdown bodies as JSON strings with escaped line breaks.",
+                            "",
+                            "JSON schema:",
+                            json.dumps(request.json_schema),
+                            "",
+                            "Malformed response:",
+                            malformed_text,
+                        ]
+                    ),
+                },
+            ],
+            "max_tokens": self.settings.model_max_output_tokens,
+        }
+
     def _chat_response_text(self, response_json: dict[str, Any]) -> str:
         for choice in response_json.get("choices", []):
             if not isinstance(choice, dict):
@@ -541,21 +638,32 @@ class DatabricksModelServingProvider:
 
     def _parse_json_candidate(self, text: str) -> Any:
         stripped = text.strip()
-        try:
-            return json.loads(stripped)
-        except json.JSONDecodeError:
-            pass
+        candidates = [stripped] if stripped else []
 
         if "```" in stripped:
             fenced = stripped.split("```", 2)[1]
             if fenced.lstrip().startswith("json"):
                 fenced = fenced.lstrip()[4:]
-            return json.loads(fenced.strip())
+            candidates.append(fenced.strip())
 
         first = stripped.find("{")
         last = stripped.rfind("}")
         if first >= 0 and last > first:
-            return json.loads(stripped[first : last + 1])
+            candidates.append(stripped[first : last + 1])
+
+        decode_errors: list[json.JSONDecodeError] = []
+        for candidate in candidates:
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError as error:
+                decode_errors.append(error)
+
+        if decode_errors:
+            error = decode_errors[-1]
+            raise ValueError(
+                "Model response was not valid JSON: "
+                f"{error.msg} at line {error.lineno}, column {error.colno}.",
+            ) from error
 
         raise ValueError("Model response did not contain valid JSON.")
 

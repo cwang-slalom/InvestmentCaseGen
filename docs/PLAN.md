@@ -11,6 +11,11 @@ Planning checkpoint date: 2026-07-14
   Databricks endpoints and set it in the Databricks App environment.
 - Wrap Databricks socket/read timeouts with a provider-specific error so the UI
   does not surface the raw Python "read operation timed out" message.
+- Add a Databricks JSON repair pass for model responses that return complete
+  text but malformed JSON, such as missing commas or unescaped markdown body
+  strings.
+- Tighten the Databricks structured prompt so markdown section bodies must be
+  emitted as escaped JSON strings rather than raw multi-line values.
 
 ## 2026-08-06 Databricks Claude Parameter And Output Selection Recovery
 

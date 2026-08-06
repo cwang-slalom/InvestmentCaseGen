@@ -155,6 +155,17 @@ The backend also wraps Databricks socket/read timeouts in a Databricks-specific
 message. This preserves the existing failed-generation UI state while avoiding
 the raw Python "read operation timed out" text shown to users.
 
+Malformed JSON after a full Databricks response is treated as a different
+failure mode from timeout. If the first response fails JSON parsing, the
+Databricks provider now makes one repair call to the same endpoint with the
+malformed text and the expected schema, instructing the model to fix only JSON
+syntax, escaping, commas, brackets, and delimiters while preserving factual
+wording. The repaired output still must pass the existing schema validator
+before the UI stores or displays it.
+
+The structured prompt now explicitly tells Databricks to encode markdown
+section bodies as JSON strings with escaped line breaks and internal quotes.
+
 ## 2026-08-06: Databricks Claude Payloads Omit Unsupported Temperature
 
 The approved Databricks Claude endpoint rejects the OpenAI-compatible

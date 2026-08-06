@@ -282,6 +282,7 @@ def test_databricks_provider_loads_backend_prompt_bundle() -> None:
     assert response.redacted_response_json is not None
     assert response.redacted_response_json["externalWebSearchRequested"] is True
     assert response.redacted_response_json["externalWebSearchApplied"] is False
+    assert response.redacted_response_json["jsonRepairAttempted"] is False
 
 
 def test_databricks_provider_omits_temperature_for_claude_models() -> None:
@@ -321,6 +322,72 @@ def test_databricks_provider_uses_configured_gateway_base_url() -> None:
     )
 
     assert provider._chat_completions_url() == "https://proxy.example.com/v1/chat/completions"
+
+
+class RepairingDatabricksProvider(DatabricksModelServingProvider):
+    def __init__(self) -> None:
+        super().__init__(
+            Settings(
+                databricks_host="https://workspace.cloud.databricks.com",
+                databricks_model_serving_endpoint="system.ai.test-model",
+                databricks_token="token-1",
+            ),
+        )
+        self.payloads: list[dict] = []
+
+    def _access_token(self) -> str:
+        return "token-1"
+
+    def _post_json(self, url, payload, headers):  # type: ignore[no-untyped-def]
+        self.payloads.append(payload)
+        if len(self.payloads) == 1:
+            return {
+                "choices": [
+                    {
+                        "message": {"content": '{"ok": true\n "items": []}'},
+                        "finish_reason": "stop",
+                    },
+                ],
+                "usage": {"total_tokens": 20},
+            }
+        return {
+            "choices": [
+                {
+                    "message": {"content": '{"ok": true, "items": []}'},
+                    "finish_reason": "stop",
+                },
+            ],
+            "usage": {"total_tokens": 10},
+        }
+
+
+def test_databricks_provider_repairs_malformed_json_once() -> None:
+    prompt = load_prompt("generate-investment-case")
+    provider = RepairingDatabricksProvider()
+
+    response = provider.generate_structured(
+        StructuredGenerationRequest(
+            operation="render_executive_investment_case",
+            promptVersion=prompt.version,
+            input={"value": "hello"},
+            jsonSchema={
+                "type": "object",
+                "required": ["ok", "items"],
+                "properties": {
+                    "ok": {"type": "boolean"},
+                    "items": {"type": "array"},
+                },
+            },
+            metadata={"promptName": "generate-investment-case"},
+        ),
+    )
+
+    assert response.output == {"ok": True, "items": []}
+    assert len(provider.payloads) == 2
+    assert "repair malformed JSON syntax only" in provider.payloads[1]["messages"][0]["content"]
+    assert response.redacted_response_json is not None
+    assert response.redacted_response_json["jsonRepairAttempted"] is True
+    assert response.redacted_response_json["jsonRepairFinishReasons"] == ["stop"]
 
 
 def test_databricks_provider_uses_configured_request_timeout(monkeypatch) -> None:  # type: ignore[no-untyped-def]
