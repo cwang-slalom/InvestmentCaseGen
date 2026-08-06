@@ -191,7 +191,7 @@ export type GenerationResult = {
 
 export type GenerationJobStatus = {
   projectId: string;
-  state: "idle" | "running" | "completed" | "failed";
+  state: "idle" | "running" | "completed" | "failed" | "canceled";
   generationId?: string | null;
   message: string;
   error?: string | null;

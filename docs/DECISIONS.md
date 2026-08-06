@@ -42,21 +42,24 @@ running status instead of starting another Databricks model call. If a
 generation result has already been saved, subsequent requests return completed
 status with that stored result.
 
-Browser-side Stop watching controls now stop local polling only. They do not
-claim to cancel the Databricks model request after it has been handed to the
-backend. Server-side cancel/pause remains future work.
+The Generate page exposes Cancel generation inside the progress panel rather
+than the bottom navigation bar. The control cancels the Phase 1 asyncio
+background task, returns a canceled job status, and avoids saving an output
+package from that task. A provider HTTP request already handed off to
+Databricks may still finish remotely; durable provider-side cancel/pause
+remains future work.
 
-## 2026-08-06: Stop Watching Is Local-Only For Background Generation
+## 2026-08-06: Generation Cancel Lives With Progress
 
-This decision is superseded by the background job contract above. The Generate
-page now exposes Stop watching while a live generation job is running. The
-button clears local polling state and shows a user-visible notice rather than
-treating the action as a backend failure.
+This decision updates the earlier local-only Stop watching control. The
+Generate page now exposes Cancel generation while a live generation job is
+running, and the action lives in the Generation progress panel rather than the
+workflow footer.
 
-Stopping watching does not terminate a Databricks request that the backend has
-already sent to the model provider. True server-side job pause, resume, and
-cancel controls remain future work behind durable job storage. The UI does not
-show Pause because that would imply work can be safely resumed from a model
+Canceling marks the current in-memory backend task canceled and prevents a
+canceled task from saving results. True provider-side pause, resume, and
+durable cancellation remain future work behind durable job storage. The UI does
+not show Pause because that would imply work can be safely resumed from a model
 checkpoint, which the current API cannot do.
 
 ## 2026-08-06: UI Generation Requires The Live Model Backend
@@ -217,6 +220,13 @@ malformed text and the expected schema, instructing the model to fix only JSON
 syntax, escaping, commas, brackets, and delimiters while preserving factual
 wording. The repaired output still must pass the existing schema validator
 before the UI stores or displays it.
+
+If the repair response is still syntactically invalid, the provider applies a
+deterministic local syntax repair for common Databricks/Claude JSON issues:
+missing commas between fields, trailing commas, literal control characters in
+strings, and unescaped quote marks inside long markdown body values. This local
+repair never bypasses schema validation; if the repaired object does not match
+the requested typed schema, generation still fails.
 
 The structured prompt now explicitly tells Databricks to encode markdown
 section bodies as JSON strings with escaped line breaks and internal quotes.

@@ -2228,6 +2228,19 @@ button.status-pill:hover {
   margin-top: 26px;
 }
 
+.progress-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.progress-panel-header .danger-button {
+  min-height: 36px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
 .stage-list {
   display: grid;
   gap: 18px;
@@ -2302,6 +2315,10 @@ button.status-pill:hover {
 
 .progress-ring.failed {
   background: conic-gradient(#c42828 var(--progress), #f4dede 0);
+}
+
+.progress-ring.canceled {
+  background: conic-gradient(#c47400 var(--progress), #f2e6d7 0);
 }
 
 .progress-ring::after {
@@ -2413,6 +2430,19 @@ button.status-pill:hover {
 
 .generation-meter.failed .generation-meter-track span {
   background: #c42828;
+}
+
+.generation-meter.canceled {
+  border-color: #f0d0a6;
+  background: #fffaf2;
+}
+
+.generation-meter.canceled .generation-meter-track {
+  background: #f2e6d7;
+}
+
+.generation-meter.canceled .generation-meter-track span {
+  background: #c47400;
 }
 
 @keyframes progress-sheen {

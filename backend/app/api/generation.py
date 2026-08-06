@@ -21,6 +21,7 @@ router = APIRouter(prefix="/api", tags=["generation"])
 _generation_lock = asyncio.Lock()
 _generation_tasks: dict[str, asyncio.Task[GenerationResult]] = {}
 _generation_errors: dict[str, str] = {}
+_generation_cancellations: dict[str, str] = {}
 
 
 @router.post("/projects/{project_id}/generate")
@@ -49,6 +50,7 @@ async def generate(project_id: str, request: GenerateRequest) -> GenerationJobSt
             raise HTTPException(status_code=503, detail=backend_health.message)
 
         _generation_errors.pop(project_id, None)
+        _generation_cancellations.pop(project_id, None)
         task = asyncio.create_task(_generate_and_save(project_id, backend))
         task.add_done_callback(lambda completed_task: _record_task_error(project_id, completed_task))
         _generation_tasks[project_id] = task
@@ -69,6 +71,53 @@ async def generation_status(project_id: str) -> GenerationJobStatus:
 
         if task and task.done():
             _record_task_error(project_id, task)
+
+        cancellation = _generation_cancellations.get(project_id)
+        if cancellation:
+            return _canceled_status(project_id, cancellation)
+
+        error = _generation_errors.get(project_id)
+        if error:
+            return GenerationJobStatus(
+                projectId=project_id,
+                state="failed",
+                generationId=None,
+                message="Generation failed before completion.",
+                error=error,
+                result=None,
+            )
+
+        return GenerationJobStatus(
+            projectId=project_id,
+            state="idle",
+            generationId=None,
+            message="No generation is running for this project.",
+            error=None,
+            result=None,
+        )
+
+
+@router.delete("/projects/{project_id}/generation")
+async def cancel_generation(project_id: str) -> GenerationJobStatus:
+    async with _generation_lock:
+        project = case_repository.get_project(project_id)
+        if project.generation_id:
+            return _completed_status(project_id, generation_store.get_generation(project.generation_id))
+
+        task = _generation_tasks.pop(project_id, None)
+        if task and not task.done():
+            task.cancel()
+            message = "Generation canceled before completion. No output package was saved."
+            _generation_errors.pop(project_id, None)
+            _generation_cancellations[project_id] = message
+            return _canceled_status(project_id, message)
+
+        if task and task.done():
+            _record_task_error(project_id, task)
+
+        cancellation = _generation_cancellations.get(project_id)
+        if cancellation:
+            return _canceled_status(project_id, cancellation)
 
         error = _generation_errors.get(project_id)
         if error:
@@ -113,15 +162,29 @@ def _completed_status(project_id: str, result: GenerationResult) -> GenerationJo
     )
 
 
+def _canceled_status(project_id: str, message: str) -> GenerationJobStatus:
+    return GenerationJobStatus(
+        projectId=project_id,
+        state="canceled",
+        generationId=None,
+        message=message,
+        error=None,
+        result=None,
+    )
+
+
 def _record_task_error(project_id: str, task: asyncio.Task[GenerationResult]) -> None:
     if task.cancelled():
-        _generation_errors[project_id] = "Generation was canceled before completion."
+        _generation_errors.pop(project_id, None)
+        _generation_cancellations[project_id] = "Generation canceled before completion. No output package was saved."
         return
     try:
         task.result()
     except HTTPException as error:
+        _generation_cancellations.pop(project_id, None)
         _generation_errors[project_id] = str(error.detail)
     except Exception as error:
+        _generation_cancellations.pop(project_id, None)
         _generation_errors[project_id] = str(error) or "Generation backend is not configured."
 
 
@@ -141,6 +204,7 @@ async def _generate_and_save(project_id: str, backend=None) -> GenerationResult:
     GenerationResult.model_validate(result.model_dump(by_alias=True))
     case_repository.save_generation(project_id, result)
     _generation_errors.pop(project_id, None)
+    _generation_cancellations.pop(project_id, None)
     return result
 
 

@@ -42,6 +42,7 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
   const hasGeneration = Boolean(project.generationId || currentGeneration?.generationId);
   const complete = Boolean(project.generationId || currentGeneration?.status === "completed");
   const generationFailed = liveModelReady && Boolean(error) && !generating && !complete;
+  const generationCanceled = liveModelReady && Boolean(cancelNotice) && !error && !generating && !complete;
   const progress = complete
     ? 100
     : !liveModelReady
@@ -79,6 +80,11 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
       setError(status.error || status.message || "Generation could not be completed.");
     }
 
+    if (status.state === "canceled") {
+      setCancelNotice(status.message || "Generation canceled before completion. No output package was saved.");
+      setError("");
+    }
+
     return null;
   }, [onGeneration, onProject, project.id]);
 
@@ -86,7 +92,7 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
     let status = initialStatus;
     while (generationRunRef.current === runId) {
       const result = await applyGenerationStatus(status, runId);
-      if (result || status.state === "completed" || status.state === "failed" || status.state === "idle") {
+      if (result || status.state === "completed" || status.state === "failed" || status.state === "canceled" || status.state === "idle") {
         return result;
       }
 
@@ -120,8 +126,10 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
       .then((status) => pollGenerationUntilComplete(status, runId))
       .catch((apiError) => {
         if (isAbortError(apiError)) {
-          setCancelNotice("Stopped watching this generation. It may continue running in the background.");
-          setError("");
+          if (generationRunRef.current === runId) {
+            setCancelNotice("Generation request was interrupted before completion.");
+            setError("");
+          }
           return null;
         }
         setError(apiError instanceof Error ? apiError.message : "Generation could not be completed.");
@@ -139,16 +147,43 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
     return request;
   }, [config?.backend.message, liveModelReady, pollGenerationUntilComplete, project.generationId, project.id]);
 
-  const stopWatchingGeneration = useCallback(() => {
+  const cancelGeneration = useCallback(async () => {
     if (timerRef.current) window.clearTimeout(timerRef.current);
-    generationRunRef.current += 1;
+    const cancelRunId = generationRunRef.current + 1;
+    generationRunRef.current = cancelRunId;
     generationAbortRef.current?.abort();
     generationAbortRef.current = null;
     generationPromiseRef.current = null;
     setGenerating(false);
-    setCancelNotice("Stopped watching this generation. It may continue running in the background.");
+    setCancelNotice("Canceling generation...");
     setError("");
-  }, []);
+    try {
+      const status = await api.cancelGeneration(project.id);
+      if (generationRunRef.current !== cancelRunId) return;
+      if (status.state === "completed" && status.result) {
+        onGeneration(status.result);
+        const refreshed = await api.project(project.id);
+        if (generationRunRef.current !== cancelRunId) return;
+        onProject(refreshed);
+        setCancelNotice("");
+        return;
+      }
+      if (status.state === "failed") {
+        setCancelNotice("");
+        setError(status.error || status.message || "Generation could not be canceled cleanly.");
+        return;
+      }
+      setCancelNotice(
+        status.state === "canceled"
+          ? status.message
+          : "No active generation is running for this project.",
+      );
+    } catch (apiError) {
+      if (generationRunRef.current !== cancelRunId) return;
+      setCancelNotice("");
+      setError(apiError instanceof Error ? apiError.message : "Generation could not be canceled.");
+    }
+  }, [onGeneration, onProject, project.id]);
 
   const toggleOutputSelection = useCallback(async (output: OutputType) => {
     const opportunityAudience = project.opportunityAudience;
@@ -235,7 +270,15 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
 
       <div className="generation-grid">
         <section className="panel progress-panel">
-          <h3>Generation progress</h3>
+          <div className="progress-panel-header">
+            <h3>Generation progress</h3>
+            {generating && (
+              <button className="danger-button" type="button" onClick={() => void cancelGeneration()}>
+                <Icon name="close" />
+                Cancel generation
+              </button>
+            )}
+          </div>
           <div className="progress-content">
             <div className="stage-list">
               {generationStages.map((stage, index) => {
@@ -255,21 +298,21 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
                 );
               })}
             </div>
-            <div className={`progress-ring ${generationFailed ? "failed" : ""}`} style={{ "--progress": `${progress}%` } as CSSProperties}>
+            <div className={`progress-ring ${generationFailed ? "failed" : generationCanceled ? "canceled" : ""}`} style={{ "--progress": `${progress}%` } as CSSProperties}>
               <span>{progress}%</span>
-              <small>{progressStatusLabel(complete, liveModelReady, generationFailed, generating)}</small>
+              <small>{progressStatusLabel(complete, liveModelReady, generationFailed, generationCanceled, generating)}</small>
             </div>
           </div>
           <div
-            className={`generation-meter ${complete ? "completed" : generationFailed ? "failed" : generating ? "active" : ""}`}
+            className={`generation-meter ${complete ? "completed" : generationFailed ? "failed" : generationCanceled ? "canceled" : generating ? "active" : ""}`}
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progress}
           >
             <div className="generation-meter-copy">
-              <strong>{progressHeadline(complete, liveModelReady, generationFailed, generating, activeStageIndex)}</strong>
-              <span>{progressMetaLabel(complete, liveModelReady, generationFailed, generating, elapsedSeconds)}</span>
+              <strong>{progressHeadline(complete, liveModelReady, generationFailed, generationCanceled, generating, activeStageIndex)}</strong>
+              <span>{progressMetaLabel(complete, liveModelReady, generationFailed, generationCanceled, generating, elapsedSeconds)}</span>
             </div>
             <div className="generation-meter-track">
               <span style={{ width: `${progress}%` }} />
@@ -280,13 +323,15 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
               ? "Estimated progress. Final completion depends on the model response."
               : complete
                 ? "Generation completed. Results are ready for review."
+                : generationCanceled
+                  ? "Generation canceled. You can restart when ready."
                 : "This usually takes 2-4 minutes once generation starts."}
           </p>
           <div className="info-callout slim">
             <Icon name="info" />
             <p>
               {liveModelReady
-                ? progressCalloutLabel(complete, generating)
+                ? progressCalloutLabel(complete, generationCanceled, generating)
                 : config?.backend.message || "Live model generation is required before outputs can be generated."}
             </p>
           </div>
@@ -364,14 +409,8 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
           <button className="secondary-button large" type="button" onClick={() => onNavigate("/projects")}>
             Save and exit
           </button>
-          {generating && (
-            <button className="secondary-button large" type="button" onClick={stopWatchingGeneration}>
-              <Icon name="close" />
-              Stop watching
-            </button>
-          )}
           <button className="primary-button large" type="button" disabled={(!liveModelReady && !hasGeneration) || generating || selectionSaving} onClick={viewResults}>
-            {hasGeneration ? "View results" : !liveModelReady ? "Configure model to generate" : generating ? "Generating results..." : generationFailed ? "Retry generation" : "View results"}
+            {hasGeneration ? "View results" : !liveModelReady ? "Configure model to generate" : generating ? "Generating results..." : generationFailed || generationCanceled ? "Retry generation" : "View results"}
           </button>
         </div>
       </div>
@@ -423,10 +462,11 @@ function generationStatusLabel(status: string) {
   return "Queued";
 }
 
-function progressStatusLabel(complete: boolean, liveModelReady: boolean, generationFailed: boolean, generating: boolean) {
+function progressStatusLabel(complete: boolean, liveModelReady: boolean, generationFailed: boolean, generationCanceled: boolean, generating: boolean) {
   if (complete) return "Completed";
   if (!liveModelReady) return "Model required";
   if (generationFailed) return "Failed";
+  if (generationCanceled) return "Canceled";
   if (!generating) return "Ready";
   return "In progress";
 }
@@ -435,12 +475,14 @@ function progressHeadline(
   complete: boolean,
   liveModelReady: boolean,
   generationFailed: boolean,
+  generationCanceled: boolean,
   generating: boolean,
   activeStageIndex: number,
 ) {
   if (complete) return "Materials are ready for review.";
   if (!liveModelReady) return "Connect a live model before generation can start.";
   if (generationFailed) return "Generation failed before completion.";
+  if (generationCanceled) return "Generation was canceled before completion.";
   if (!generating) return "Generation will start automatically, or when you view results.";
   return generationStages[activeStageIndex];
 }
@@ -449,18 +491,21 @@ function progressMetaLabel(
   complete: boolean,
   liveModelReady: boolean,
   generationFailed: boolean,
+  generationCanceled: boolean,
   generating: boolean,
   elapsedSeconds: number,
 ) {
   if (complete) return "Elapsed time is no longer updating.";
   if (!liveModelReady) return "No model request has been sent.";
   if (generationFailed) return `Failed after ${formatGenerationDuration(elapsedSeconds)}.`;
+  if (generationCanceled) return "No output package was saved.";
   if (!generating) return "You can still adjust selected outputs.";
   return `Elapsed ${formatGenerationDuration(elapsedSeconds)} · ${estimatedRemainingLabel(elapsedSeconds)}`;
 }
 
-function progressCalloutLabel(complete: boolean, generating: boolean) {
+function progressCalloutLabel(complete: boolean, generationCanceled: boolean, generating: boolean) {
   if (complete) return "Your materials are ready. Continue to results for human review and edits.";
+  if (generationCanceled) return "The canceled run did not save results. Starting again will create a new generation job.";
   if (generating) return "Keep this page open while the model works; progress will continue updating here.";
   return "You can still adjust selected outputs until generation starts.";
 }

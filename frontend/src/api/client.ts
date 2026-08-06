@@ -68,6 +68,10 @@ export async function apiJson<T>(
   );
 }
 
+export async function apiDelete<T>(path: string): Promise<T> {
+  return parseJson<T>(await fetch(path, { method: "DELETE", headers: { accept: "application/json" } }));
+}
+
 async function apiBlob(path: string, method: "POST", body: unknown): Promise<Blob> {
   const response = await fetch(path, {
     method,
@@ -135,6 +139,7 @@ export const api = {
   generate: (projectId: string, simulateError: boolean, options?: { signal?: AbortSignal }) =>
     apiJson<GenerationJobStatus>(`/api/projects/${projectId}/generate`, "POST", { simulateError }, options),
   generationStatus: (projectId: string) => apiGet<GenerationJobStatus>(`/api/projects/${projectId}/generation-status`),
+  cancelGeneration: (projectId: string) => apiDelete<GenerationJobStatus>(`/api/projects/${projectId}/generation`),
   generation: (generationId: string) => apiGet<GenerationResult>(`/api/generations/${generationId}`),
   exportDocx: (
     projectId: string,

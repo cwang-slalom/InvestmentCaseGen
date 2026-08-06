@@ -232,7 +232,7 @@ class FailingGenerationBackend(SlowGenerationBackend):
 async def wait_for_terminal_generation_status(project_id: str) -> GenerationJobStatus:
     for _ in range(20):
         status = await generation_api.generation_status(project_id)
-        if status.state in {"completed", "failed"}:
+        if status.state in {"completed", "failed", "canceled"}:
             return status
         await asyncio.sleep(0)
     raise AssertionError("Generation did not reach a terminal status.")
@@ -407,6 +407,42 @@ def test_duplicate_project_generation_requests_share_one_backend_task(monkeypatc
     assert saved_result.result is not None
     assert saved_result.generation_id == f"gen-{project_id}-shared"
     assert saved_result.result.generation_id == saved_result.generation_id
+
+
+def test_project_generation_can_be_canceled_and_retried(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    test_client = TestClient(app)
+    project = test_client.post("/api/projects", json={"name": "Cancelable generation"}).json()
+    project_id = project["id"]
+    backend = SlowGenerationBackend()
+    monkeypatch.setattr(generation_api, "get_generation_backend", lambda: backend)
+
+    async def cancel_and_retry() -> tuple[
+        GenerationJobStatus,
+        GenerationJobStatus,
+        GenerationJobStatus,
+        GenerationJobStatus,
+        GenerationJobStatus,
+    ]:
+        start_status = await generation_api.generate(project_id, GenerateRequest(simulateError=False))
+        await backend.started.wait()
+        cancel_status = await generation_api.cancel_generation(project_id)
+        status_after_cancel = await generation_api.generation_status(project_id)
+        retry_status = await generation_api.generate(project_id, GenerateRequest(simulateError=False))
+        backend.release.set()
+        completed_status = await wait_for_terminal_generation_status(project_id)
+        return start_status, cancel_status, status_after_cancel, retry_status, completed_status
+
+    start_status, cancel_status, status_after_cancel, retry_status, completed_status = asyncio.run(cancel_and_retry())
+
+    assert start_status.state == "running"
+    assert cancel_status.state == "canceled"
+    assert cancel_status.error is None
+    assert "No output package was saved" in cancel_status.message
+    assert status_after_cancel.state == "canceled"
+    assert retry_status.state == "running"
+    assert completed_status.state == "completed"
+    assert completed_status.generation_id == f"gen-{project_id}-shared"
+    assert backend.calls == 2
 
 
 def test_generation_status_reports_background_backend_failure(monkeypatch) -> None:  # type: ignore[no-untyped-def]

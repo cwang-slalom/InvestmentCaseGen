@@ -38,12 +38,14 @@ Planning checkpoint date: 2026-07-14
 
 ## 2026-08-06 Generate Cancel Control
 
-- Replace the prior Cancel generation action with a Stop watching control now
-  that generation runs as a backend background task.
-- Return the page to a non-generating local state when the user stops watching
-  and show a clear notice that the server-side generation may continue.
-- Keep server-side cancellation, pause, and resume out of scope until the
-  backend exposes durable job controls beyond the Phase 1 in-memory runtime.
+- Remove the bottom-bar Stop watching control and place Cancel generation in
+  the Generation progress panel, where users are already monitoring the run.
+- Add a project-level cancel route for the Phase 1 background generation task
+  so the UI can stop polling, mark the run canceled, and avoid saving an output
+  package from a canceled task.
+- Note that a provider HTTP request already handed off to Databricks may still
+  finish remotely, because durable provider-side job cancellation is outside
+  the Phase 1 in-memory runtime.
 - Do not show Pause until generation moves to an asynchronous job model with a
   real pause/resume capability.
 
@@ -59,6 +61,9 @@ Planning checkpoint date: 2026-07-14
 - Add a Databricks JSON repair pass for model responses that return complete
   text but malformed JSON, such as missing commas or unescaped markdown body
   strings.
+- Add a deterministic local JSON syntax repair fallback after the Databricks
+  model repair pass so common long-body delimiter issues do not fail a run when
+  the repaired object still validates against the typed schema.
 - Tighten the Databricks structured prompt so markdown section bodies must be
   emitted as escaped JSON strings rather than raw multi-line values.
 

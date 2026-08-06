@@ -339,7 +339,10 @@ class DatabricksModelServingProvider:
         if not text:
             raise ValueError("Databricks Model Serving returned no text candidate.")
 
-        output, repair_response_json = self._parse_or_repair_json_candidate(request, text)
+        output, repair_response_json, local_repair_applied = self._parse_or_repair_json_candidate(
+            request,
+            text,
+        )
         validate_json_schema_output(output, request.json_schema)
 
         redacted_response_json = {
@@ -355,6 +358,7 @@ class DatabricksModelServingProvider:
             "externalWebSearchApplied": False,
             "externalWebSearchRequested": request.external_web_search,
             "jsonRepairAttempted": repair_response_json is not None,
+            "jsonLocalRepairApplied": local_repair_applied,
         }
         if repair_response_json is not None:
             redacted_response_json.update(
@@ -534,9 +538,9 @@ class DatabricksModelServingProvider:
         self,
         request: StructuredGenerationRequest,
         text: str,
-    ) -> tuple[Any, dict[str, Any] | None]:
+    ) -> tuple[Any, dict[str, Any] | None, bool]:
         try:
-            return self._parse_json_candidate(text), None
+            return self._parse_json_candidate(text), None, False
         except ValueError as parse_error:
             repair_response_json = self._post_json(
                 self._chat_completions_url(),
@@ -548,12 +552,28 @@ class DatabricksModelServingProvider:
             )
             repaired_text = self._chat_response_text(repair_response_json)
             if not repaired_text:
-                raise ValueError(
-                    "Databricks Model Serving returned malformed JSON and the JSON repair pass returned no text candidate.",
-                ) from parse_error
+                try:
+                    return (
+                        self._parse_locally_repaired_json_candidate(text),
+                        repair_response_json,
+                        True,
+                    )
+                except ValueError:
+                    raise ValueError(
+                        "Databricks Model Serving returned malformed JSON and the JSON repair pass returned no text candidate.",
+                    ) from parse_error
             try:
-                return self._parse_json_candidate(repaired_text), repair_response_json
+                return self._parse_json_candidate(repaired_text), repair_response_json, False
             except ValueError as repair_error:
+                for candidate_text in (repaired_text, text):
+                    try:
+                        return (
+                            self._parse_locally_repaired_json_candidate(candidate_text),
+                            repair_response_json,
+                            True,
+                        )
+                    except ValueError:
+                        continue
                 raise ValueError(
                     "Databricks Model Serving returned malformed JSON and the JSON repair pass did not produce valid JSON: "
                     f"{repair_error}",
@@ -637,19 +657,7 @@ class DatabricksModelServingProvider:
         return ""
 
     def _parse_json_candidate(self, text: str) -> Any:
-        stripped = text.strip()
-        candidates = [stripped] if stripped else []
-
-        if "```" in stripped:
-            fenced = stripped.split("```", 2)[1]
-            if fenced.lstrip().startswith("json"):
-                fenced = fenced.lstrip()[4:]
-            candidates.append(fenced.strip())
-
-        first = stripped.find("{")
-        last = stripped.rfind("}")
-        if first >= 0 and last > first:
-            candidates.append(stripped[first : last + 1])
+        candidates = self._json_candidate_texts(text)
 
         decode_errors: list[json.JSONDecodeError] = []
         for candidate in candidates:
@@ -666,6 +674,246 @@ class DatabricksModelServingProvider:
             ) from error
 
         raise ValueError("Model response did not contain valid JSON.")
+
+    def _parse_locally_repaired_json_candidate(self, text: str) -> Any:
+        candidates = self._json_candidate_texts(text)
+        decode_errors: list[json.JSONDecodeError] = []
+        for candidate in candidates:
+            repaired = self._locally_repair_json_candidate(candidate)
+            if repaired == candidate:
+                continue
+            try:
+                return json.loads(repaired)
+            except json.JSONDecodeError as error:
+                decode_errors.append(error)
+
+        if decode_errors:
+            error = decode_errors[-1]
+            raise ValueError(
+                "Locally repaired model response was not valid JSON: "
+                f"{error.msg} at line {error.lineno}, column {error.colno}.",
+            ) from error
+
+        raise ValueError("Model response did not contain repairable JSON.")
+
+    def _json_candidate_texts(self, text: str) -> list[str]:
+        stripped = text.strip()
+        candidates = [stripped] if stripped else []
+
+        if "```" in stripped:
+            fenced = stripped.split("```", 2)[1]
+            if fenced.lstrip().startswith("json"):
+                fenced = fenced.lstrip()[4:]
+            candidates.append(fenced.strip())
+
+        first = stripped.find("{")
+        last = stripped.rfind("}")
+        if first >= 0 and last > first:
+            candidates.append(stripped[first : last + 1])
+
+        seen: set[str] = set()
+        unique_candidates: list[str] = []
+        for candidate in candidates:
+            if candidate and candidate not in seen:
+                seen.add(candidate)
+                unique_candidates.append(candidate)
+        return unique_candidates
+
+    def _locally_repair_json_candidate(self, text: str) -> str:
+        repaired = self._escape_unescaped_json_string_chars(text)
+        repaired = self._insert_missing_json_commas(repaired)
+        return self._remove_trailing_json_commas(repaired)
+
+    def _escape_unescaped_json_string_chars(self, text: str) -> str:
+        output: list[str] = []
+        in_string = False
+        escaped = False
+
+        for index, char in enumerate(text):
+            if not in_string:
+                output.append(char)
+                if char == '"':
+                    in_string = True
+                    escaped = False
+                continue
+
+            if escaped:
+                output.append(char)
+                escaped = False
+                continue
+
+            if char == "\\":
+                output.append(char)
+                escaped = True
+                continue
+
+            if char == "\n":
+                output.append("\\n")
+                continue
+            if char == "\r":
+                output.append("\\r")
+                continue
+            if char == "\t":
+                output.append("\\t")
+                continue
+
+            if char == '"':
+                if self._json_quote_can_close_string(text, index):
+                    output.append(char)
+                    in_string = False
+                else:
+                    output.append('\\"')
+                continue
+
+            output.append(char)
+
+        return "".join(output)
+
+    def _json_quote_can_close_string(self, text: str, quote_index: int) -> bool:
+        next_index = self._next_non_whitespace_index(text, quote_index + 1)
+        if next_index >= len(text):
+            return True
+
+        next_char = text[next_index]
+        if next_char == ":":
+            after_colon = self._next_non_whitespace_index(text, next_index + 1)
+            return after_colon >= len(text) or text[after_colon] in '"{[-0123456789tfn'
+
+        if next_char in "]}":
+            return True
+
+        if next_char != ",":
+            return False
+
+        after_comma = self._next_non_whitespace_index(text, next_index + 1)
+        if after_comma >= len(text):
+            return True
+
+        return text[after_comma] in '"{[-0123456789tfn'
+
+    def _insert_missing_json_commas(self, text: str) -> str:
+        output: list[str] = []
+        index = 0
+        value_can_end = False
+
+        while index < len(text):
+            char = text[index]
+
+            if char.isspace():
+                output.append(char)
+                index += 1
+                continue
+
+            if char == '"':
+                if value_can_end:
+                    output.append(",")
+                end_index = self._copy_json_string(text, index, output)
+                index = end_index + 1
+                value_can_end = True
+                continue
+
+            if char in "{[":
+                if value_can_end:
+                    output.append(",")
+                output.append(char)
+                value_can_end = False
+                index += 1
+                continue
+
+            if char in "}]":
+                output.append(char)
+                value_can_end = True
+                index += 1
+                continue
+
+            if char == ":":
+                output.append(char)
+                value_can_end = False
+                index += 1
+                continue
+
+            if char == ",":
+                output.append(char)
+                value_can_end = False
+                index += 1
+                continue
+
+            if char in "-0123456789" or text.startswith(("true", "false", "null"), index):
+                if value_can_end:
+                    output.append(",")
+                end_index = self._copy_json_primitive(text, index, output)
+                index = end_index
+                value_can_end = True
+                continue
+
+            output.append(char)
+            index += 1
+
+        return "".join(output)
+
+    def _copy_json_string(self, text: str, start_index: int, output: list[str]) -> int:
+        index = start_index
+        escaped = False
+        while index < len(text):
+            char = text[index]
+            output.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"' and index > start_index:
+                return index
+            index += 1
+        return len(text) - 1
+
+    def _copy_json_primitive(self, text: str, start_index: int, output: list[str]) -> int:
+        index = start_index
+        while index < len(text) and not text[index].isspace() and text[index] not in ',]}{"[:':
+            output.append(text[index])
+            index += 1
+        return index
+
+    def _remove_trailing_json_commas(self, text: str) -> str:
+        output: list[str] = []
+        index = 0
+        in_string = False
+        escaped = False
+
+        while index < len(text):
+            char = text[index]
+            if in_string:
+                output.append(char)
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == '"':
+                    in_string = False
+                index += 1
+                continue
+
+            if char == '"':
+                output.append(char)
+                in_string = True
+                index += 1
+                continue
+
+            if char == ",":
+                next_index = self._next_non_whitespace_index(text, index + 1)
+                if next_index < len(text) and text[next_index] in "}]":
+                    index += 1
+                    continue
+
+            output.append(char)
+            index += 1
+
+        return "".join(output)
+
+    def _next_non_whitespace_index(self, text: str, start_index: int) -> int:
+        index = start_index
+        while index < len(text) and text[index].isspace():
+            index += 1
+        return index
 
 
 class AnthropicClaudeProvider:

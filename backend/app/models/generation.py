@@ -48,7 +48,7 @@ class GenerationResult(APIModel):
 
 class GenerationJobStatus(APIModel):
     project_id: str = Field(alias="projectId")
-    state: Literal["idle", "running", "completed", "failed"]
+    state: Literal["idle", "running", "completed", "failed", "canceled"]
     generation_id: str | None = Field(default=None, alias="generationId")
     message: str
     error: str | None = None

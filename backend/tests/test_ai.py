@@ -387,7 +387,89 @@ def test_databricks_provider_repairs_malformed_json_once() -> None:
     assert "repair malformed JSON syntax only" in provider.payloads[1]["messages"][0]["content"]
     assert response.redacted_response_json is not None
     assert response.redacted_response_json["jsonRepairAttempted"] is True
+    assert response.redacted_response_json["jsonLocalRepairApplied"] is False
     assert response.redacted_response_json["jsonRepairFinishReasons"] == ["stop"]
+
+
+class LocallyRepairingDatabricksProvider(DatabricksModelServingProvider):
+    def __init__(self) -> None:
+        super().__init__(
+            Settings(
+                databricks_host="https://workspace.cloud.databricks.com",
+                databricks_model_serving_endpoint="system.ai.test-model",
+                databricks_token="token-1",
+            ),
+        )
+        self.payloads: list[dict] = []
+
+    def _access_token(self) -> str:
+        return "token-1"
+
+    def _post_json(self, url, payload, headers):  # type: ignore[no-untyped-def]
+        self.payloads.append(payload)
+        if len(self.payloads) == 1:
+            return {
+                "choices": [
+                    {
+                        "message": {"content": '{"ok": true "body": "Needs repair."}'},
+                        "finish_reason": "stop",
+                    },
+                ],
+                "usage": {"total_tokens": 20},
+            }
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": '{"ok": true, "body": "Use the "why now": evidence frame."}',
+                    },
+                    "finish_reason": "stop",
+                },
+            ],
+            "usage": {"total_tokens": 10},
+        }
+
+
+def test_databricks_provider_locally_repairs_invalid_json_repair_response() -> None:
+    prompt = load_prompt("generate-investment-case")
+    provider = LocallyRepairingDatabricksProvider()
+
+    response = provider.generate_structured(
+        StructuredGenerationRequest(
+            operation="render_executive_investment_case",
+            promptVersion=prompt.version,
+            input={"value": "hello"},
+            jsonSchema={
+                "type": "object",
+                "required": ["ok", "body"],
+                "properties": {
+                    "ok": {"type": "boolean"},
+                    "body": {"type": "string"},
+                },
+            },
+            metadata={"promptName": "generate-investment-case"},
+        ),
+    )
+
+    assert response.output == {"ok": True, "body": 'Use the "why now": evidence frame.'}
+    assert len(provider.payloads) == 2
+    assert response.redacted_response_json is not None
+    assert response.redacted_response_json["jsonRepairAttempted"] is True
+    assert response.redacted_response_json["jsonLocalRepairApplied"] is True
+
+
+def test_databricks_local_repair_handles_missing_comma_without_whitespace() -> None:
+    provider = DatabricksModelServingProvider(
+        Settings(
+            databricks_host="https://workspace.cloud.databricks.com",
+            databricks_model_serving_endpoint="system.ai.test-model",
+            databricks_token="token-1",
+        ),
+    )
+
+    output = provider._parse_locally_repaired_json_candidate('{"ok":true"body":"Ready."}')
+
+    assert output == {"ok": True, "body": "Ready."}
 
 
 def test_databricks_provider_uses_configured_request_timeout(monkeypatch) -> None:  # type: ignore[no-untyped-def]
