@@ -1,63 +1,82 @@
 # Generate Investment Case Prompt
 
+Use this prompt as the runtime task instruction for investment-case generation.
 Transform the selected source-grounded opportunity into the requested
-donor-facing saved format. For `executive_investment_case`, use
-`resources/templates/executive-investment-case.md`; for prospectus-style
-formats, follow the provided `outputFormat.sectionBlueprint` and
-`outputFormat.promptGuidance`.
-
-The goal is to pull foundation materials into an investor- and donor-ready
-case with stronger narrative, language, behavioral-science framing, and visual
-storytelling direction while preserving source fidelity.
+donor-facing saved format while preserving source fidelity.
 
 ## Instructions
 
-- Use the selected concept and source evidence.
-- If the source material contains multiple opportunities, write only for the
-  selected concept in the provided scaffold. Do not blend separate concepts
-  into one case.
-- Learn structure and narrative quality from reference examples, but do not copy their language.
-- If the user provides an existing starting point, including Jenn's draft or
-  notes, preserve the strongest ideas and improve them rather than restarting
-  from scratch.
-- Do not use reference examples as fact sources.
-- Do not assume the funding recipient is GPD, the Gates Foundation, Global Fund, or any other organization.
-- Keep implementing organization(s) separate from investment vehicle or funding recipient.
-- Mark unresolved fields as unresolved instead of inventing details.
-- Clearly distinguish source facts from narrative framing.
-- Tailor the draft to the provided `investorSegment`, `audienceTailoring`,
-  `outputFormat`, `prospectusBuilder`, and `narrativeAngle` settings.
-  Audience familiarity, funding scale, tone, tailoring notes, variant names,
-  narrative angles, intended-audience notes, positioning notes, and calls to
-  action affect emphasis, structure, and language only; they are not factual
-  evidence.
-- Preserve every provided `sectionKey`. Return replacement markdown only for
-  those existing section keys.
-- Rewrite the scaffold into polished donor-ready markdown without adding facts,
-  numbers, organizations, timelines, funding recipients, investment vehicles,
-  regulatory status, or impact figures that are not already in the scaffold or
-  cited excerpts.
-- Build the requested narrative arc. Prospectus-style formats should attract
-  interest first, then explain the investable concept, audience fit, role and
-  capital-pathway clarity, evidence state, open questions, and next
-  conversation. Executive cases may use the fuller investment proposition, why
-  this matters, opportunity/intervention, investment structure or ask, risk
-  profile, why now, implementation or investment management, visual brief, and
-  evidence gaps.
-- Use donor-friendly language: concrete, specific, emotionally resonant,
-  concise, and oriented toward a clear next decision.
-- Match the requested tone without overstating certainty. For big-bet or major
-  donor audiences, emphasize scale conditions, governance, execution risks, and
-  evidence needs only when those ideas are already present in the scaffold.
-- Apply behavioral-science principles only as framing, not as new factual
-  claims. Prioritize salience, specificity, credible urgency, audience fit, and
-  a clear call to action.
-- Include a visual brief for human review, such as suggested charts, maps,
-  proof-point callouts, beneficiary journey moments, or implementation diagrams,
-  and list the source evidence each visual would require.
-- Include evidence gaps.
+Use the structured input payload as:
+
+- `documentType`: the requested document type.
+- `caseTitle`: the case name.
+- `userGoal`: the current user goal.
+- `targetLength`: the target length.
+- `currentDocumentState`: `NEW_DRAFT`, `REVISION`, or `DIAGNOSTIC_ONLY`.
+- `caseBrief`: the case brief.
+- `approvedFactLedger`: approved case facts.
+- `lockedFacts`: facts that must not be changed.
+- `requiredContent`: required content that must not be omitted or weakened.
+- `sourceExcerpts`: retrieved source chunks with citation IDs.
+- `documentTemplate`: selected document template or section blueprint.
+- `currentUserInstructions`: current user instructions.
+- `workspaceProfile`: workspace-specific audience, brand, organization,
+  vocabulary, and editorial preferences.
+
+Before drafting, report any blocking source conflicts or missing required
+information in the structured output.
+
+Use the selected concept and source evidence only. If the source material
+contains multiple opportunities, write only for the selected concept in the
+provided scaffold. Do not blend separate concepts into one case.
+
+Learn structure and narrative quality from approved reference examples, but do
+not copy their language and do not use them as fact sources.
+
+If the user provides an existing starting point, preserve the strongest ideas
+and improve them rather than restarting from scratch.
+
+Do not assume the funding recipient is GPD, the Gates Foundation, Global Fund,
+or any other organization. Keep implementing organizations separate from the
+investment vehicle, investment manager, fiscal sponsor, and funding recipient.
+
+Mark unresolved fields as unresolved instead of inventing details. Use
+information-needed flags for absent required information.
+
+Clearly distinguish source facts from narrative framing.
+
+Tailor the draft to the workspace profile and the provided investor segment,
+audience tailoring, output format, prospectus builder, and narrative angle
+settings. Audience familiarity, funding scale, tone, tailoring notes, variant
+names, narrative angles, intended-audience notes, positioning notes, and calls
+to action affect emphasis, structure, and language only; they are not factual
+evidence.
+
+Preserve every provided `sectionKey` when revising an existing scaffold.
+
+Rewrite the scaffold into polished donor- and investor-ready markdown without
+adding facts, numbers, organizations, timelines, funding recipients,
+investment vehicles, regulatory status, or impact figures that are not already
+in the scaffold, approved fact ledger, locked facts, or cited excerpts.
+
+Build the requested narrative arc. Prospectus-style formats should attract
+interest first, then explain the investable concept, audience fit, role and
+capital-pathway clarity, evidence state, open questions, and next
+conversation. Executive cases may use the fuller investment proposition,
+opportunity, intervention, investment structure, risk profile, why now,
+implementation or investment management, visual brief, and evidence gaps.
+
+Use behavioral-science principles only as editorial discipline, not as new
+factual claims. Prioritize proof before deficit, calibrated certainty, causal
+specificity, cognitive clarity, sourced social proof, agency, sourced leverage,
+intrinsic motivation, and deliberative next steps.
+
+Include visual structures only when they improve comprehension. Do not invent
+values for a visual.
+
+Return the structured output required by the system prompt.
 
 ## Output
 
-A complete Markdown draft suitable for human review, plus a visual brief and
-evidence gaps.
+Return only valid JSON matching the structured output schema supplied by the
+caller.

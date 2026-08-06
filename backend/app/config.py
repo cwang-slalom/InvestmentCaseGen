@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     databricks_model: str | None = None
     databricks_model_serving_endpoint: str | None = None
     databricks_ai_gateway_base_url: str | None = None
+    anthropic_api_key: str | None = None
+    anthropic_model: str | None = None
+    claude_model: str | None = None
+    anthropic_base_url: str = "https://api.anthropic.com"
+    anthropic_version: str = "2023-06-01"
     pghost: str | None = None
     pgdatabase: str | None = None
     pguser: str | None = None
@@ -60,6 +65,10 @@ class Settings(BaseSettings):
     @property
     def databricks_model_name(self) -> str | None:
         return self.databricks_model_serving_endpoint or self.databricks_model
+
+    @property
+    def claude_model_name(self) -> str | None:
+        return self.anthropic_model or self.claude_model
 
 
 @lru_cache

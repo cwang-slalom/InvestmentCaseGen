@@ -94,7 +94,7 @@ class InMemoryCaseRepository(CaseRepository):
         self.generation_store = generation_store
         self.projects: dict[str, Project] = {project.id: project for project in recent_projects(now)}
         self.extractions: dict[str, ExtractionResult] = {}
-        self.next_number = 3
+        self.next_number = 4
 
     def list_projects(self) -> list[Project]:
         return sorted(self.projects.values(), key=lambda item: item.updated_at, reverse=True)
@@ -105,7 +105,7 @@ class InMemoryCaseRepository(CaseRepository):
         now = utc_now()
         project = Project(
             id=project_id,
-            name=request.name or "Untitled investment case",
+            name=request.name or "HKJC - Vaccine Development",
             createdAt=now,
             updatedAt=now,
             demoNotice=DEMO_NOTICE,

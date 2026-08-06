@@ -4,6 +4,62 @@ Planning checkpoint date: 2026-07-14
 
 ## Decisions
 
+## 2026-08-06: Step 2 Detail Controls Use In-Page Drawers
+
+The screenshot-style Step 2 controls for opportunity browsing, donor profile
+review, suggestion customization, and output options open right-side drawers
+inside the current wizard step. This preserves the user's selected concept,
+audience, and output package while making every visible button perform an
+observable action.
+
+## 2026-08-05: Screenshot Refresh Keeps The Phase 1 Runtime
+
+The screenshot-matched UI is implemented inside the existing React/Vite
+frontend and FastAPI-backed Phase 1 runtime rather than introducing a new
+frontend framework. The new Gates-styled shell, wizard cards, upload view,
+extraction review, setup review, and generation progress screens remain wired
+to the current typed API contracts and in-memory repositories.
+
+The home route is a workspace dashboard rather than the first setup step. It
+summarizes recent projects, recommended next actions, opportunity readiness,
+and source/evidence health. The four-step workflow header appears only after a
+user starts or opens a project flow.
+
+## 2026-08-05: Screenshot Scenario Data Is Demo Fixture Content
+
+Names and labels from the supplied screenshots, including HKJC, Vaccine
+Development Platform, PST validation, and donor-output labels, are represented
+as synthetic fixture data for UI fidelity. They do not establish a real funding
+recipient, investment vehicle, investment manager, or delivery partner unless a
+future approved source explicitly supports that role.
+
+## 2026-08-05: Prompt Rules Are Split By Scope
+
+The core agent prompt now contains only universal investment-case editing,
+source-truth, factual-integrity, citation, behavioral-framing, and structured
+output rules. Workspace-specific donor profile, timeline, UHNW commitment
+level, global-health positioning, brand details, contacts, approved vehicles,
+and benchmark examples live in `prompts/workspace-profile.example.yaml` or
+future workspace records rather than the core prompt.
+
+## 2026-08-05: Writer And Integrity Reviewer Are Separate Roles
+
+Generation uses a writer prompt with the runtime case brief, approved fact
+ledger, locked facts, required content, retrieved excerpts, selected template,
+and current user instructions. Factual review uses a separate adversarial
+reviewer contract that returns `pass`, `revise`, or `blocked` with findings
+classified as `BLOCKING`, `WARNING`, or `EDITORIAL`. A reviewer pass means safe
+for human review, not approved for external distribution.
+
+## 2026-08-05: Memory Is Modeled As Scoped Approved Records
+
+Longer-lived memory should be decomposed into ProductPolicy,
+WorkspaceProfile, ProjectState, CaseKnowledge, and SessionInstruction records
+instead of injecting a whole memory file into every prompt. Each memory item
+must carry scope, category, source, source reference, approval status,
+approver, timestamps, and optional expiry. Case facts remain case-scoped and
+must not be reused across cases.
+
 ## 2026-08-05: Databricks Root Deployment Uses Backend Package Imports
 
 The Databricks App is deployed from the repository root so the root build can
@@ -514,6 +570,19 @@ The FastAPI backend loads the system prompt and operation prompt from
 against the provided schema, and returns only validated output plus redacted
 metadata. The direct TypeScript Vertex provider remains available only for an
 explicit local/direct mode and is not the default live Gemini path.
+
+## 2026-08-05: Claude Uses The Same Backend-Owned Prompt Boundary
+
+Claude is supported as a first-class live model provider through the existing
+FastAPI `/ai/structured` endpoint. The provider uses Anthropic's Messages API
+with the repository system prompt supplied as the top-level system instruction
+and the task prompt, schema, and business input supplied as one user message.
+
+Claude output must follow the same invariants as Gemini and Databricks output:
+parse JSON, validate against the caller-provided schema, preserve citation and
+evidence structures, and persist only validated output plus redacted operational
+metadata. External web search requests are recorded but not applied on the
+Claude path.
 
 ## 2026-07-21: Donor Follow-Ups Are Proactive Review Inputs, Not Evidence
 

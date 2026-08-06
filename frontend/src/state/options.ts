@@ -17,32 +17,32 @@ export const taskOptions: TaskOption[] = [
   {
     id: "donor_meeting",
     title: "Prepare for a donor meeting",
-    description: "Create a briefing package for a partner conversation.",
+    description: "Create a deck or briefing for a donor",
   },
   {
     id: "donor_deck",
     title: "Create a donor deck",
-    description: "Shape a source-grounded presentation outline.",
+    description: "Full presentation for donor engagement",
   },
   {
     id: "opportunity_brief",
     title: "Draft an opportunity brief",
-    description: "Summarize the concept, evidence, and open questions.",
+    description: "Program summary and rationale",
   },
   {
     id: "proposal",
     title: "Develop a proposal",
-    description: "Prepare a more detailed concept narrative.",
+    description: "Response to RFP or funding request",
   },
   {
     id: "rfp_package",
     title: "Create an RFP package",
-    description: "Draft a structured funder-response package.",
+    description: "Comprehensive proposal materials",
   },
   {
     id: "update_work",
     title: "Update existing work",
-    description: "Refresh prior materials with current source evidence.",
+    description: "Refresh or expand previous materials",
   },
 ];
 
@@ -62,8 +62,8 @@ export const functionalOutputs: Array<{
 }> = [
   {
     id: "investment_case",
-    label: "Investment case draft",
-    description: "Structured investor-ready narrative draft.",
+    label: "Donor deck",
+    description: "10-12 slides",
     defaultSelected: true,
   },
   {
@@ -75,8 +75,8 @@ export const functionalOutputs: Array<{
   {
     id: "talking_points",
     label: "Meeting talking points",
-    description: "Conversation guide for a donor meeting.",
-    defaultSelected: false,
+    description: "Conversation guide",
+    defaultSelected: true,
   },
   {
     id: "source_appendix",
@@ -86,7 +86,7 @@ export const functionalOutputs: Array<{
   },
 ];
 
-export const futureOutputs = ["Donor deck", "Follow-up email", "Technical annex"];
+export const futureOutputs = ["Executive summary", "Follow-up email draft", "Technical annex (Internal)"];
 
 export const defaultSelectedOutputs = functionalOutputs
   .filter((output) => output.defaultSelected)
@@ -94,9 +94,9 @@ export const defaultSelectedOutputs = functionalOutputs
 
 export const generationStages = [
   "Preparing request",
-  "Validating approved facts",
-  "Synthesizing sources",
+  "Retrieving and synthesizing sources",
   "Writing first draft",
-  "Running integrity checks",
-  "Compiling results",
+  "Building slides and visuals",
+  "Compiling output package",
+  "Final checks",
 ];

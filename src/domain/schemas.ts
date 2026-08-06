@@ -486,6 +486,147 @@ export const ProductQualityEvaluationSchema = z.object({
   evaluatedAtIso: z.string(),
 });
 
+export const InvestmentCaseWriterStatusSchema = z.enum([
+  "ready",
+  "needs_information",
+  "blocked",
+]);
+
+export const InvestmentCaseRequiredContentCheckSchema = z.object({
+  investment_team_present: z.boolean(),
+  technical_team_present: z.boolean(),
+  diligence_present: z.boolean(),
+});
+
+export const InvestmentCaseDraftBlockSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  heading: z.string(),
+  body: z.string(),
+  citations: z.array(z.string()).default([]),
+  locked: z.boolean().default(false),
+});
+
+export const InvestmentCaseQualityReviewSchema = z.object({
+  changed_facts: z.array(z.string()).default([]),
+  unsupported_claims: z.array(z.string()).default([]),
+  missing_citations: z.array(z.string()).default([]),
+  tone_issues: z.array(z.string()).default([]),
+  direct_appeals: z.array(z.string()).default([]),
+  repetition: z.array(z.string()).default([]),
+});
+
+export const InvestmentCaseWriterOutputSchema = z.object({
+  status: InvestmentCaseWriterStatusSchema,
+  source_summary: z.array(z.string()).default([]),
+  conflicts: z.array(z.string()).default([]),
+  information_needed: z.array(z.string()).default([]),
+  required_content_check: InvestmentCaseRequiredContentCheckSchema,
+  outline: z.array(z.string()).default([]),
+  draft_blocks: z.array(InvestmentCaseDraftBlockSchema).default([]),
+  quality_review: InvestmentCaseQualityReviewSchema,
+});
+
+export const IntegrityReviewDecisionSchema = z.enum([
+  "pass",
+  "revise",
+  "blocked",
+]);
+
+export const IntegrityReviewFindingSeveritySchema = z.enum([
+  "BLOCKING",
+  "WARNING",
+  "EDITORIAL",
+]);
+
+export const IntegrityReviewFindingSchema = z.object({
+  severity: IntegrityReviewFindingSeveritySchema,
+  type: z.string().min(1),
+  block_id: z.string(),
+  description: z.string().min(1),
+  source_reference: z.string(),
+  recommended_action: z.string().min(1),
+});
+
+export const IntegrityReviewerOutputSchema = z.object({
+  decision: IntegrityReviewDecisionSchema,
+  findings: z.array(IntegrityReviewFindingSchema).default([]),
+});
+
+const MemoryValueSchema = z.record(z.string(), z.unknown());
+
+export const MemoryScopeSchema = z.enum([
+  "product",
+  "workspace",
+  "case",
+  "session",
+]);
+
+export const MemorySourceSchema = z.enum([
+  "user",
+  "source_document",
+  "administrator",
+]);
+
+export const MemoryStatusSchema = z.enum([
+  "proposed",
+  "approved",
+  "deprecated",
+]);
+
+export const MemoryRecordSchema = z.object({
+  id: z.string().min(1),
+  scope: MemoryScopeSchema,
+  category: z.string().min(1),
+  value: MemoryValueSchema,
+  source: MemorySourceSchema,
+  source_reference: z.string(),
+  status: MemoryStatusSchema,
+  approved_by: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  expires_at: z.string().nullable(),
+});
+
+export const ProductPolicySchema = z.object({
+  universal_factual_integrity_rules: z.array(z.string()).default([]),
+  generic_editorial_principles: z.array(z.string()).default([]),
+  prompt_version: z.string().min(1),
+});
+
+export const WorkspaceProfileMemorySchema = z.object({
+  audience: MemoryValueSchema.default({}),
+  brand: MemoryValueSchema.default({}),
+  organization_vocabulary: MemoryValueSchema.default({}),
+  approved_vehicles: z.array(MemoryValueSchema).default([]),
+  editorial_preferences: MemoryValueSchema.default({}),
+  approved_benchmark_cases: z.array(z.string()).default([]),
+});
+
+export const ProjectStateMemorySchema = z.object({
+  current_case_status: z.string().optional(),
+  open_questions: z.array(z.string()).default([]),
+  requested_changes: z.array(z.string()).default([]),
+  reviewers: z.array(z.string()).default([]),
+  deadlines: z.array(z.string()).default([]),
+});
+
+export const CaseKnowledgeMemorySchema = z.object({
+  source_documents: z.array(MemoryValueSchema).default([]),
+  source_chunks: z.array(MemoryValueSchema).default([]),
+  fact_ledger: z.array(MemoryValueSchema).default([]),
+  locked_facts: z.array(MemoryValueSchema).default([]),
+  citations: z.array(MemoryValueSchema).default([]),
+  approved_corrections: z.array(MemoryValueSchema).default([]),
+});
+
+export const SessionInstructionMemorySchema = z.object({
+  current_requested_edit: z.string().optional(),
+  target_length: z.string().optional(),
+  selected_sections: z.array(z.string()).default([]),
+  temporary_preferences: MemoryValueSchema.default({}),
+});
+
 export const DonorFollowUpTopicSchema = z.enum([
   "funding_pathway",
   "budget",

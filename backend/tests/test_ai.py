@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.ai import (
+    AnthropicClaudeProvider,
     DatabricksModelServingProvider,
     StructuredGenerationRequest,
     StructuredGenerationResponse,
@@ -37,7 +38,7 @@ def override_provider() -> FakeProvider:
 
 
 def override_missing_provider() -> None:
-    raise HTTPException(status_code=503, detail="Live Gemini provider is not configured.")
+    raise HTTPException(status_code=503, detail="Live model provider is not configured.")
 
 
 def test_structured_generation_endpoint() -> None:
@@ -95,6 +96,22 @@ def test_structured_generation_requires_provider() -> None:
         app.dependency_overrides.clear()
 
     assert response.status_code == 503
+
+
+def test_get_model_provider_uses_explicit_anthropic_mode() -> None:
+    provider = get_model_provider(
+        Settings(
+            model_provider_mode="anthropic",
+            anthropic_api_key="token-1",
+            anthropic_model="claude-sonnet-5",
+            google_cloud_project="project-1",
+            vertex_ai_location="global",
+            vertex_ai_model="gemini-test",
+        ),
+    )
+
+    assert isinstance(provider, AnthropicClaudeProvider)
+    assert provider.model_name == "claude-sonnet-5"
 
 
 class CapturingVertexProvider(VertexGeminiProvider):
@@ -275,3 +292,84 @@ def test_databricks_provider_uses_configured_gateway_base_url() -> None:
     )
 
     assert provider._chat_completions_url() == "https://proxy.example.com/v1/chat/completions"
+
+
+class CapturingAnthropicProvider(AnthropicClaudeProvider):
+    def __init__(self, response_text: str):
+        super().__init__(
+            Settings(
+                anthropic_api_key="token-1",
+                anthropic_model="claude-sonnet-5",
+            ),
+        )
+        self.response_text = response_text
+        self.payload = None
+        self.url = None
+        self.headers = None
+
+    def _post_json(self, url, payload, headers):  # type: ignore[no-untyped-def]
+        self.url = url
+        self.payload = payload
+        self.headers = headers
+        return {
+            "id": "msg_test",
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "text", "text": self.response_text}],
+            "model": "claude-sonnet-5",
+            "stop_reason": "end_turn",
+            "stop_sequence": None,
+            "usage": {"input_tokens": 10, "output_tokens": 4},
+        }
+
+
+def test_anthropic_provider_loads_backend_prompt_bundle() -> None:
+    prompt = load_prompt("generate-investment-case")
+    provider = CapturingAnthropicProvider('{"ok": true}')
+
+    response = provider.generate_structured(
+        StructuredGenerationRequest(
+            operation="render_executive_investment_case",
+            promptVersion=prompt.version,
+            externalWebSearch=True,
+            input={"prompt": "client prompt should be ignored", "value": "hello"},
+            jsonSchema={
+                "type": "object",
+                "required": ["ok"],
+                "properties": {"ok": {"type": "boolean"}},
+            },
+            metadata={"promptName": "generate-investment-case"},
+        ),
+    )
+
+    assert response.output == {"ok": True}
+    assert provider.url == "https://api.anthropic.com/v1/messages"
+    assert provider.headers is not None
+    assert provider.headers["anthropic-version"] == "2023-06-01"
+    assert provider.headers["x-api-key"] == "token-1"
+    assert provider.payload is not None
+    assert provider.payload["model"] == "claude-sonnet-5"
+    assert provider.payload["system"].startswith(
+        "# Source-Grounded Investment Case System Prompt",
+    )
+    user_prompt = provider.payload["messages"][0]["content"]
+    assert provider.payload["messages"][0]["role"] == "user"
+    assert "Generate Investment Case Prompt" in user_prompt
+    assert "client prompt should be ignored" not in user_prompt
+    assert response.model_provider == "backend-anthropic-claude"
+    assert response.redacted_response_json is not None
+    assert response.redacted_response_json["stopReason"] == "end_turn"
+    assert response.redacted_response_json["externalWebSearchRequested"] is True
+    assert response.redacted_response_json["externalWebSearchApplied"] is False
+
+
+def test_anthropic_provider_uses_configured_base_url() -> None:
+    provider = AnthropicClaudeProvider(
+        Settings(
+            anthropic_api_key="token-1",
+            anthropic_model="claude-sonnet-5",
+            anthropic_base_url="https://proxy.example.com/anthropic",
+        ),
+    )
+
+    assert provider._messages_url() == "https://proxy.example.com/anthropic/v1/messages"

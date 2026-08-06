@@ -81,6 +81,7 @@ export function App() {
 
   function navigate(nextPath: string) {
     window.history.pushState({}, "", nextPath);
+    window.scrollTo({ top: 0, left: 0 });
     setPath(nextPath);
   }
 
@@ -105,7 +106,16 @@ export function App() {
   } else if (error) {
     content = <section className="panel full-panel"><h2>{error}</h2></section>;
   } else if (path === "/" || path === "/home") {
-    content = <HomePage projects={projects} onNewProject={createProject} onNavigate={navigate} />;
+    content = (
+      <HomePage
+        projects={projects}
+        opportunities={opportunities}
+        audiences={audiences}
+        config={config}
+        onNewProject={createProject}
+        onNavigate={navigate}
+      />
+    );
   } else if (path === "/projects") {
     content = <ProjectsPage projects={projects} onNewProject={createProject} onNavigate={navigate} />;
   } else if (path === "/opportunity-library") {
@@ -156,13 +166,23 @@ export function App() {
       />
     );
   } else {
-    content = <HomePage projects={projects} onNewProject={createProject} onNavigate={navigate} />;
+    content = (
+      <HomePage
+        projects={projects}
+        opportunities={opportunities}
+        audiences={audiences}
+        config={config}
+        onNewProject={createProject}
+        onNavigate={navigate}
+      />
+    );
   }
 
   return (
     <Shell
       currentPath={path}
       project={currentProject}
+      projects={projects}
       collapsed={collapsed}
       onToggleCollapsed={() => setCollapsed((current) => !current)}
       onNavigate={navigate}

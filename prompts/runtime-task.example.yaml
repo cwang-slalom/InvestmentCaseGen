@@ -1,12 +1,28 @@
-project_id: demo-project-3
-task: "Prepare for a donor meeting"
-opportunity_source_mode: existing
-audience: "Riverbend Catalytic Fund"
-intended_outcome: "Explore a co-funding partnership"
-selected_outputs:
-  - investment_case
-  - one_page
-  - source_appendix
-case_scoped_facts:
-  funding_recipient: unresolved
-  external_web_search: disabled
+task:
+  document_type: "{{DOCUMENT_TYPE}}"
+  case_title: "{{CASE_TITLE}}"
+
+goal: "{{USER_GOAL}}"
+
+target_length: "{{TARGET_LENGTH}}"
+
+current_document_state: "{{NEW_DRAFT | REVISION | DIAGNOSTIC_ONLY}}"
+
+case_brief: "{{CASE_BRIEF}}"
+
+approved_fact_ledger: "{{APPROVED_FACT_LEDGER}}"
+
+locked_facts: "{{LOCKED_FACTS}}"
+
+required_content: "{{REQUIRED_CONTENT}}"
+
+source_excerpts: "{{RETRIEVED_SOURCE_CHUNKS}}"
+
+document_template: "{{DOCUMENT_TEMPLATE}}"
+
+specific_user_instructions: "{{CURRENT_USER_INSTRUCTIONS}}"
+
+runtime_rules:
+  - "Return the structured output required by the system prompt."
+  - "Before drafting, report any blocking source conflicts or missing required information."
+  - "Do not use facts from previous cases or general knowledge."

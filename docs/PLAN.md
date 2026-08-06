@@ -2,6 +2,67 @@
 
 Planning checkpoint date: 2026-07-14
 
+## 2026-08-06 Opportunity Setup Interaction Fix
+
+- Wire the Step 2 detail affordances for viewing all opportunities, opening the
+  selected donor profile, customizing system suggestions, and reviewing all
+  output options.
+- Keep the interactions in-page through the existing drawer pattern so the
+  user does not lose the current opportunity, audience, or output selections.
+
+## 2026-08-05 Screenshot-Matched Frontend Refresh
+
+- Rework the Phase 1 Vite frontend to match the supplied Gates Foundation
+  Investment Case Generator screenshots across the home/task, opportunity and
+  audience, new opportunity upload, extraction review, review setup, and
+  generation progress screens.
+- Keep the existing four-step workflow and FastAPI API contracts intact while
+  replacing the visual shell, stepper, cards, action controls, and generated
+  progress views.
+- Treat the home route as a workspace dashboard with recent work,
+  recommendations, opportunity pipeline, and evidence-health summaries. The
+  four-step setup header belongs to the project creation flow after users start
+  a new project.
+- Update synthetic demo fixtures to use the screenshot scenario names and
+  labels, including HKJC, Vaccine Development Platform, PST validation status,
+  and coordinated donor outputs.
+- Preserve the concept-first guardrail in the UI copy: demo content supports
+  product visualization only and does not identify an inferred funding
+  recipient or investment vehicle.
+
+## 2026-08-05 Prompt And Memory Architecture Update
+
+- Replace the short source-grounding prompt with a full core agent prompt for
+  philanthropic investment-case editing, including source-of-truth rules,
+  instruction priority, factual integrity, required content preservation,
+  behavioral framing, citation discipline, and the structured writer output
+  contract.
+- Keep workspace-specific details out of the core prompt. Store audience,
+  brand, organization vocabulary, contacts, approved vehicles, benchmark
+  cases, and governance rules in a separate workspace profile.
+- Standardize runtime task inputs around document type, case title, user goal,
+  target length, document state, case brief, approved fact ledger, locked
+  facts, required content, source excerpts, template, and current user
+  instructions.
+- Use an independent adversarial factual-integrity reviewer prompt for
+  validation decisions instead of relying only on the writer's self-check.
+- Document the target memory split into ProductPolicy, WorkspaceProfile,
+  ProjectState, CaseKnowledge, and SessionInstruction objects, with approval
+  metadata on each stored memory record.
+
+## 2026-08-05 Claude Provider Update
+
+- Add Claude as a first-class live model option through the existing FastAPI
+  `/ai/structured` boundary, using Anthropic's Messages API.
+- Preserve backend-owned prompt loading, caller-supplied JSON schema
+  validation, validated-output-only persistence, and deterministic fallback
+  behavior.
+- Keep the TypeScript route layer provider-agnostic: Claude, Vertex Gemini, and
+  Databricks Model Serving all flow through the same `BackendModelProvider`
+  when `GENAI_BACKEND_BASE_URL` or `NEXT_PUBLIC_API_BASE_URL` is configured.
+- Do not commit live Anthropic credentials. Local Claude runs require
+  `MODEL_PROVIDER_MODE=anthropic`, `ANTHROPIC_API_KEY`, and `ANTHROPIC_MODEL`.
+
 ## 2026-08-05 Phase 1 Databricks Apps Vertical Slice
 
 - Fix Databricks root deployment startup by using package-relative imports

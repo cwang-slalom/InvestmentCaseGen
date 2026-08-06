@@ -1,9 +1,84 @@
-workspace_name: example-client-workspace
-brand_guidance: "Use approved client guidance only when supplied."
-allowed_sources:
-  - "Approved uploaded source documents"
-  - "Approved Knowledge Base records"
-default_external_web_search: false
-private_contacts: []
-notes:
-  - "Do not place private contacts or current project status into core-system.md."
+workspace:
+  id: "example-workspace"
+  name: "Philanthropic Investment Cases"
+
+audience:
+  primary_segment: "ultra-high-net-worth donors"
+  secondary_segment: "experienced and first-time domain funders"
+  domain: "global health"
+  indicative_commitment: "$5M+"
+  decision_context: "at an event or within approximately two months"
+  familiarity:
+    minimum: "limited domain knowledge"
+    maximum: "experienced global health funder"
+
+document_positioning:
+  type: "executive briefing"
+  direct_solicitation: false
+  default_length: "2–4 pages"
+  primary_goal: >
+    Help the reader recognize a credible, strategically logical and
+    well-managed opportunity.
+
+editorial_preferences:
+  tone:
+    - sophisticated
+    - concise
+    - urgent through facts
+    - invitational
+    - head-and-heart
+  lead_with:
+    - proof
+    - progress
+    - credible opportunity
+  avoid:
+    - deficit-led titles
+    - tragedy framing
+    - direct appeals
+    - gap-filling language
+    - overwritten conclusions
+    - generic AI headings
+  preserve:
+    - all verified data
+    - investment teams
+    - technical teams
+    - diligence spotlights
+
+framing_preferences:
+  donor_role: "participant and potential author of outcomes"
+  philanthropy_role: "configurable; only use catalytic or first-mover framing when sourced"
+  social_proof: "use only when source-backed"
+  leverage_language: "use exact sourced ratios only"
+  engage_style:
+    - substantive briefing
+    - technical discussion
+    - site or lab visit
+    - intellectual exploration
+
+organization:
+  co_investment_vehicle:
+    name: "{{CONFIGURABLE_VEHICLE_NAME}}"
+    description: "{{APPROVED_DESCRIPTION}}"
+
+brand:
+  profile: "{{SELECTED_BRAND_PROFILE}}"
+  heading_font: "{{CONFIGURABLE_SERIF_FONT}}"
+  body_font: "{{CONFIGURABLE_SANS_FONT}}"
+  primary_color: "{{HEX}}"
+  accent_color: "{{HEX}}"
+  background_color: "{{HEX}}"
+
+contacts:
+  default_contact:
+    name: "{{CONTACT_NAME}}"
+    title: "{{CONTACT_TITLE}}"
+    email: "{{CONTACT_EMAIL}}"
+
+benchmarks:
+  approved_reference_cases:
+    - "{{REFERENCE_CASE_ID}}"
+
+governance:
+  workspace_memory_requires_admin_approval: true
+  cross_case_fact_reuse: false
+  show_information_needed_flags: true

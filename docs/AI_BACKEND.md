@@ -1,13 +1,13 @@
 # AI Backend And Output Flow
 
-Update date: 2026-07-16
+Update date: 2026-08-05
 
 ## Current Backend Reality
 
-The current MVP has the AI boundary, backend-owned prompt package, and an
-optional live Vertex Gemini path in place. Deterministic behavior remains the
-default fallback so the app still works without network access or valid cloud
-credentials.
+The current MVP has the AI boundary, backend-owned prompt package, and optional
+live Claude, Vertex Gemini, and Databricks Model Serving paths in place.
+Deterministic behavior remains the default fallback so the app still works
+without network access or valid cloud credentials.
 
 Important locations:
 
@@ -20,8 +20,8 @@ Important locations:
   sends live model calls to the FastAPI backend when
   `NEXT_PUBLIC_API_BASE_URL` or `GENAI_BACKEND_BASE_URL` is configured.
 - `backend/app/ai.py` owns the FastAPI `/ai/structured` endpoint and the
-  backend-side live model call paths for Vertex Gemini and Databricks Model
-  Serving.
+  backend-side live model call paths for Claude, Vertex Gemini, and Databricks
+  Model Serving.
 - `backend/app/prompts.py` maps operations to prompt files, loads the
   source-grounded system prompt and task prompt, and computes prompt versions.
 - `backend/app/schema_validation.py` validates parsed model JSON against the
@@ -38,8 +38,8 @@ Important locations:
 - `src/server/drafts/render.ts` builds a source-grounded scaffold with
   claim-level citations, donor-language guidance, behavioral framing, and
   visual-brief sections.
-- `src/server/drafts/model-draft.ts` uses Gemini to author the final section
-  language from that scaffold when a live provider is configured. It preserves
+- `src/server/drafts/model-draft.ts` uses the configured live model to author
+  the final section language from that scaffold. It preserves
   section keys, claim IDs, citation mappings, unresolved evidence gaps, and
   rejects high-risk model edits such as unsupported new numbers or resolved
   funding pathways that were unresolved in the scaffold.
@@ -54,7 +54,7 @@ storage model can track provider, model name, prompt version, input chunk IDs,
 validation result, and payload mode. Deterministic model names such as
 `keyword-role-pathway-extractor-v1` and `source-grounded-draft-renderer-v1`
 indicate fallback behavior. Live runs record the FastAPI backend provider plus
-the configured Vertex or Databricks model name.
+the configured Claude, Vertex, or Databricks model name.
 
 Raw model responses are not persisted by default. The provider returns only
 validated structured output and redacted operational metadata.
@@ -82,6 +82,20 @@ VERTEX_AI_LOCATION="global"
 VERTEX_AI_MODEL="gemini-3.5-flash"
 GOOGLE_APPLICATION_CREDENTIALS="/absolute/path/to/service-account.json"
 ```
+
+Live Claude behavior through the Python backend:
+
+```bash
+GENAI_BACKEND_BASE_URL="http://localhost:8000"
+MODEL_PROVIDER_MODE="anthropic"
+ANTHROPIC_API_KEY="sk-ant-..."
+ANTHROPIC_MODEL="<claude-model-id>"
+```
+
+The Claude provider uses Anthropic's Messages API with the backend-owned system
+prompt in the top-level `system` field and the task/schema/input package as a
+single user message. External web search requests are recorded in redacted
+metadata but are not applied on the Claude path.
 
 The Python backend also recognizes existing Google/Vertex-style variables
 already used in local `.env` files:
@@ -141,13 +155,14 @@ When a user generates a donor-facing output:
 2. The renderer creates a source-grounded scaffold with sections, claims,
    citations, evidence gaps, narrative changes, behavioral framing, and a visual
    brief.
-3. If the FastAPI model backend is configured, Gemini authors the final section
-   markdown from the scaffold while preserving the existing claim and citation
-   registry. The Python backend loads and injects the generation prompt.
-4. If the Gemini render fails, the scaffold is stored as the deterministic
+3. If the FastAPI model backend is configured, the live model authors the final
+   section markdown from the scaffold while preserving the existing claim and
+   citation registry. The Python backend loads and injects the generation
+   prompt.
+4. If the live render fails, the scaffold is stored as the deterministic
    fallback.
-5. If narrative strengthening is enabled, Gemini may add additional bounded
-   framing suggestions after the main Gemini render.
+5. If narrative strengthening is enabled, the live model may add additional
+   bounded framing suggestions after the main live render.
 6. Draft claim validation and product-quality evaluation are re-run.
 7. The result is stored as `DraftRecord`.
 8. The UI shows it at

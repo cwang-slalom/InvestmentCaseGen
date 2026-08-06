@@ -76,6 +76,21 @@ describe("model-provider config", () => {
     expect(provider?.modelName).toBe("system.ai.test-model");
   });
 
+  it("uses the FastAPI backend for Claude mode", () => {
+    const provider = getConfiguredModelProvider({
+      env: {
+        MODEL_PROVIDER_MODE: "anthropic",
+        ANTHROPIC_API_KEY: "token",
+        ANTHROPIC_MODEL: "claude-sonnet-5",
+        VERTEX_AI_MODEL: "gemini-test",
+        NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000",
+      },
+    });
+
+    expect(provider?.providerName).toBe("backend");
+    expect(provider?.modelName).toBe("claude-sonnet-5");
+  });
+
   it("honors an explicit deterministic mode", () => {
     expect(
       getConfiguredModelProvider({

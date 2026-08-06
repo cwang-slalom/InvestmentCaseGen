@@ -26,13 +26,13 @@ Health endpoints:
 
 - `GET /health` confirms the API process is running.
 - `GET /ready` confirms the API can reach Postgres.
-- `POST /ai/structured` runs structured Gemini generation through the backend
-  when Vertex configuration is present, or Databricks Model Serving generation
-  when `MODEL_PROVIDER_MODE=databricks` is configured.
+- `POST /ai/structured` runs structured live-model generation through the
+  backend when Claude, Vertex Gemini, or Databricks Model Serving configuration
+  is present.
 
 The existing Next.js route handlers still power the current MVP workflow while
-their backend logic is migrated into FastAPI. Gemini model calls now route
-through this FastAPI backend first when `NEXT_PUBLIC_API_BASE_URL` points at the
+their backend logic is migrated into FastAPI. Live model calls now route through
+this FastAPI backend first when `NEXT_PUBLIC_API_BASE_URL` points at the
 backend.
 
 Prompt assembly for model calls is backend-owned:
@@ -41,9 +41,17 @@ Prompt assembly for model calls is backend-owned:
   `backend/app/prompts.py`.
 - The caller sends `operation`, `promptVersion`, `metadata.promptName`, business
   input, and a JSON schema. It does not send prompt text.
-- The backend injects the system prompt and operation prompt into Gemini,
-  parses JSON, validates the output against the provided schema, and returns
-  only validated output plus redacted generation metadata.
+- The backend injects the system prompt and operation prompt into the configured
+  model, parses JSON, validates the output against the provided schema, and
+  returns only validated output plus redacted generation metadata.
+
+Claude configuration:
+
+```bash
+MODEL_PROVIDER_MODE="anthropic"
+ANTHROPIC_API_KEY="sk-ant-..."
+ANTHROPIC_MODEL="<claude-model-id>"
+```
 
 ## Databricks Apps
 

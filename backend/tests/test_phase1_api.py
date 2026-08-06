@@ -77,9 +77,9 @@ def test_mock_extraction_contract() -> None:
     assert extraction["temporaryStatus"].startswith("Phase 1 temporary processing")
     assert len(extraction["fields"]) >= 13
     values = " ".join(field["value"] for field in extraction["fields"])
-    assert "USD 6-9 million" in values
-    assert "31%" in values
-    assert "March 15, 2027" in values
+    assert "USD 10-25 million" in values
+    assert "Global Vaccine Development Initiative" in values
+    assert "2026-2030" in values
 
 
 def test_mock_generation_contract_and_response_validation() -> None:
@@ -135,7 +135,7 @@ def test_locked_number_comparison_and_generation_preserves_locked_fact() -> None
     ).json()
     parsed_extraction = ExtractionResult.model_validate(extraction)
     locked_model_field = next(field for field in parsed_extraction.fields if field.id == "funding_range").model_copy(update={"locked": True})
-    assert locked_facts_preserved("This sentence preserves USD 6-9 million.", [locked_model_field])
+    assert locked_facts_preserved("This sentence preserves USD 10-25 million.", [locked_model_field])
     assert not locked_facts_preserved("This sentence omits the amount.", [locked_model_field])
 
     fields = []
@@ -156,7 +156,7 @@ def test_locked_number_comparison_and_generation_preserves_locked_fact() -> None
         for output in generation["outputs"]
         for section in output["sections"]
     )
-    assert "USD 6-9 million" in body
+    assert "USD 10-25 million" in body
 
 
 def test_sanitized_controlled_generation_error() -> None:

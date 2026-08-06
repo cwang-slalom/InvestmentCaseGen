@@ -44,8 +44,46 @@ function hasDatabricksSignal(env: Env) {
   );
 }
 
+function hasAnthropicSignal(env: Env) {
+  return Boolean(env.ANTHROPIC_MODEL || env.CLAUDE_MODEL);
+}
+
 function backendBaseUrl(env: Env) {
   return env.GENAI_BACKEND_BASE_URL ?? env.NEXT_PUBLIC_API_BASE_URL;
+}
+
+function backendModelName(env: Env) {
+  const explicit = normalized(env.MODEL_PROVIDER_MODE);
+
+  if (
+    explicit === "databricks" ||
+    explicit === "databricks-model-serving" ||
+    explicit === "mosaic" ||
+    explicit === "mosaic-ai"
+  ) {
+    return env.DATABRICKS_MODEL_SERVING_ENDPOINT ?? env.DATABRICKS_MODEL;
+  }
+
+  if (explicit === "anthropic" || explicit === "claude") {
+    return env.ANTHROPIC_MODEL ?? env.CLAUDE_MODEL;
+  }
+
+  if (
+    explicit === "vertex" ||
+    explicit === "vertex-gemini" ||
+    explicit === "gemini"
+  ) {
+    return env.VERTEX_AI_MODEL ?? env.LIVE_API_MODEL;
+  }
+
+  return (
+    env.DATABRICKS_MODEL_SERVING_ENDPOINT ??
+    env.DATABRICKS_MODEL ??
+    env.ANTHROPIC_MODEL ??
+    env.CLAUDE_MODEL ??
+    env.VERTEX_AI_MODEL ??
+    env.LIVE_API_MODEL
+  );
 }
 
 export function getModelProviderMode(env: Env = process.env) {
@@ -69,7 +107,9 @@ export function getModelProviderMode(env: Env = process.env) {
     explicit === "databricks" ||
     explicit === "databricks-model-serving" ||
     explicit === "mosaic" ||
-    explicit === "mosaic-ai"
+    explicit === "mosaic-ai" ||
+    explicit === "anthropic" ||
+    explicit === "claude"
   ) {
     return "backend" as const;
   }
@@ -106,6 +146,10 @@ export function getModelProviderMode(env: Env = process.env) {
     return "backend" as const;
   }
 
+  if (hasAnthropicSignal(env)) {
+    return "backend" as const;
+  }
+
   return "deterministic" as const;
 }
 
@@ -131,11 +175,7 @@ export function getConfiguredModelProvider({
 
     return new BackendModelProvider({
       baseUrl: backendUrl,
-      modelName:
-        env.DATABRICKS_MODEL_SERVING_ENDPOINT ??
-        env.DATABRICKS_MODEL ??
-        env.VERTEX_AI_MODEL ??
-        env.LIVE_API_MODEL,
+      modelName: backendModelName(env),
     });
   }
 

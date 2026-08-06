@@ -537,13 +537,191 @@ class DatabricksModelServingProvider:
         raise ValueError("Model response did not contain valid JSON.")
 
 
+class AnthropicClaudeProvider:
+    provider_name = "backend-anthropic-claude"
+
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        if not settings.anthropic_api_key:
+            raise ValueError("ANTHROPIC_API_KEY is required for Claude.")
+        if not settings.claude_model_name:
+            raise ValueError("ANTHROPIC_MODEL or CLAUDE_MODEL is required.")
+
+    @property
+    def model_name(self) -> str:
+        return self.settings.claude_model_name or ""
+
+    def generate_structured(
+        self,
+        request: StructuredGenerationRequest,
+    ) -> StructuredGenerationResponse:
+        system_prompt = load_system_prompt()
+        task_prompt = load_operation_prompt(request.operation, request.prompt_name)
+        if request.prompt_version != task_prompt.version:
+            raise ValueError(
+                "Prompt version mismatch for "
+                f"{task_prompt.name}: caller sent {request.prompt_version}, "
+                f"backend loaded {task_prompt.version}.",
+            )
+
+        response_json = self._post_json(
+            self._messages_url(),
+            self._messages_payload(request, system_prompt.text, task_prompt.text),
+            headers={
+                "anthropic-version": self.settings.anthropic_version,
+                "content-type": "application/json",
+                "x-api-key": self.settings.anthropic_api_key or "",
+            },
+        )
+        text = self._message_response_text(response_json)
+        if not text:
+            raise ValueError("Claude returned no text content block.")
+
+        output = self._parse_json_candidate(text)
+        validate_json_schema_output(output, request.json_schema)
+
+        return StructuredGenerationResponse(
+            output=output,
+            modelProvider=self.provider_name,
+            modelName=self.model_name,
+            storedPayloadMode="validated_outputs_only",
+            redactedResponseJson={
+                "promptName": task_prompt.name,
+                "promptVersion": task_prompt.version,
+                "systemPromptVersion": system_prompt.version,
+                "stopReason": response_json.get("stop_reason"),
+                "stopSequence": response_json.get("stop_sequence"),
+                "usageMetadata": response_json.get("usage"),
+                "externalWebSearchApplied": False,
+                "externalWebSearchRequested": request.external_web_search,
+            },
+        )
+
+    def _messages_url(self) -> str:
+        return f"{self.settings.anthropic_base_url.rstrip('/')}/v1/messages"
+
+    def _messages_payload(
+        self,
+        request: StructuredGenerationRequest,
+        system_prompt: str,
+        task_prompt: str,
+    ) -> dict[str, Any]:
+        return {
+            "model": self.model_name,
+            "max_tokens": self.settings.model_max_output_tokens,
+            "temperature": 0.2,
+            "system": system_prompt,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": self._structured_prompt(request, task_prompt),
+                },
+            ],
+        }
+
+    def _structured_prompt(
+        self,
+        request: StructuredGenerationRequest,
+        task_prompt: str,
+    ) -> str:
+        input_payload = dict(request.input)
+        input_payload.pop("prompt", None)
+        input_payload.pop("systemPrompt", None)
+        input_payload.pop("taskPrompt", None)
+        return "\n".join(
+            part
+            for part in [
+                task_prompt,
+                "",
+                "Return only valid JSON for this operation.",
+                "Do not include Markdown fences or explanatory prose.",
+                f"Operation: {request.operation}",
+                "",
+                "Structured output schema:",
+                json.dumps(request.json_schema),
+                "",
+                "Input:",
+                json.dumps(input_payload),
+            ]
+            if part
+        )
+
+    def _post_json(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        headers: dict[str, str],
+    ) -> dict[str, Any]:
+        return self._request(
+            urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+                method="POST",
+            ),
+        )
+
+    def _request(self, request: urllib.request.Request) -> dict[str, Any]:
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            body = error.read().decode("utf-8", errors="replace")
+            raise ValueError(f"Claude request failed: {body}") from error
+
+    def _message_response_text(self, response_json: dict[str, Any]) -> str:
+        content = response_json.get("content")
+        if isinstance(content, str):
+            return content.strip()
+        if not isinstance(content, list):
+            return ""
+
+        text_parts = [
+            block.get("text")
+            for block in content
+            if isinstance(block, dict)
+            and block.get("type") == "text"
+            and isinstance(block.get("text"), str)
+        ]
+        return "\n".join(text_parts).strip()
+
+    def _parse_json_candidate(self, text: str) -> Any:
+        stripped = text.strip()
+        try:
+            return json.loads(stripped)
+        except json.JSONDecodeError:
+            pass
+
+        if "```" in stripped:
+            fenced = stripped.split("```", 2)[1]
+            if fenced.lstrip().startswith("json"):
+                fenced = fenced.lstrip()[4:]
+            return json.loads(fenced.strip())
+
+        first = stripped.find("{")
+        last = stripped.rfind("}")
+        if first >= 0 and last > first:
+            return json.loads(stripped[first : last + 1])
+
+        raise ValueError("Model response did not contain valid JSON.")
+
+
+LiveModelProvider = (
+    VertexGeminiProvider | DatabricksModelServingProvider | AnthropicClaudeProvider
+)
+
+
 def get_model_provider(
     settings: Settings = Depends(get_settings),
-) -> VertexGeminiProvider | DatabricksModelServingProvider:
+) -> LiveModelProvider:
     mode = settings.model_provider_mode.strip().lower()
     databricks_requested = (
         mode in {"databricks", "databricks-model-serving", "mosaic", "mosaic-ai"}
         or bool(settings.databricks_model_name)
+    )
+    anthropic_requested = (
+        mode in {"anthropic", "claude"}
+        or bool(settings.claude_model_name)
     )
     vertex_requested = (
         mode in {"vertex", "vertex-gemini", "gemini"}
@@ -551,15 +729,25 @@ def get_model_provider(
         or bool(settings.vertex_model)
         or bool(settings.live_api_model)
     )
-    if settings.use_mock_ai or not (databricks_requested or vertex_requested):
+    if settings.use_mock_ai or not (
+        databricks_requested or anthropic_requested or vertex_requested
+    ):
         raise HTTPException(
             status_code=503,
             detail="Live model provider is not configured.",
         )
 
     try:
+        if mode in {"anthropic", "claude"}:
+            return AnthropicClaudeProvider(settings)
+        if mode in {"databricks", "databricks-model-serving", "mosaic", "mosaic-ai"}:
+            return DatabricksModelServingProvider(settings)
+        if mode in {"vertex", "vertex-gemini", "gemini"}:
+            return VertexGeminiProvider(settings)
         if databricks_requested:
             return DatabricksModelServingProvider(settings)
+        if anthropic_requested:
+            return AnthropicClaudeProvider(settings)
         return VertexGeminiProvider(settings)
     except ValueError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
@@ -575,7 +763,7 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 )
 def generate_structured(
     request: StructuredGenerationRequest,
-    provider: VertexGeminiProvider | DatabricksModelServingProvider = Depends(get_model_provider),
+    provider: LiveModelProvider = Depends(get_model_provider),
 ) -> StructuredGenerationResponse:
     try:
         return provider.generate_structured(request)
