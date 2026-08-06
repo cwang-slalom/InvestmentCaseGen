@@ -6,9 +6,10 @@ Current behavior and limitations:
 
 - Existing-library opportunities, audiences, source records, recent projects,
   and demo review findings are synthetic.
-- New-opportunity uploads parse plain text and text-layer PDFs in memory.
-  Extracted fields use the uploaded source text, with unresolved values where
-  evidence is not found.
+- New-opportunity uploads parse plain text and text-layer PDFs in memory, then
+  require the configured live LLM provider to produce structured extraction
+  fields. Extracted fields use the uploaded source text, with unresolved values
+  where evidence is not found.
 - Generated drafts require a configured live Databricks model backend. There
   is no deterministic or mock generation fallback.
 - In-memory project state may survive browser refresh while the process runs,
@@ -16,7 +17,9 @@ Current behavior and limitations:
 - File upload parsing currently supports plain text, Markdown, and text-layer
   PDFs. DOCX, PPTX, XLSX, OCR, scanned PDFs, charts, diagrams, and complex
   tables are not production parsed in this runtime.
-- Uploaded bytes are parsed in memory and are not retained after extraction.
+- Uploaded bytes are not durably stored by the Phase 1 FastAPI runtime. Parsed
+  source text is retained in memory only for project-level extraction reruns
+  until the process restarts.
 - No durable document storage is implemented.
 - No external web search is performed.
 - No production database is used.

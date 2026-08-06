@@ -1,8 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from ..models.extraction import ExtractionResult, ExtractionReviewUpdate
 from ..models.project import OpportunityAudienceUpdate, Project, ProjectCreate, ReviewSetupUpdate, TaskUpdate
 from ..repositories.memory import case_repository
+from ..services.extraction import ExtractionModelError, TemporarySourceUnavailable, source_processor
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -26,10 +27,27 @@ def get_project(project_id: str) -> Project:
 def get_project_extraction(project_id: str) -> ExtractionResult:
     project = case_repository.get_project(project_id)
     if project.extraction_id is None:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=404, detail="Extraction not found.")
     return case_repository.get_extraction(project.extraction_id)
+
+
+@router.post("/{project_id}/extraction/rerun")
+async def rerun_project_extraction(project_id: str) -> ExtractionResult:
+    project = case_repository.get_project(project_id)
+    if project.extraction_id is None:
+        raise HTTPException(status_code=404, detail="Extraction not found.")
+
+    try:
+        extraction = await source_processor.rerun_project_extraction(project_id)
+    except TemporarySourceUnavailable as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ExtractionModelError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    case_repository.save_extraction(project_id, extraction)
+    return extraction
 
 
 @router.put("/{project_id}/task")
@@ -53,8 +71,6 @@ def update_extraction_review(
     project = case_repository.get_project(project_id)
     extraction_id = project.extraction_id
     if extraction_id is None:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=404, detail="Extraction not found.")
     extraction = case_repository.get_extraction(extraction_id)
     updated = extraction.model_copy(update={"fields": request.fields}, deep=True)

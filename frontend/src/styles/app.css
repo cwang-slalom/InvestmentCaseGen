@@ -471,6 +471,7 @@ input:disabled {
 
 .primary-button,
 .secondary-button,
+.danger-button,
 .outline-action,
 .soft-button,
 .ghost-link,
@@ -508,6 +509,13 @@ input:disabled {
   padding: 0 16px;
 }
 
+.danger-button {
+  border: 1px solid #f0b8b2;
+  background: #fff8f8;
+  color: var(--danger);
+  padding: 0 16px;
+}
+
 .secondary-button:disabled,
 .soft-button:disabled {
   color: #9aa4bb;
@@ -516,6 +524,7 @@ input:disabled {
 }
 
 .secondary-button.large,
+.danger-button.large,
 .primary-button.large {
   min-width: 112px;
   min-height: 48px;
@@ -615,6 +624,15 @@ button.status-pill:hover {
   border-radius: 6px;
   background: #fff1f0;
   color: var(--danger);
+  padding: 10px 12px;
+}
+
+.generation-cancel-message {
+  margin: 14px 0 0;
+  border-left: 4px solid #c47400;
+  border-radius: 6px;
+  background: #fff8ee;
+  color: #7a430e;
   padding: 10px 12px;
 }
 

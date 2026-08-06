@@ -70,8 +70,7 @@ export function ExtractionReviewPage({ project, onProject, onNavigate }: Extract
     setSaving(true);
     setError("");
     try {
-      const extractionInput = fields.map((field) => `${field.label}: ${field.value}`).join("\n");
-      const extraction = await api.extractText(project.id, sourceLabel, extractionInput);
+      const extraction = await api.rerunExtraction(project.id);
       setFields(extraction.fields.map((field) => ({ ...field, verified: true })));
       setConfirmed(true);
     } catch (apiError) {
@@ -123,7 +122,7 @@ export function ExtractionReviewPage({ project, onProject, onNavigate }: Extract
               <strong>{sourceLabel}</strong>
               <small>{sourceType}&nbsp;&nbsp;•&nbsp;&nbsp;temporary Phase 1 source</small>
             </div>
-            <span className="status-pill ready">Approved</span>
+            <span className="status-pill ready">LLM extracted</span>
             <button className="secondary-button" type="button" onClick={rerunExtraction} disabled={saving}>
               <Icon name="refresh" />
               Re-run extraction

@@ -2,6 +2,51 @@
 
 Planning checkpoint date: 2026-07-14
 
+## 2026-08-06 LLM-Backed New Opportunity Extraction
+
+- Route new-opportunity extraction through the same backend-owned structured
+  model boundary used for generation, with `extract-opportunities` loaded from
+  `prompts/` and output validated against a typed schema.
+- Send uploaded text-layer PDF pages or pasted source text to the model with a
+  canonical field list, concept-first guardrails, and explicit unresolved-field
+  instructions for unsupported roles, costs, impact figures, and timelines.
+- Retain parsed source text in memory only for project-level reruns until the
+  process restarts; reruns use the original uploaded text instead of the
+  currently displayed extracted fields.
+- Return a model-configuration error when live LLM extraction is unavailable
+  instead of silently falling back to keyword-derived field candidates.
+
+## 2026-08-06 Databricks Generate Refresh Recovery
+
+- Convert project generation from a browser-held synchronous request into a
+  project-scoped background job with `/generation-status` polling so Databricks
+  App upstream request limits do not terminate slow model runs.
+- Keep `/api/projects/{projectId}/generate` as the start/reuse route, but have
+  it return generation job status instead of waiting for the final
+  `GenerationResult`.
+- Let the Generate page poll until completion, then store the validated
+  generation result through the existing project/result state flow.
+- Surface non-JSON upstream/proxy errors as readable API errors instead of
+  exposing browser `JSON.parse` messages.
+- Keep the FastAPI app responsive during long Databricks generation by running
+  the synchronous Model Serving HTTP request outside the main event loop.
+- Add a project-level in-flight generation guard so refreshes, repeated clicks,
+  or multiple browser tabs reuse the same pending generation instead of
+  starting duplicate Databricks calls.
+- Return an already saved generation immediately when the project has a
+  `generationId`, preserving the existing result storage contract.
+
+## 2026-08-06 Generate Cancel Control
+
+- Replace the prior Cancel generation action with a Stop watching control now
+  that generation runs as a backend background task.
+- Return the page to a non-generating local state when the user stops watching
+  and show a clear notice that the server-side generation may continue.
+- Keep server-side cancellation, pause, and resume out of scope until the
+  backend exposes durable job controls beyond the Phase 1 in-memory runtime.
+- Do not show Pause until generation moves to an asynchronous job model with a
+  real pause/resume capability.
+
 ## 2026-08-06 Databricks Generation Timeout Recovery
 
 - Increase the Databricks Model Serving request timeout default to 300 seconds,

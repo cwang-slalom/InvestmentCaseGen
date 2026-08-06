@@ -189,6 +189,15 @@ export type GenerationResult = {
   metadata: Record<string, string>;
 };
 
+export type GenerationJobStatus = {
+  projectId: string;
+  state: "idle" | "running" | "completed" | "failed";
+  generationId?: string | null;
+  message: string;
+  error?: string | null;
+  result?: GenerationResult | null;
+};
+
 export type AppConfig = {
   appName: string;
   phase: string;

@@ -11,7 +11,9 @@ import {
 } from "../state/generation";
 import { functionalOutputs, futureOutputs, generationStages } from "../state/options";
 import { toggleOutput } from "../state/workflow";
-import type { AppConfig, FieldValue, GenerationResult, OutputType, Project } from "../types";
+import type { AppConfig, FieldValue, GenerationJobStatus, GenerationResult, OutputType, Project } from "../types";
+
+const GENERATION_POLL_INTERVAL_MS = 3000;
 
 type GeneratePageProps = {
   project: Project;
@@ -27,10 +29,13 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
   const [generating, setGenerating] = useState(false);
   const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [cancelNotice, setCancelNotice] = useState("");
   const [selectionSaving, setSelectionSaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const timerRef = useRef<number | null>(null);
   const generationPromiseRef = useRef<Promise<GenerationResult | null> | null>(null);
+  const generationAbortRef = useRef<AbortController | null>(null);
+  const generationRunRef = useRef(0);
   const selectedOutputs = project.opportunityAudience?.selectedOutputs || [];
   const currentGeneration = generation?.projectId === project.id ? generation : null;
   const liveModelReady = config?.mode === "live";
@@ -54,6 +59,46 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
   const evidenceDensity = settingValue(approachFields, "evidence_density");
   const externalWebSearch = settingValue(approachFields, "external_web_search");
 
+  const applyGenerationStatus = useCallback(async (status: GenerationJobStatus, runId: number) => {
+    if (generationRunRef.current !== runId) return null;
+
+    if (status.state === "completed" && status.result) {
+      onGeneration(status.result);
+      const refreshed = await api.project(project.id);
+      if (generationRunRef.current === runId) {
+        onProject(refreshed);
+      }
+      return status.result;
+    }
+
+    if (status.state === "completed") {
+      setError("Generation completed but no output payload was returned.");
+    }
+
+    if (status.state === "failed") {
+      setError(status.error || status.message || "Generation could not be completed.");
+    }
+
+    return null;
+  }, [onGeneration, onProject, project.id]);
+
+  const pollGenerationUntilComplete = useCallback(async (initialStatus: GenerationJobStatus, runId: number) => {
+    let status = initialStatus;
+    while (generationRunRef.current === runId) {
+      const result = await applyGenerationStatus(status, runId);
+      if (result || status.state === "completed" || status.state === "failed" || status.state === "idle") {
+        return result;
+      }
+
+      await wait(GENERATION_POLL_INTERVAL_MS);
+      if (generationRunRef.current !== runId) {
+        return null;
+      }
+      status = await api.generationStatus(project.id);
+    }
+    return null;
+  }, [applyGenerationStatus, project.id]);
+
   const runGeneration = useCallback(async () => {
     if (!liveModelReady) {
       setError(config?.backend.message || "Live model generation is required before outputs can be generated.");
@@ -62,29 +107,48 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
     if (project.generationId) return null;
     if (generationPromiseRef.current) return generationPromiseRef.current;
 
+    const runId = generationRunRef.current + 1;
+    generationRunRef.current = runId;
     setGenerating(true);
     setGenerationStartedAt(Date.now());
     setElapsedSeconds(0);
     setError("");
-    const request = api.generate(project.id, false)
-      .then(async (nextGeneration) => {
-        onGeneration(nextGeneration);
-        const refreshed = await api.project(project.id);
-        onProject(refreshed);
-        return nextGeneration;
-      })
+    setCancelNotice("");
+    const abortController = new AbortController();
+    generationAbortRef.current = abortController;
+    const request = api.generate(project.id, false, { signal: abortController.signal })
+      .then((status) => pollGenerationUntilComplete(status, runId))
       .catch((apiError) => {
+        if (isAbortError(apiError)) {
+          setCancelNotice("Stopped watching this generation. It may continue running in the background.");
+          setError("");
+          return null;
+        }
         setError(apiError instanceof Error ? apiError.message : "Generation could not be completed.");
         return null;
       })
       .finally(() => {
-        generationPromiseRef.current = null;
-        setGenerating(false);
+        if (generationRunRef.current === runId) {
+          generationPromiseRef.current = null;
+          generationAbortRef.current = null;
+          setGenerating(false);
+        }
       });
 
     generationPromiseRef.current = request;
     return request;
-  }, [config?.backend.message, liveModelReady, onGeneration, onProject, project.generationId, project.id]);
+  }, [config?.backend.message, liveModelReady, pollGenerationUntilComplete, project.generationId, project.id]);
+
+  const stopWatchingGeneration = useCallback(() => {
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    generationRunRef.current += 1;
+    generationAbortRef.current?.abort();
+    generationAbortRef.current = null;
+    generationPromiseRef.current = null;
+    setGenerating(false);
+    setCancelNotice("Stopped watching this generation. It may continue running in the background.");
+    setError("");
+  }, []);
 
   const toggleOutputSelection = useCallback(async (output: OutputType) => {
     const opportunityAudience = project.opportunityAudience;
@@ -138,6 +202,13 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
       window.clearInterval(interval);
     };
   }, [generating, generationStartedAt]);
+
+  useEffect(() => {
+    return () => {
+      generationRunRef.current += 1;
+      generationAbortRef.current?.abort();
+    };
+  }, []);
 
   async function viewResults() {
     if (timerRef.current) window.clearTimeout(timerRef.current);
@@ -220,6 +291,7 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
             </p>
           </div>
           {error && <p className="validation-message" role="alert">{error}</p>}
+          {cancelNotice && !error && <p className="generation-cancel-message" role="status">{cancelNotice}</p>}
         </section>
 
         <section className="panel outputs-generation-panel">
@@ -239,7 +311,7 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
                 <strong>{output.label}</strong>
                 {output.description && <small>{output.description}</small>}
                 <em>{output.statusLabel}</em>
-                {output.disabledReason && <small className="output-lock-note">{output.disabledReason}</small>}
+                {output.disabledReason && output.status !== "failed" && <small className="output-lock-note">{output.disabledReason}</small>}
                 {output.percent && <div className="mini-progress"><span style={{ width: output.percent }} /></div>}
                 {output.percent && <b>{output.percent}</b>}
                 {output.done && <Icon name="check" />}
@@ -292,6 +364,12 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
           <button className="secondary-button large" type="button" onClick={() => onNavigate("/projects")}>
             Save and exit
           </button>
+          {generating && (
+            <button className="secondary-button large" type="button" onClick={stopWatchingGeneration}>
+              <Icon name="close" />
+              Stop watching
+            </button>
+          )}
           <button className="primary-button large" type="button" disabled={(!liveModelReady && !hasGeneration) || generating || selectionSaving} onClick={viewResults}>
             {hasGeneration ? "View results" : !liveModelReady ? "Configure model to generate" : generating ? "Generating results..." : generationFailed ? "Retry generation" : "View results"}
           </button>
@@ -311,6 +389,16 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
 
 function settingValue(fields: FieldValue[] | undefined, id: string) {
   return fields?.find((field) => field.id === id)?.value || "Unresolved";
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+function wait(milliseconds: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
 }
 
 function generationStageStatus(
@@ -352,7 +440,7 @@ function progressHeadline(
 ) {
   if (complete) return "Materials are ready for review.";
   if (!liveModelReady) return "Connect a live model before generation can start.";
-  if (generationFailed) return "Generation stopped before completion.";
+  if (generationFailed) return "Generation failed before completion.";
   if (!generating) return "Generation will start automatically, or when you view results.";
   return generationStages[activeStageIndex];
 }
@@ -366,7 +454,7 @@ function progressMetaLabel(
 ) {
   if (complete) return "Elapsed time is no longer updating.";
   if (!liveModelReady) return "No model request has been sent.";
-  if (generationFailed) return `Stopped after ${formatGenerationDuration(elapsedSeconds)}.`;
+  if (generationFailed) return `Failed after ${formatGenerationDuration(elapsedSeconds)}.`;
   if (!generating) return "You can still adjust selected outputs.";
   return `Elapsed ${formatGenerationDuration(elapsedSeconds)} · ${estimatedRemainingLabel(elapsedSeconds)}`;
 }

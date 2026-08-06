@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import re
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
+from typing import Any, Callable, Literal
 
-from ..fixtures import default_extraction
-from ..models.base import CitationRef, FieldMetadata
+from fastapi import HTTPException
+from pydantic import Field
+
+from ..ai import LiveModelProvider, StructuredGenerationRequest
+from ..config import get_settings
+from ..fixtures import SOURCES
+from ..models.base import APIModel, CitationRef, FieldMetadata
 from ..models.extraction import ExtractedField
 from ..models.extraction import ExtractionResult
+from ..prompts import load_operation_prompt
 from ..repositories.base import SourceProcessor
 
 
@@ -20,17 +28,69 @@ class SourcePage:
 
 
 @dataclass(frozen=True)
-class CandidateText:
-    text: str
-    page_number: int
-
-
-@dataclass(frozen=True)
 class FieldSpec:
     field_id: str
     label: str
     keywords: tuple[str, ...]
     unresolved: str
+
+
+@dataclass(frozen=True)
+class TemporarySource:
+    source_label: str
+    pages: list[SourcePage]
+    digest: str
+
+
+ExtractionFieldId = Literal[
+    "opportunity_name",
+    "problem",
+    "solution",
+    "why_now",
+    "geographies",
+    "reach",
+    "primary_outcomes",
+    "differentiators",
+    "timeframe",
+    "funding_range",
+    "investment_team",
+    "technical_team",
+    "diligence",
+]
+
+
+class ModelExtractedField(APIModel):
+    id: ExtractionFieldId
+    value: str = Field(min_length=1)
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence_status: Literal["source_provided", "unresolved"] = Field(
+        alias="evidenceStatus",
+    )
+    page_number: int | None = Field(default=None, alias="pageNumber")
+    excerpt: str = ""
+
+
+class ModelExtractionOutput(APIModel):
+    selected_opportunity: str = Field(alias="selectedOpportunity", min_length=1)
+    selection_rationale: str = Field(alias="selectionRationale", min_length=1)
+    notes: str = ""
+    fields: list[ModelExtractedField] = Field(min_length=1)
+
+
+class ExtractionModelError(RuntimeError):
+    pass
+
+
+class TemporarySourceUnavailable(ValueError):
+    pass
+
+
+OPPORTUNITY_NAME_SPEC = FieldSpec(
+    "opportunity_name",
+    "Opportunity name",
+    ("opportunity", "spotlight", "concept", "initiative", "fund"),
+    "Unresolved opportunity name in uploaded source.",
+)
 
 
 FIELD_SPECS = [
@@ -55,13 +115,32 @@ FIELD_SPECS = [
     FieldSpec(
         "geographies",
         "Geographies",
-        ("global", "africa", "asia", "latin america", "country", "countries", "region", "geography", "geographies"),
+        (
+            "global",
+            "africa",
+            "asia",
+            "latin america",
+            "country",
+            "countries",
+            "region",
+            "geography",
+            "geographies",
+        ),
         "Unresolved geography in uploaded source.",
     ),
     FieldSpec(
         "reach",
         "Reach / Impact",
-        ("people", "beneficiaries", "patients", "children", "women", "households", "communities", "reach"),
+        (
+            "people",
+            "beneficiaries",
+            "patients",
+            "children",
+            "women",
+            "households",
+            "communities",
+            "reach",
+        ),
         "Unresolved reach or impact figure in uploaded source.",
     ),
     FieldSpec(
@@ -91,7 +170,14 @@ FIELD_SPECS = [
     FieldSpec(
         "investment_team",
         "Investment team",
-        ("investment manager", "funding recipient", "investment vehicle", "fiscal sponsor", "sponsor", "fund manager"),
+        (
+            "investment manager",
+            "funding recipient",
+            "investment vehicle",
+            "fiscal sponsor",
+            "sponsor",
+            "fund manager",
+        ),
         "Unresolved investment manager, funding recipient, and investment vehicle in uploaded source.",
     ),
     FieldSpec(
@@ -108,18 +194,66 @@ FIELD_SPECS = [
     ),
 ]
 
-MONEY_PATTERN = re.compile(
-    r"(?:USD\s*)?\$?\s?\d+(?:[.,]\d+)?(?:\s?[-–]\s?\d+(?:[.,]\d+)?)?\s?(?:million|billion|m|bn)?",
-    re.IGNORECASE,
-)
-YEAR_PATTERN = re.compile(r"\b20\d{2}(?:\s?[-–]\s?20\d{2})?\b")
+ALL_FIELD_SPECS = [OPPORTUNITY_NAME_SPEC, *FIELD_SPECS]
 
 
 class SourceBackedProcessor(SourceProcessor):
     max_upload_bytes = 25 * 1024 * 1024
+    max_model_input_chars = 120_000
+
+    def __init__(
+        self,
+        provider_factory: Callable[[], LiveModelProvider] | None = None,
+    ):
+        self._provider_factory = provider_factory or self._default_provider
+        self._temporary_sources: dict[str, TemporarySource] = {}
 
     async def extract(self, source_label: str, project_id: str | None) -> ExtractionResult:
-        return default_extraction(project_id, source_label)
+        if project_id and project_id in self._temporary_sources:
+            return await self.rerun_project_extraction(project_id)
+        raise ValueError("Live LLM extraction requires uploaded source content or pasted source text.")
+
+    async def extract_text(
+        self,
+        text: str,
+        source_label: str,
+        project_id: str | None,
+    ) -> ExtractionResult:
+        content = text.encode("utf-8")
+        page_text = self._decode_text(content)
+        pages = [SourcePage(page_number=1, text=page_text)]
+        digest = hashlib.sha256(content).hexdigest()[:10]
+        self._cache_temporary_source(project_id, source_label, pages, digest)
+        return await self._build_extraction(source_label, project_id, pages, digest)
+
+    async def extract_knowledge_source(
+        self,
+        knowledge_source_id: str,
+        source_label: str,
+        project_id: str | None,
+    ) -> ExtractionResult:
+        matched_sources = [
+            source
+            for source in SOURCES
+            if source.id == knowledge_source_id or source.title == source_label
+        ]
+        if not matched_sources:
+            raise ValueError("Selected knowledge-base source was not found.")
+
+        source_text = "\n\n".join(
+            "\n".join(
+                [
+                    f"Title: {source.title}",
+                    f"Type: {source.source_type}",
+                    f"Label: {source.label}",
+                    f"Locator: {source.locator}",
+                    f"Status: {source.status}",
+                    f"Excerpt: {source.excerpt}",
+                ]
+            )
+            for source in matched_sources
+        )
+        return await self.extract_text(source_text, source_label, project_id)
 
     async def extract_uploaded_bytes(
         self,
@@ -131,7 +265,23 @@ class SourceBackedProcessor(SourceProcessor):
             raise ValueError("File exceeds the 25 MB MVP source-processing limit.")
 
         pages = self._extract_pages(content, source_label)
-        return self._build_extraction(source_label, project_id, pages, content)
+        digest = hashlib.sha256(content).hexdigest()[:10]
+        self._cache_temporary_source(project_id, source_label, pages, digest)
+        return await self._build_extraction(source_label, project_id, pages, digest)
+
+    async def rerun_project_extraction(self, project_id: str) -> ExtractionResult:
+        try:
+            source = self._temporary_sources[project_id]
+        except KeyError as error:
+            raise TemporarySourceUnavailable(
+                "Temporary source text is no longer available; re-upload the source document to rerun extraction.",
+            ) from error
+        return await self._build_extraction(
+            source.source_label,
+            project_id,
+            source.pages,
+            source.digest,
+        )
 
     def _extract_pages(self, content: bytes, source_label: str) -> list[SourcePage]:
         suffix = Path(source_label).suffix.lower()
@@ -170,97 +320,138 @@ class SourceBackedProcessor(SourceProcessor):
             raise ValueError("Uploaded text source does not contain enough extractable text.")
         return text
 
-    def _build_extraction(
+    async def _build_extraction(
         self,
         source_label: str,
         project_id: str | None,
         pages: list[SourcePage],
-        content: bytes,
+        digest: str,
     ) -> ExtractionResult:
-        candidates = self._candidate_text(pages)
-        title = self._title_candidate(source_label, candidates)
-        fields = [
-            self._field(
-                "opportunity_name",
-                "Opportunity name",
-                title.text,
-                0.78,
-                source_label,
-                title.page_number,
-                title.text,
-            )
-        ]
-        for spec in FIELD_SPECS:
-            candidate = self._match_candidate(spec, candidates)
-            if candidate:
-                value = self._trim(candidate.text)
-                confidence = 0.76 if spec.field_id not in {"funding_range", "reach", "timeframe"} else 0.82
-                fields.append(self._field(spec.field_id, spec.label, value, confidence, source_label, candidate.page_number, candidate.text))
-            else:
-                fields.append(self._unresolved_field(spec, source_label))
+        model_output = await self._model_extract(source_label, pages)
+        fields = self._fields_from_model(model_output, source_label, pages)
 
-        digest = hashlib.sha256(content).hexdigest()[:10]
         found_count = sum(1 for field in fields if not field.value.lower().startswith("unresolved"))
+        notes = (
+            "LLM extraction from uploaded source text. "
+            "Fields are source-grounded candidates and require human review before generation is used externally."
+        )
+        if model_output.notes:
+            notes = f"{notes} Model notes: {self._trim(model_output.notes, limit=320)}"
         return ExtractionResult(
             id=f"extract-{project_id or 'upload'}-{digest}",
             projectId=project_id,
             sourceLabel=source_label,
-            temporaryStatus="Phase 1 temporary processing - uploaded content is parsed in memory and not retained after restart",
+            temporaryStatus="Phase 1 temporary processing - uploaded text is parsed and retained in memory only for reruns until restart",
             confidence=round(found_count / len(fields), 2),
-            notes="Text-layer extraction from uploaded source. Fields are parser-derived candidates and require human review before generation is used externally.",
+            notes=notes,
             fields=fields,
         )
 
-    def _candidate_text(self, pages: list[SourcePage]) -> list[CandidateText]:
-        candidates: list[CandidateText] = []
-        for page in pages:
-            clean = re.sub(r"[ \t]+", " ", page.text)
-            for raw_line in clean.splitlines():
-                line = self._trim(raw_line)
-                if line:
-                    candidates.append(CandidateText(line, page.page_number))
-            paragraph_text = re.sub(r"\s+", " ", clean)
-            for sentence in re.split(r"(?<=[.!?])\s+", paragraph_text):
-                sentence = self._trim(sentence)
-                if len(sentence) >= 35:
-                    candidates.append(CandidateText(sentence, page.page_number))
-        return candidates
-
-    def _title_candidate(self, source_label: str, candidates: list[CandidateText]) -> CandidateText:
-        ignored = {"table of contents", "contents", "executive summary", "introduction"}
-        for candidate in candidates[:30]:
-            text = candidate.text.strip(":- ")
-            word_count = len(text.split())
-            if 2 <= word_count <= 14 and len(text) <= 100 and text.lower() not in ignored:
-                return CandidateText(text, candidate.page_number)
-        fallback = Path(source_label).stem.replace("-", " ").replace("_", " ").strip().title()
-        return CandidateText(fallback or "Uploaded Opportunity", 1)
-
-    def _match_candidate(self, spec: FieldSpec, candidates: list[CandidateText]) -> CandidateText | None:
-        if spec.field_id == "funding_range":
-            return self._match_pattern(candidates, MONEY_PATTERN, spec.keywords)
-        if spec.field_id == "timeframe":
-            return self._match_pattern(candidates, YEAR_PATTERN, spec.keywords)
-        for candidate in candidates:
-            lower = candidate.text.lower()
-            if any(keyword in lower for keyword in spec.keywords):
-                return candidate
-        return None
-
-    def _match_pattern(
+    async def _model_extract(
         self,
-        candidates: list[CandidateText],
-        pattern: re.Pattern[str],
-        keywords: tuple[str, ...],
-    ) -> CandidateText | None:
-        for candidate in candidates:
-            lower = candidate.text.lower()
-            if pattern.search(candidate.text) and any(keyword in lower for keyword in keywords):
-                return candidate
-        for candidate in candidates:
-            if pattern.search(candidate.text):
-                return candidate
-        return None
+        source_label: str,
+        pages: list[SourcePage],
+    ) -> ModelExtractionOutput:
+        prompt = load_operation_prompt("extract_opportunities")
+        request = StructuredGenerationRequest(
+            operation="extract_opportunities",
+            promptVersion=prompt.version,
+            externalWebSearch=False,
+            input={
+                "sourceLabel": source_label,
+                "sourcePages": self._source_pages_for_model(pages),
+                "fieldsToExtract": [
+                    {
+                        "id": spec.field_id,
+                        "label": spec.label,
+                        "keywords": list(spec.keywords),
+                        "unresolvedValue": spec.unresolved,
+                    }
+                    for spec in ALL_FIELD_SPECS
+                ],
+                "currentUserInstructions": (
+                    "Extract exactly one investable concept from the uploaded source. "
+                    "If the document contains rubrics, front matter, or multiple opportunity spotlights, "
+                    "ignore generic rubric criteria and select one concrete opportunity spotlight before filling fields. "
+                    "Never infer funding recipient, investment vehicle, investment manager, or implementation roles without direct evidence."
+                ),
+            },
+            jsonSchema=ModelExtractionOutput.model_json_schema(by_alias=True),
+            metadata={"promptName": prompt.name, "uiRoute": "/api/sources/extract"},
+        )
+
+        try:
+            response = await asyncio.to_thread(
+                self._provider_factory().generate_structured,
+                request,
+            )
+            return ModelExtractionOutput.model_validate(response.output)
+        except HTTPException as error:
+            raise ExtractionModelError(str(error.detail)) from error
+        except Exception as error:
+            raise ExtractionModelError(str(error) or "Live LLM extraction failed.") from error
+
+    def _source_pages_for_model(self, pages: list[SourcePage]) -> list[dict[str, Any]]:
+        payload: list[dict[str, Any]] = []
+        remaining = self.max_model_input_chars
+        for page in pages:
+            clean = self._clean_page_text(page.text)
+            if not clean:
+                continue
+            if len(clean) > remaining:
+                clean = f"{clean[: max(0, remaining - 1)].rstrip()}..."
+            payload.append({"pageNumber": page.page_number, "text": clean})
+            remaining -= len(clean)
+            if remaining <= 0:
+                break
+        if not payload:
+            raise ValueError("Uploaded source does not contain enough extractable text.")
+        return payload
+
+    def _fields_from_model(
+        self,
+        model_output: ModelExtractionOutput,
+        source_label: str,
+        pages: list[SourcePage],
+    ) -> list[ExtractedField]:
+        model_fields = {field.id: field for field in model_output.fields}
+        fields: list[ExtractedField] = []
+        for spec in ALL_FIELD_SPECS:
+            model_field = model_fields.get(spec.field_id)
+            if not model_field or self._is_unresolved(model_field):
+                unresolved_value = (
+                    self._trim(model_field.value)
+                    if model_field and model_field.value.lower().startswith("unresolved")
+                    else spec.unresolved
+                )
+                fields.append(self._unresolved_field(spec, source_label, unresolved_value))
+                continue
+
+            page_number = self._valid_page_number(model_field.page_number, pages)
+            excerpt = self._trim(
+                model_field.excerpt
+                or self._excerpt_from_page(page_number, pages, model_field.value)
+                or model_field.value,
+                limit=420,
+            )
+            fields.append(
+                self._field(
+                    spec.field_id,
+                    spec.label,
+                    self._trim(model_field.value),
+                    model_field.confidence,
+                    source_label,
+                    page_number,
+                    excerpt,
+                )
+            )
+        return fields
+
+    def _is_unresolved(self, field: ModelExtractedField) -> bool:
+        return (
+            field.evidence_status == "unresolved"
+            or field.value.strip().lower().startswith("unresolved")
+        )
 
     def _field(
         self,
@@ -269,10 +460,10 @@ class SourceBackedProcessor(SourceProcessor):
         value: str,
         confidence: float,
         source_label: str,
-        page_number: int,
+        page_number: int | None,
         excerpt: str,
     ) -> ExtractedField:
-        locator = f"p. {page_number}"
+        locator = f"p. {page_number}" if page_number else "uploaded source"
         return ExtractedField(
             id=field_id,
             label=label,
@@ -297,11 +488,16 @@ class SourceBackedProcessor(SourceProcessor):
             ),
         )
 
-    def _unresolved_field(self, spec: FieldSpec, source_label: str) -> ExtractedField:
+    def _unresolved_field(
+        self,
+        spec: FieldSpec,
+        source_label: str,
+        value: str | None = None,
+    ) -> ExtractedField:
         return ExtractedField(
             id=spec.field_id,
             label=spec.label,
-            value=spec.unresolved,
+            value=self._trim(value or spec.unresolved),
             confidence=0.32,
             sourceLabel=source_label,
             locator="unresolved",
@@ -314,6 +510,65 @@ class SourceBackedProcessor(SourceProcessor):
                 citations=[],
             ),
         )
+
+    def _valid_page_number(
+        self,
+        page_number: int | None,
+        pages: list[SourcePage],
+    ) -> int | None:
+        if page_number is None:
+            return None
+        page_numbers = {page.page_number for page in pages}
+        return page_number if page_number in page_numbers else None
+
+    def _excerpt_from_page(
+        self,
+        page_number: int | None,
+        pages: list[SourcePage],
+        value: str,
+    ) -> str:
+        if page_number is None:
+            return ""
+        page = next((item for item in pages if item.page_number == page_number), None)
+        if not page:
+            return ""
+        clean_page = self._clean_page_text(page.text)
+        normalized_value = re.sub(r"\s+", " ", value).strip()
+        if not normalized_value:
+            return self._trim(clean_page, limit=420)
+        index = re.sub(r"\s+", " ", clean_page).lower().find(normalized_value.lower())
+        if index < 0:
+            return self._trim(clean_page, limit=420)
+        start = max(0, index - 140)
+        end = min(len(clean_page), index + len(normalized_value) + 140)
+        return self._trim(clean_page[start:end], limit=420)
+
+    def _clean_page_text(self, value: str) -> str:
+        lines = [
+            re.sub(r"[ \t]+", " ", line).strip()
+            for line in value.splitlines()
+        ]
+        return "\n".join(line for line in lines if line)
+
+    def _cache_temporary_source(
+        self,
+        project_id: str | None,
+        source_label: str,
+        pages: list[SourcePage],
+        digest: str,
+    ) -> None:
+        if not project_id:
+            return
+        self._temporary_sources[project_id] = TemporarySource(
+            source_label=source_label,
+            pages=pages,
+            digest=digest,
+        )
+
+    def _default_provider(self) -> LiveModelProvider:
+        from ..ai import get_model_provider
+
+        return get_model_provider(get_settings())
 
     def _trim(self, value: str, limit: int = 500) -> str:
         clean = re.sub(r"\s+", " ", value).strip(" \t\r\n-•")

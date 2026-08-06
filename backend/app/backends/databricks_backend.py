@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 from uuid import uuid4
 
@@ -396,7 +397,10 @@ class DatabricksGenerationBackend(GenerationBackend):
     async def generate(self, project: Project) -> GenerationResult:
         generation_id = f"gen-{project.id}-{uuid4().hex[:8]}"
         request = self.adapter.map_generate(project, generation_id)
-        response = self._structured_provider().generate_structured(request)
+        response = await asyncio.to_thread(
+            self._structured_provider().generate_structured,
+            request,
+        )
         return self._normalize_generation_result(
             response,
             project,
@@ -411,7 +415,10 @@ class DatabricksGenerationBackend(GenerationBackend):
         section_id: str,
     ) -> GeneratedSection:
         request, existing = self.adapter.map_regenerate_section(project, generation, section_id)
-        response = self._structured_provider().generate_structured(request)
+        response = await asyncio.to_thread(
+            self._structured_provider().generate_structured,
+            request,
+        )
         section = GeneratedSection.model_validate(response.output)
         return section.model_copy(
             update={

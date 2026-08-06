@@ -46,6 +46,15 @@ class GenerationResult(APIModel):
     metadata: dict[str, str]
 
 
+class GenerationJobStatus(APIModel):
+    project_id: str = Field(alias="projectId")
+    state: Literal["idle", "running", "completed", "failed"]
+    generation_id: str | None = Field(default=None, alias="generationId")
+    message: str
+    error: str | None = None
+    result: GenerationResult | None = None
+
+
 class GenerateRequest(APIModel):
     simulate_error: bool = Field(default=False, alias="simulateError")
 

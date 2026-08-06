@@ -4,8 +4,10 @@ from zipfile import ZipFile
 
 from fastapi.testclient import TestClient
 
+from app.ai import StructuredGenerationRequest, StructuredGenerationResponse
 from app.main import app
 from app.models.extraction import ExtractionResult
+from app.services.extraction import ALL_FIELD_SPECS, source_processor
 from app.services.integrity import locked_facts_preserved
 
 
@@ -26,6 +28,112 @@ Funding range: USD 12-18 million.
 Technical team: District health offices and local maintenance partners.
 Diligence: funding recipient and investment vehicle are not yet defined.
 """
+
+
+class FakeExtractionProvider:
+    def __init__(
+        self,
+        field_values: dict[str, tuple[str, int | None, str, float]] | None = None,
+    ):
+        self.field_values = field_values or clean_water_field_values()
+        self.requests: list[StructuredGenerationRequest] = []
+
+    def generate_structured(
+        self,
+        request: StructuredGenerationRequest,
+    ) -> StructuredGenerationResponse:
+        self.requests.append(request)
+        fields = []
+        for spec in ALL_FIELD_SPECS:
+            configured = self.field_values.get(spec.field_id)
+            if configured:
+                value, page_number, excerpt, confidence = configured
+                fields.append(
+                    {
+                        "id": spec.field_id,
+                        "value": value,
+                        "confidence": confidence,
+                        "evidenceStatus": "source_provided",
+                        "pageNumber": page_number,
+                        "excerpt": excerpt,
+                    }
+                )
+            else:
+                fields.append(
+                    {
+                        "id": spec.field_id,
+                        "value": spec.unresolved,
+                        "confidence": 0.3,
+                        "evidenceStatus": "unresolved",
+                        "pageNumber": None,
+                        "excerpt": "",
+                    }
+                )
+        return StructuredGenerationResponse(
+            output={
+                "selectedOpportunity": self.field_values["opportunity_name"][0],
+                "selectionRationale": "Fake provider selected the clearest source-backed concept.",
+                "notes": "fake extraction",
+                "fields": fields,
+            },
+            modelProvider="fake-structured-provider",
+            modelName="fake-extraction-model",
+            storedPayloadMode="validated_outputs_only",
+            redactedResponseJson={"finishReasons": ["stop"]},
+        )
+
+
+def clean_water_field_values() -> dict[str, tuple[str, int | None, str, float]]:
+    return {
+        "opportunity_name": ("Clean Water Opportunity", 1, "Clean Water Opportunity", 0.94),
+        "problem": (
+            "Rural clinics face unreliable water systems that interrupt safe care.",
+            1,
+            "Problem: Rural clinics face unreliable water systems that interrupt safe care.",
+            0.91,
+        ),
+        "solution": (
+            "Install solar-powered purification hubs with district maintenance teams.",
+            1,
+            "Solution: Install solar-powered purification hubs with district maintenance teams.",
+            0.9,
+        ),
+        "why_now": (
+            "2026 procurement reforms create a window for implementation.",
+            1,
+            "Why now: 2026 procurement reforms create a window for implementation.",
+            0.88,
+        ),
+        "geographies": ("Kenya and Uganda.", 1, "Geographies: Kenya and Uganda.", 0.89),
+        "reach": ("2 million residents and 350 clinics.", 1, "Reach: 2 million residents and 350 clinics.", 0.92),
+        "primary_outcomes": ("safer water and reduced clinic downtime.", 1, "Primary outcomes: safer water and reduced clinic downtime.", 0.87),
+        "differentiators": (
+            "local maintenance partnerships and accountable district reporting.",
+            1,
+            "Differentiators: local maintenance partnerships and accountable district reporting.",
+            0.86,
+        ),
+        "timeframe": ("2026-2028.", 1, "Timeframe: 2026-2028.", 0.9),
+        "funding_range": ("USD 12-18 million.", 1, "Funding range: USD 12-18 million.", 0.9),
+        "technical_team": (
+            "District health offices and local maintenance partners.",
+            1,
+            "Technical team: District health offices and local maintenance partners.",
+            0.84,
+        ),
+        "diligence": (
+            "funding recipient and investment vehicle are not yet defined.",
+            1,
+            "Diligence: funding recipient and investment vehicle are not yet defined.",
+            0.82,
+        ),
+    }
+
+
+def install_fake_extraction_provider(monkeypatch, provider: FakeExtractionProvider | None = None) -> FakeExtractionProvider:
+    fake_provider = provider or FakeExtractionProvider()
+    monkeypatch.setattr(source_processor, "_provider_factory", lambda: fake_provider)
+    return fake_provider
 
 
 def test_api_health_and_config_do_not_expose_credentials() -> None:
@@ -82,7 +190,8 @@ def test_opportunity_and_audience_fixtures_load() -> None:
     assert all("@" not in item["name"] for item in audiences)
 
 
-def test_uploaded_text_extraction_uses_source_content() -> None:
+def test_uploaded_text_extraction_uses_source_content(monkeypatch) -> None:
+    fake_provider = install_fake_extraction_provider(monkeypatch)
     test_client = client()
     project = test_client.post("/api/projects", json={"name": "Extraction test"}).json()
 
@@ -102,9 +211,31 @@ def test_uploaded_text_extraction_uses_source_content() -> None:
     assert "USD 12-18 million" in values
     assert "Kenya and Uganda" in values
     assert "Global Vaccine Development Initiative" not in values
+    assert fake_provider.requests[0].operation == "extract_opportunities"
+    assert "Clean Water Opportunity" in fake_provider.requests[0].input["sourcePages"][0]["text"]
 
 
-def test_uploaded_pdf_extraction_reads_text_layer() -> None:
+def test_uploaded_pdf_extraction_reads_text_layer(monkeypatch) -> None:
+    fake_provider = install_fake_extraction_provider(
+        monkeypatch,
+        FakeExtractionProvider(
+            {
+                **clean_water_field_values(),
+                "opportunity_name": (
+                    "The Beginnings Fund phase 1 countries",
+                    4,
+                    "Opportunity spotlight: The Beginnings Fund phase 1 countries",
+                    0.94,
+                ),
+                "funding_range": (
+                    "$30M",
+                    4,
+                    "$30M reflects current gap to target",
+                    0.88,
+                ),
+            }
+        ),
+    )
     test_client = client()
     project = test_client.post("/api/projects", json={"name": "PDF extraction test"}).json()
     repo_root = Path(__file__).resolve().parents[2]
@@ -119,8 +250,32 @@ def test_uploaded_pdf_extraction_reads_text_layer() -> None:
     assert response.status_code == 200
     extraction = response.json()
     values = " ".join(field["value"] for field in extraction["fields"])
-    assert "maternal newborn health spotlights" in values.lower()
+    assert "the beginnings fund phase 1 countries" in values.lower()
+    assert "$30M" in values
     assert "Global Vaccine Development Initiative" not in values
+    assert len(fake_provider.requests[0].input["sourcePages"]) >= 1
+    assert "maternal newborn health spotlights" in fake_provider.requests[0].input["sourcePages"][0]["text"].lower()
+
+
+def test_project_extraction_rerun_uses_cached_source_text(monkeypatch) -> None:
+    fake_provider = install_fake_extraction_provider(monkeypatch)
+    test_client = client()
+    project = test_client.post("/api/projects", json={"name": "Rerun extraction test"}).json()
+    project_id = project["id"]
+
+    uploaded = test_client.post(
+        f"/api/sources/extract?projectId={project_id}&filename=clean-water.txt",
+        content=REAL_SOURCE_TEXT,
+        headers={"content-type": "text/plain"},
+    )
+    rerun = test_client.post(f"/api/projects/{project_id}/extraction/rerun", json={})
+
+    assert uploaded.status_code == 200
+    assert rerun.status_code == 200
+    assert len(fake_provider.requests) == 2
+    rerun_page_text = fake_provider.requests[1].input["sourcePages"][0]["text"]
+    assert "Clean Water Opportunity" in rerun_page_text
+    assert "Opportunity name:" not in rerun_page_text
 
 
 def test_generation_requires_live_model_by_default() -> None:
@@ -133,7 +288,8 @@ def test_generation_requires_live_model_by_default() -> None:
     assert "Live model generation is required" in response.json()["detail"]
 
 
-def test_new_opportunity_generation_requires_live_model_after_extraction() -> None:
+def test_new_opportunity_generation_requires_live_model_after_extraction(monkeypatch) -> None:
+    install_fake_extraction_provider(monkeypatch)
     test_client = client()
     project = test_client.post("/api/projects", json={"name": "Source generation test"}).json()
     project_id = project["id"]
@@ -217,7 +373,8 @@ def test_phase1_docx_export_uses_visible_output_payload() -> None:
     assert "Draft export - human review required" in document_xml
 
 
-def test_locked_number_comparison_and_generation_preserves_locked_fact() -> None:
+def test_locked_number_comparison_and_generation_preserves_locked_fact(monkeypatch) -> None:
+    install_fake_extraction_provider(monkeypatch)
     test_client = client()
     project = test_client.post("/api/projects", json={"name": "Locked fact test"}).json()
     project_id = project["id"]

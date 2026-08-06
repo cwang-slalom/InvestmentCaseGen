@@ -1,27 +1,137 @@
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import APIRouter, HTTPException, Response
 
-from ..models.generation import ExportDraftRequest, FindingUpdate, GenerateRequest, GeneratedSection, GenerationResult
+from ..models.generation import (
+    ExportDraftRequest,
+    FindingUpdate,
+    GenerateRequest,
+    GeneratedSection,
+    GenerationJobStatus,
+    GenerationResult,
+)
 from ..repositories.memory import case_repository, generation_store
 from ..services.docx_export import draft_output_to_docx, filename_safe
 from ..services.generation import get_generation_backend
 
 router = APIRouter(prefix="/api", tags=["generation"])
 
+_generation_lock = asyncio.Lock()
+_generation_tasks: dict[str, asyncio.Task[GenerationResult]] = {}
+_generation_errors: dict[str, str] = {}
+
 
 @router.post("/projects/{project_id}/generate")
-async def generate(project_id: str, request: GenerateRequest) -> GenerationResult:
+async def generate(project_id: str, request: GenerateRequest) -> GenerationJobStatus:
     if request.simulate_error:
         raise HTTPException(
             status_code=500,
             detail="Generation failed in controlled test mode.",
         )
 
-    project = case_repository.get_project(project_id)
-    backend = get_generation_backend()
+    async with _generation_lock:
+        project = case_repository.get_project(project_id)
+        if project.generation_id:
+            return _completed_status(project_id, generation_store.get_generation(project.generation_id))
+
+        task = _generation_tasks.get(project_id)
+        if task and not task.done():
+            return _running_status(project_id)
+
+        if task and task.done():
+            _record_task_error(project_id, task)
+
+        backend = get_generation_backend()
+        backend_health = await backend.health_check()
+        if backend_health.status != "ok":
+            raise HTTPException(status_code=503, detail=backend_health.message)
+
+        _generation_errors.pop(project_id, None)
+        task = asyncio.create_task(_generate_and_save(project_id, backend))
+        task.add_done_callback(lambda completed_task: _record_task_error(project_id, completed_task))
+        _generation_tasks[project_id] = task
+
+    return _running_status(project_id)
+
+
+@router.get("/projects/{project_id}/generation-status")
+async def generation_status(project_id: str) -> GenerationJobStatus:
+    async with _generation_lock:
+        project = case_repository.get_project(project_id)
+        if project.generation_id:
+            return _completed_status(project_id, generation_store.get_generation(project.generation_id))
+
+        task = _generation_tasks.get(project_id)
+        if task and not task.done():
+            return _running_status(project_id)
+
+        if task and task.done():
+            _record_task_error(project_id, task)
+
+        error = _generation_errors.get(project_id)
+        if error:
+            return GenerationJobStatus(
+                projectId=project_id,
+                state="failed",
+                generationId=None,
+                message="Generation failed before completion.",
+                error=error,
+                result=None,
+            )
+
+        return GenerationJobStatus(
+            projectId=project_id,
+            state="idle",
+            generationId=None,
+            message="No generation is running for this project.",
+            error=None,
+            result=None,
+        )
+
+
+def _running_status(project_id: str) -> GenerationJobStatus:
+    return GenerationJobStatus(
+        projectId=project_id,
+        state="running",
+        generationId=None,
+        message="Generation is running in the background.",
+        error=None,
+        result=None,
+    )
+
+
+def _completed_status(project_id: str, result: GenerationResult) -> GenerationJobStatus:
+    return GenerationJobStatus(
+        projectId=project_id,
+        state="completed",
+        generationId=result.generation_id,
+        message="Generation completed.",
+        error=None,
+        result=result,
+    )
+
+
+def _record_task_error(project_id: str, task: asyncio.Task[GenerationResult]) -> None:
+    if task.cancelled():
+        _generation_errors[project_id] = "Generation was canceled before completion."
+        return
     try:
-        result = await backend.generate(project)
+        task.result()
+    except HTTPException as error:
+        _generation_errors[project_id] = str(error.detail)
+    except Exception as error:
+        _generation_errors[project_id] = str(error) or "Generation backend is not configured."
+
+
+async def _generate_and_save(project_id: str, backend=None) -> GenerationResult:
+    project = case_repository.get_project(project_id)
+    generation_backend = backend or get_generation_backend()
+    try:
+        result = await generation_backend.generate(project)
+    except HTTPException:
+        raise
     except Exception as error:
         raise HTTPException(
             status_code=503,
@@ -30,6 +140,7 @@ async def generate(project_id: str, request: GenerateRequest) -> GenerationResul
 
     GenerationResult.model_validate(result.model_dump(by_alias=True))
     case_repository.save_generation(project_id, result)
+    _generation_errors.pop(project_id, None)
     return result
 
 

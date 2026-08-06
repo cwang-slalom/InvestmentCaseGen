@@ -6,11 +6,13 @@ from fastapi.testclient import TestClient
 from app.ai import StructuredGenerationRequest, StructuredGenerationResponse
 from app.main import app
 from app.api import config as config_api
+from app.api import generation as generation_api
 from app.backends.databricks_backend import DatabricksGenerationBackend
 from app.config import Settings
 from app.models.base import BackendHealth
-from app.models.generation import GeneratedSection, GenerationResult
+from app.models.generation import GeneratedSection, GenerationJobStatus, GenerateRequest, GenerationResult
 from app.repositories.memory import case_repository
+from app.services.extraction import ALL_FIELD_SPECS, source_processor
 
 
 REAL_SOURCE_TEXT = b"""Clean Water Opportunity
@@ -119,6 +121,123 @@ class FakeStructuredProvider:
         }
 
 
+class FakeExtractionProvider:
+    def generate_structured(
+        self,
+        request: StructuredGenerationRequest,
+    ) -> StructuredGenerationResponse:
+        fields = []
+        for spec in ALL_FIELD_SPECS:
+            if spec.field_id == "opportunity_name":
+                fields.append(
+                    {
+                        "id": spec.field_id,
+                        "value": "Clean Water Opportunity",
+                        "confidence": 0.94,
+                        "evidenceStatus": "source_provided",
+                        "pageNumber": 1,
+                        "excerpt": "Clean Water Opportunity",
+                    }
+                )
+            elif spec.field_id == "funding_range":
+                fields.append(
+                    {
+                        "id": spec.field_id,
+                        "value": "USD 12-18 million.",
+                        "confidence": 0.9,
+                        "evidenceStatus": "source_provided",
+                        "pageNumber": 1,
+                        "excerpt": "Funding range: USD 12-18 million.",
+                    }
+                )
+            else:
+                fields.append(
+                    {
+                        "id": spec.field_id,
+                        "value": spec.unresolved,
+                        "confidence": 0.3,
+                        "evidenceStatus": "unresolved",
+                        "pageNumber": None,
+                        "excerpt": "",
+                    }
+                )
+        return StructuredGenerationResponse(
+            output={
+                "selectedOpportunity": "Clean Water Opportunity",
+                "selectionRationale": "Fake extraction for generation mapping.",
+                "notes": "",
+                "fields": fields,
+            },
+            modelProvider="fake-extraction-provider",
+            modelName="fake-extraction-model",
+            storedPayloadMode="validated_outputs_only",
+            redactedResponseJson={"finishReasons": ["stop"]},
+        )
+
+
+class SlowGenerationBackend:
+    def __init__(self) -> None:
+        self.calls = 0
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def health_check(self) -> BackendHealth:
+        return BackendHealth(
+            status="ok",
+            provider="test-generation-backend",
+            message="configured",
+        )
+
+    async def generate(self, project: Any) -> GenerationResult:
+        self.calls += 1
+        self.started.set()
+        await self.release.wait()
+        return GenerationResult(
+            generationId=f"gen-{project.id}-shared",
+            projectId=project.id,
+            status="completed",
+            outputs=[
+                {
+                    "id": "out-investment-case",
+                    "type": "investment_case",
+                    "title": "Investment Case Draft",
+                    "status": "Model generated",
+                    "sections": [
+                        {
+                            "id": "case-summary",
+                            "type": "narrative",
+                            "heading": "Shared Draft",
+                            "body": "Generated once for duplicate requests.",
+                            "citations": [],
+                        }
+                    ],
+                }
+            ],
+            informationNeeded=[],
+            reviewFindings=[],
+            metadata={"mode": "live"},
+        )
+
+    async def regenerate_section(self, project: Any, generation: Any, section_id: str) -> GeneratedSection:
+        raise AssertionError("regenerate_section should not be called")
+
+
+class FailingGenerationBackend(SlowGenerationBackend):
+    async def generate(self, project: Any) -> GenerationResult:
+        self.calls += 1
+        self.started.set()
+        raise ValueError("Synthetic backend failure.")
+
+
+async def wait_for_terminal_generation_status(project_id: str) -> GenerationJobStatus:
+    for _ in range(20):
+        status = await generation_api.generation_status(project_id)
+        if status.state in {"completed", "failed"}:
+            return status
+        await asyncio.sleep(0)
+    raise AssertionError("Generation did not reach a terminal status.")
+
+
 def test_ui_generation_backend_calls_databricks_claude_provider() -> None:
     provider = FakeStructuredProvider()
     backend = DatabricksGenerationBackend(
@@ -148,7 +267,8 @@ def test_ui_generation_backend_calls_databricks_claude_provider() -> None:
     assert all(output.status == "Model generated - human review required" for output in result.outputs)
 
 
-def test_databricks_generation_request_includes_ui_setup_and_uploaded_source() -> None:
+def test_databricks_generation_request_includes_ui_setup_and_uploaded_source(monkeypatch) -> None:
+    monkeypatch.setattr(source_processor, "_provider_factory", lambda: FakeExtractionProvider())
     test_client = TestClient(app)
     provider = FakeStructuredProvider()
     backend = DatabricksGenerationBackend(
@@ -259,3 +379,53 @@ def test_config_reports_live_mode_for_databricks_backend(monkeypatch) -> None:  
 
     assert payload["mode"] == "live"
     assert payload["backend"]["provider"] == "databricks-generation-backend"
+
+
+def test_duplicate_project_generation_requests_share_one_backend_task(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    test_client = TestClient(app)
+    project = test_client.post("/api/projects", json={"name": "Duplicate generation"}).json()
+    project_id = project["id"]
+    backend = SlowGenerationBackend()
+    monkeypatch.setattr(generation_api, "get_generation_backend", lambda: backend)
+
+    async def run_duplicate_requests() -> tuple[GenerationJobStatus, GenerationJobStatus, GenerationJobStatus]:
+        first_result = await generation_api.generate(project_id, GenerateRequest(simulateError=False))
+        await backend.started.wait()
+        second_result = await generation_api.generate(project_id, GenerateRequest(simulateError=False))
+        backend.release.set()
+        completed_result = await wait_for_terminal_generation_status(project_id)
+        saved_result = await generation_api.generate(project_id, GenerateRequest(simulateError=False))
+        assert completed_result.state == "completed"
+        return first_result, second_result, saved_result
+
+    first_result, second_result, saved_result = asyncio.run(run_duplicate_requests())
+
+    assert backend.calls == 1
+    assert first_result.state == "running"
+    assert second_result.state == "running"
+    assert saved_result.state == "completed"
+    assert saved_result.result is not None
+    assert saved_result.generation_id == f"gen-{project_id}-shared"
+    assert saved_result.result.generation_id == saved_result.generation_id
+
+
+def test_generation_status_reports_background_backend_failure(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    test_client = TestClient(app)
+    project = test_client.post("/api/projects", json={"name": "Failed background generation"}).json()
+    project_id = project["id"]
+    backend = FailingGenerationBackend()
+    monkeypatch.setattr(generation_api, "get_generation_backend", lambda: backend)
+
+    async def fail_generation() -> tuple[GenerationJobStatus, GenerationJobStatus]:
+        start_status = await generation_api.generate(project_id, GenerateRequest(simulateError=False))
+        await backend.started.wait()
+        terminal_status = await wait_for_terminal_generation_status(project_id)
+        return start_status, terminal_status
+
+    start_status, terminal_status = asyncio.run(fail_generation())
+
+    assert backend.calls == 1
+    assert start_status.state == "running"
+    assert terminal_status.state == "failed"
+    assert terminal_status.error is not None
+    assert "Synthetic backend failure" in terminal_status.error

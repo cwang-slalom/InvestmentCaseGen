@@ -4,6 +4,61 @@ Planning checkpoint date: 2026-07-14
 
 ## Decisions
 
+## 2026-08-06: New Opportunity Extraction Requires Live LLM Extraction
+
+Uploaded-source extraction now uses the same backend-owned structured model
+boundary as generation. The FastAPI source route parses text-layer PDFs or
+pasted text into source pages, loads `prompts/extract-opportunities.md`, sends
+the canonical extraction field list and concept-first guardrails to the model,
+and validates the returned JSON against a typed extraction schema before
+storing fields for review.
+
+The previous keyword-derived parser could produce high-confidence-looking
+fields from rubric headings, page furniture, or the wrong spotlight in a
+multi-concept PDF. To avoid silently presenting those artifacts as extracted
+facts, the UI path now returns a not-configured/model error when no live model
+provider is available. Project-level reruns reuse the original parsed source
+text retained in memory until process restart, not the currently displayed
+field values.
+
+## 2026-08-06: Databricks Generate Calls Use Background Jobs And Polling
+
+Databricks Model Serving calls can run longer than a Databricks App browser
+request should remain open, especially when the endpoint is cold, queued, or
+repairing malformed JSON. The UI generation contract therefore no longer holds
+the `/api/projects/{projectId}/generate` request open until the model returns.
+
+The route now starts or reuses a project-scoped background task and immediately
+returns a `GenerationJobStatus`. The Generate page polls
+`/api/projects/{projectId}/generation-status` until the task completes or
+fails. Completed jobs still save and expose the same validated
+`GenerationResult`, so the results page and export flow continue to depend on
+the existing generated-output model.
+
+The generation route also keeps a per-project in-flight task map. If the user
+refreshes the Generate page, opens another tab, or retries while a generation
+is already running for the same project, the later request returns the existing
+running status instead of starting another Databricks model call. If a
+generation result has already been saved, subsequent requests return completed
+status with that stored result.
+
+Browser-side Stop watching controls now stop local polling only. They do not
+claim to cancel the Databricks model request after it has been handed to the
+backend. Server-side cancel/pause remains future work.
+
+## 2026-08-06: Stop Watching Is Local-Only For Background Generation
+
+This decision is superseded by the background job contract above. The Generate
+page now exposes Stop watching while a live generation job is running. The
+button clears local polling state and shows a user-visible notice rather than
+treating the action as a backend failure.
+
+Stopping watching does not terminate a Databricks request that the backend has
+already sent to the model provider. True server-side job pause, resume, and
+cancel controls remain future work behind durable job storage. The UI does not
+show Pause because that would imply work can be safely resumed from a model
+checkpoint, which the current API cannot do.
+
 ## 2026-08-06: UI Generation Requires The Live Model Backend
 
 The "Create new opportunity" path now parses uploaded plain text and

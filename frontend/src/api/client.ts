@@ -4,6 +4,7 @@ import type {
   ExtractionResult,
   ExtractedField,
   FieldValue,
+  GenerationJobStatus,
   GenerationResult,
   GeneratedSection,
   GeneratedOutput,
@@ -30,7 +31,17 @@ export class ApiError extends Error {
 
 async function parseJson<T>(response: Response): Promise<T> {
   const text = await response.text();
-  const data = text ? (JSON.parse(text) as T & ApiErrorPayload) : ({} as T & ApiErrorPayload);
+  let data = {} as T & ApiErrorPayload;
+  if (text) {
+    try {
+      data = JSON.parse(text) as T & ApiErrorPayload;
+    } catch {
+      const fallback = response.ok
+        ? "Response was not valid JSON."
+        : text || "Request could not be completed.";
+      throw new ApiError(fallback, response.status);
+    }
+  }
   if (!response.ok) {
     throw new ApiError(data.detail || "Request could not be completed.", response.status);
   }
@@ -41,12 +52,18 @@ export async function apiGet<T>(path: string): Promise<T> {
   return parseJson<T>(await fetch(path, { headers: { accept: "application/json" } }));
 }
 
-export async function apiJson<T>(path: string, method: "POST" | "PUT", body: unknown): Promise<T> {
+export async function apiJson<T>(
+  path: string,
+  method: "POST" | "PUT",
+  body: unknown,
+  options?: { signal?: AbortSignal },
+): Promise<T> {
   return parseJson<T>(
     await fetch(path, {
       method,
       headers: { "content-type": "application/json", accept: "application/json" },
       body: JSON.stringify(body),
+      signal: options?.signal,
     }),
   );
 }
@@ -89,6 +106,8 @@ export const api = {
     projectId: string,
     body: { fields: ExtractedField[]; confirmed: boolean },
   ) => apiJson<Project>(`/api/projects/${projectId}/extraction-review`, "PUT", body),
+  rerunExtraction: (projectId: string) =>
+    apiJson<ExtractionResult>(`/api/projects/${projectId}/extraction/rerun`, "POST", {}),
   updateReviewSetup: (
     projectId: string,
     body: { approachFields: FieldValue[]; roles: ReviewRole[]; confirmed: boolean },
@@ -113,8 +132,9 @@ export const api = {
         body: file,
       }),
     ),
-  generate: (projectId: string, simulateError: boolean) =>
-    apiJson<GenerationResult>(`/api/projects/${projectId}/generate`, "POST", { simulateError }),
+  generate: (projectId: string, simulateError: boolean, options?: { signal?: AbortSignal }) =>
+    apiJson<GenerationJobStatus>(`/api/projects/${projectId}/generate`, "POST", { simulateError }, options),
+  generationStatus: (projectId: string) => apiGet<GenerationJobStatus>(`/api/projects/${projectId}/generation-status`),
   generation: (generationId: string) => apiGet<GenerationResult>(`/api/generations/${generationId}`),
   exportDocx: (
     projectId: string,
