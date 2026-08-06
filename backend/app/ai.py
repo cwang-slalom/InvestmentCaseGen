@@ -479,12 +479,29 @@ class DatabricksModelServingProvider:
         )
 
     def _request(self, request: urllib.request.Request) -> dict[str, Any]:
+        timeout_seconds = max(1, self.settings.databricks_request_timeout_seconds)
         try:
-            with urllib.request.urlopen(request, timeout=60) as response:
+            with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             body = error.read().decode("utf-8", errors="replace")
             raise ValueError(f"Databricks request failed: {body}") from error
+        except TimeoutError as error:
+            raise ValueError(
+                "Databricks Model Serving timed out after "
+                f"{timeout_seconds} seconds while waiting for a response. "
+                "Retry with fewer selected outputs or increase "
+                "DATABRICKS_REQUEST_TIMEOUT_SECONDS for slower endpoints.",
+            ) from error
+        except urllib.error.URLError as error:
+            if isinstance(error.reason, TimeoutError):
+                raise ValueError(
+                    "Databricks Model Serving timed out after "
+                    f"{timeout_seconds} seconds while waiting for a response. "
+                    "Retry with fewer selected outputs or increase "
+                    "DATABRICKS_REQUEST_TIMEOUT_SECONDS for slower endpoints.",
+                ) from error
+            raise ValueError(f"Databricks request failed: {error.reason}") from error
 
     def _chat_response_text(self, response_json: dict[str, Any]) -> str:
         for choice in response_json.get("choices", []):

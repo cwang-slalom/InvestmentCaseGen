@@ -2,6 +2,16 @@
 
 Planning checkpoint date: 2026-07-14
 
+## 2026-08-06 Databricks Generation Timeout Recovery
+
+- Increase the Databricks Model Serving request timeout default to 300 seconds,
+  matching the Generate page's expected 2-4 minute live model window with a
+  small buffer.
+- Add `DATABRICKS_REQUEST_TIMEOUT_SECONDS` as the explicit override for slower
+  Databricks endpoints and set it in the Databricks App environment.
+- Wrap Databricks socket/read timeouts with a provider-specific error so the UI
+  does not surface the raw Python "read operation timed out" message.
+
 ## 2026-08-06 Databricks Claude Parameter And Output Selection Recovery
 
 - Omit `temperature` from Databricks Model Serving chat-completions payloads
@@ -17,6 +27,16 @@ Planning checkpoint date: 2026-07-14
 - Clarify disabled output checkboxes in Step 2 and Step 4: future outputs are
   roadmap-only, and the last selected functional output is locked to keep the
   request valid.
+
+## 2026-08-06 Generation Progress Feedback
+
+- Replace static Step 4 generation percentages with a client-side estimated
+  progress model while the synchronous backend generation request is pending.
+- Show a horizontal progress bar, elapsed time, approximate remaining time,
+  dynamic stage status, and per-output mini progress so users can tell the app
+  is still working during long model calls.
+- Cap estimated progress below completion until the backend returns a validated
+  generation result; only completed results show 100%.
 
 ## 2026-08-06 UI Claude Generation Wiring
 

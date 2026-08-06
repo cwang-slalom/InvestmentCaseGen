@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     databricks_model: str | None = None
     databricks_model_serving_endpoint: str | None = None
     databricks_ai_gateway_base_url: str | None = None
+    databricks_request_timeout_seconds: int = 300
     anthropic_api_key: str | None = None
     anthropic_model: str | None = None
     claude_model: str | None = None

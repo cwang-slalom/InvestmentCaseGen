@@ -143,6 +143,18 @@ Root `app.yaml` now sets `MODEL_PROVIDER_MODE=databricks` and resolves
 `serving-endpoint`, matching the client app resource instead of using the prior
 deterministic default.
 
+## 2026-08-06: Databricks Generation Timeout Matches App Duration
+
+Live Databricks generation can legitimately run longer than one minute when the
+user selects the deck, one-page summary, talking points, and source appendix
+outputs together. The provider now waits 300 seconds by default through
+`DATABRICKS_REQUEST_TIMEOUT_SECONDS`, which matches the Generate page's 2-4
+minute estimate with a small buffer.
+
+The backend also wraps Databricks socket/read timeouts in a Databricks-specific
+message. This preserves the existing failed-generation UI state while avoiding
+the raw Python "read operation timed out" text shown to users.
+
 ## 2026-08-06: Databricks Claude Payloads Omit Unsupported Temperature
 
 The approved Databricks Claude endpoint rejects the OpenAI-compatible
@@ -157,6 +169,19 @@ can adjust functional output selections directly from the Generate page until a
 generation request starts or a generation is saved. The UI still enforces at
 least one selected functional output and labels roadmap-only outputs as coming
 soon instead of implying that their disabled checkboxes are broken.
+
+## 2026-08-06: Generation Progress Is Estimated Client-Side
+
+The Phase 1 generation API remains a synchronous backend request, so Step 4
+cannot report true model-internal progress yet. The Generate page now displays
+client-side estimated progress during the pending request, including elapsed
+time, approximate remaining time, dynamic stage labels, and per-output mini
+progress.
+
+Estimated progress is capped below completion while the request is still
+pending. The UI only shows 100% and completed output status after the backend
+returns a validated `GenerationResult`, preserving the source-grounded
+generated-output boundary.
 
 ## 2026-08-04: Databricks Is A Supported Backend Runtime
 

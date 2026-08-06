@@ -49,11 +49,16 @@ Databricks UI generation:
 MODEL_PROVIDER_MODE="databricks"
 DATABRICKS_HOST="https://<workspace-host>"
 DATABRICKS_MODEL_SERVING_ENDPOINT="<approved-endpoint-or-model-service-name>"
+DATABRICKS_REQUEST_TIMEOUT_SECONDS="300"
 ```
 
 When running as a Databricks App, Databricks injects
 `DATABRICKS_CLIENT_ID` and `DATABRICKS_CLIENT_SECRET`. For local development,
 `DATABRICKS_TOKEN` can be provided instead.
+
+`DATABRICKS_REQUEST_TIMEOUT_SECONDS` defaults to 300 seconds so the single
+structured generation request can complete within the UI's expected 2-4 minute
+window. Increase it only for approved endpoints that reliably need more time.
 
 The generic `/ai/structured` endpoint can still be used by backend tests and
 transitional integrations for live Claude, Vertex Gemini, or Databricks calls,

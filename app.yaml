@@ -8,3 +8,5 @@ env:
     value: databricks
   - name: DATABRICKS_MODEL_SERVING_ENDPOINT
     valueFrom: serving-endpoint
+  - name: DATABRICKS_REQUEST_TIMEOUT_SECONDS
+    value: "300"

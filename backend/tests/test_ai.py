@@ -1,3 +1,5 @@
+import urllib.request
+
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
@@ -319,6 +321,76 @@ def test_databricks_provider_uses_configured_gateway_base_url() -> None:
     )
 
     assert provider._chat_completions_url() == "https://proxy.example.com/v1/chat/completions"
+
+
+def test_databricks_provider_uses_configured_request_timeout(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    seen: dict[str, int] = {}
+
+    class FakeResponse:
+        def __enter__(self):  # type: ignore[no-untyped-def]
+            return self
+
+        def __exit__(self, *args):  # type: ignore[no-untyped-def]
+            return False
+
+        def read(self) -> bytes:
+            return b'{"ok": true}'
+
+    def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
+        seen["timeout"] = timeout
+        return FakeResponse()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    provider = DatabricksModelServingProvider(
+        Settings(
+            databricks_host="https://workspace.cloud.databricks.com",
+            databricks_model_serving_endpoint="system.ai.test-model",
+            databricks_token="token-1",
+            databricks_request_timeout_seconds=300,
+        ),
+    )
+
+    response = provider._request(
+        urllib.request.Request("https://workspace.cloud.databricks.com/test"),
+    )
+
+    assert response == {"ok": True}
+    assert seen["timeout"] == 300
+
+
+def test_databricks_provider_wraps_read_timeout(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    class SlowResponse:
+        def __enter__(self):  # type: ignore[no-untyped-def]
+            return self
+
+        def __exit__(self, *args):  # type: ignore[no-untyped-def]
+            return False
+
+        def read(self) -> bytes:
+            raise TimeoutError("The read operation timed out")
+
+    def fake_urlopen(request, timeout):  # type: ignore[no-untyped-def]
+        return SlowResponse()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    provider = DatabricksModelServingProvider(
+        Settings(
+            databricks_host="https://workspace.cloud.databricks.com",
+            databricks_model_serving_endpoint="system.ai.test-model",
+            databricks_token="token-1",
+            databricks_request_timeout_seconds=300,
+        ),
+    )
+
+    try:
+        provider._request(
+            urllib.request.Request("https://workspace.cloud.databricks.com/test"),
+        )
+    except ValueError as error:
+        assert "Databricks Model Serving timed out after 300 seconds" in str(error)
+        assert "DATABRICKS_REQUEST_TIMEOUT_SECONDS" in str(error)
+    else:
+        raise AssertionError("Expected Databricks read timeout to be wrapped.")
 
 
 class CapturingAnthropicProvider(AnthropicClaudeProvider):

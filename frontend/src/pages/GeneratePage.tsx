@@ -2,6 +2,13 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 
 import { api } from "../api/client";
 import { Icon, type IconName } from "../components/Icons";
+import {
+  activeStageIndexForProgress,
+  estimatedGenerationPercent,
+  estimatedOutputPercent,
+  estimatedRemainingLabel,
+  formatGenerationDuration,
+} from "../state/generation";
 import { functionalOutputs, futureOutputs, generationStages } from "../state/options";
 import { toggleOutput } from "../state/workflow";
 import type { AppConfig, FieldValue, GenerationResult, OutputType, Project } from "../types";
@@ -18,6 +25,8 @@ type GeneratePageProps = {
 export function GeneratePage({ project, config, generation, onProject, onGeneration, onNavigate }: GeneratePageProps) {
   const [error, setError] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [generationStartedAt, setGenerationStartedAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [selectionSaving, setSelectionSaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const timerRef = useRef<number | null>(null);
@@ -28,9 +37,16 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
   const hasGeneration = Boolean(project.generationId || currentGeneration?.generationId);
   const complete = Boolean(project.generationId || currentGeneration?.status === "completed");
   const generationFailed = liveModelReady && Boolean(error) && !generating && !complete;
-  const progress = complete ? 100 : !liveModelReady ? 0 : generationFailed ? 65 : generating ? 78 : 65;
+  const progress = complete
+    ? 100
+    : !liveModelReady
+      ? 0
+      : generating || generationFailed
+        ? estimatedGenerationPercent(elapsedSeconds)
+        : 0;
+  const activeStageIndex = activeStageIndexForProgress(progress);
   const canEditOutputs = !generating && !selectionSaving && !hasGeneration;
-  const outputCards = generationOutputCards(selectedOutputs, complete, liveModelReady, generationFailed, generating, canEditOutputs);
+  const outputCards = generationOutputCards(selectedOutputs, complete, liveModelReady, generationFailed, generating, canEditOutputs, progress);
   const approachFields = project.reviewSetup?.approachFields || [];
   const narrativeStyle = settingValue(approachFields, "narrative_style");
   const tone = settingValue(approachFields, "tone");
@@ -47,6 +63,8 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
     if (generationPromiseRef.current) return generationPromiseRef.current;
 
     setGenerating(true);
+    setGenerationStartedAt(Date.now());
+    setElapsedSeconds(0);
     setError("");
     const request = api.generate(project.id, false)
       .then(async (nextGeneration) => {
@@ -107,6 +125,20 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
     };
   }, [liveModelReady, project.generationId, runGeneration]);
 
+  useEffect(() => {
+    if (!generating || generationStartedAt === null) return;
+
+    const updateElapsed = () => {
+      setElapsedSeconds(Math.floor((Date.now() - generationStartedAt) / 1000));
+    };
+    updateElapsed();
+    const interval = window.setInterval(updateElapsed, 1000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [generating, generationStartedAt]);
+
   async function viewResults() {
     if (timerRef.current) window.clearTimeout(timerRef.current);
     if (!project.generationId && !currentGeneration?.generationId) {
@@ -136,7 +168,7 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
           <div className="progress-content">
             <div className="stage-list">
               {generationStages.map((stage, index) => {
-                const status = generationStageStatus(index, complete, liveModelReady, generationFailed);
+                const status = generationStageStatus(index, complete, liveModelReady, generationFailed, generating, activeStageIndex);
                 return (
                   <div className={`stage-row ${status}`} key={stage}>
                     <span>
@@ -154,15 +186,36 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
             </div>
             <div className={`progress-ring ${generationFailed ? "failed" : ""}`} style={{ "--progress": `${progress}%` } as CSSProperties}>
               <span>{progress}%</span>
-              <small>{progressStatusLabel(complete, liveModelReady, generationFailed)}</small>
+              <small>{progressStatusLabel(complete, liveModelReady, generationFailed, generating)}</small>
             </div>
           </div>
-          <p className="duration-note">This usually takes 2-4 minutes.</p>
+          <div
+            className={`generation-meter ${complete ? "completed" : generationFailed ? "failed" : generating ? "active" : ""}`}
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
+          >
+            <div className="generation-meter-copy">
+              <strong>{progressHeadline(complete, liveModelReady, generationFailed, generating, activeStageIndex)}</strong>
+              <span>{progressMetaLabel(complete, liveModelReady, generationFailed, generating, elapsedSeconds)}</span>
+            </div>
+            <div className="generation-meter-track">
+              <span style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+          <p className="duration-note">
+            {generating
+              ? "Estimated progress. Final completion depends on the model response."
+              : complete
+                ? "Generation completed. Results are ready for review."
+                : "This usually takes 2-4 minutes once generation starts."}
+          </p>
           <div className="info-callout slim">
             <Icon name="info" />
             <p>
               {liveModelReady
-                ? "You'll be notified when your materials are ready."
+                ? progressCalloutLabel(complete, generating)
                 : config?.backend.message || "Live model generation is required before outputs can be generated."}
             </p>
           </div>
@@ -260,11 +313,19 @@ function settingValue(fields: FieldValue[] | undefined, id: string) {
   return fields?.find((field) => field.id === id)?.value || "Unresolved";
 }
 
-function generationStageStatus(index: number, complete: boolean, liveModelReady: boolean, generationFailed: boolean) {
+function generationStageStatus(
+  index: number,
+  complete: boolean,
+  liveModelReady: boolean,
+  generationFailed: boolean,
+  generating: boolean,
+  activeStageIndex: number,
+) {
   if (complete) return "completed";
   if (!liveModelReady) return "queued";
-  if (generationFailed) return index < 2 ? "completed" : index === 2 ? "failed" : "queued";
-  return index < 2 ? "completed" : index === 2 ? "in-progress" : "queued";
+  if (generationFailed) return index < activeStageIndex ? "completed" : index === activeStageIndex ? "failed" : "queued";
+  if (!generating) return "queued";
+  return index < activeStageIndex ? "completed" : index === activeStageIndex ? "in-progress" : "queued";
 }
 
 function generationStatusLabel(status: string) {
@@ -274,11 +335,46 @@ function generationStatusLabel(status: string) {
   return "Queued";
 }
 
-function progressStatusLabel(complete: boolean, liveModelReady: boolean, generationFailed: boolean) {
+function progressStatusLabel(complete: boolean, liveModelReady: boolean, generationFailed: boolean, generating: boolean) {
   if (complete) return "Completed";
   if (!liveModelReady) return "Model required";
   if (generationFailed) return "Failed";
+  if (!generating) return "Ready";
   return "In progress";
+}
+
+function progressHeadline(
+  complete: boolean,
+  liveModelReady: boolean,
+  generationFailed: boolean,
+  generating: boolean,
+  activeStageIndex: number,
+) {
+  if (complete) return "Materials are ready for review.";
+  if (!liveModelReady) return "Connect a live model before generation can start.";
+  if (generationFailed) return "Generation stopped before completion.";
+  if (!generating) return "Generation will start automatically, or when you view results.";
+  return generationStages[activeStageIndex];
+}
+
+function progressMetaLabel(
+  complete: boolean,
+  liveModelReady: boolean,
+  generationFailed: boolean,
+  generating: boolean,
+  elapsedSeconds: number,
+) {
+  if (complete) return "Elapsed time is no longer updating.";
+  if (!liveModelReady) return "No model request has been sent.";
+  if (generationFailed) return `Stopped after ${formatGenerationDuration(elapsedSeconds)}.`;
+  if (!generating) return "You can still adjust selected outputs.";
+  return `Elapsed ${formatGenerationDuration(elapsedSeconds)} · ${estimatedRemainingLabel(elapsedSeconds)}`;
+}
+
+function progressCalloutLabel(complete: boolean, generating: boolean) {
+  if (complete) return "Your materials are ready. Continue to results for human review and edits.";
+  if (generating) return "Keep this page open while the model works; progress will continue updating here.";
+  return "You can still adjust selected outputs until generation starts.";
 }
 
 function outputCardStatus(
@@ -287,13 +383,13 @@ function outputCardStatus(
   liveModelReady: boolean,
   generationFailed: boolean,
   active: boolean,
-  selectedIndex: number,
+  outputPercent: number,
 ) {
   if (!checked) return "not-selected";
   if (complete) return "completed";
   if (generationFailed) return "failed";
   if (!liveModelReady) return "queued";
-  if (active && selectedIndex < 2) return "in-progress";
+  if (active && outputPercent > 0) return "in-progress";
   return "queued";
 }
 
@@ -303,14 +399,15 @@ function outputCardStatusLabel(
   liveModelReady: boolean,
   generationFailed: boolean,
   active: boolean,
-  selectedIndex: number,
+  outputPercent: number,
 ) {
   if (!checked) return "Not selected";
   if (complete) return "Completed";
   if (generationFailed) return "Failed";
   if (!liveModelReady) return "Model required";
   if (!active) return "Selected";
-  return selectedIndex < 2 ? "In progress" : "Queued";
+  if (outputPercent === 0) return "Queued";
+  return outputPercent >= 88 ? "Finalizing" : "In progress";
 }
 
 function GenerationSettingsDrawer({
@@ -392,6 +489,7 @@ function generationOutputCards(
   generationFailed: boolean,
   generating: boolean,
   canEditOutputs: boolean,
+  progress: number,
 ) {
   const selectedProgressSlots = functionalOutputs
     .filter((output) => selectedOutputs.includes(output.id))
@@ -412,9 +510,10 @@ function generationOutputCards(
         : undefined;
     const disabled = Boolean(disabledReason);
     const active = checked && liveModelReady && generating && !generationFailed;
-    const percent = active && selectedIndex < 2 ? `${65 - selectedIndex * 10}%` : "";
-    const status = outputCardStatus(checked, complete, liveModelReady, generationFailed, active, selectedIndex);
-    const statusLabel = outputCardStatusLabel(checked, complete, liveModelReady, generationFailed, active, selectedIndex);
+    const outputPercent = active ? estimatedOutputPercent(progress, selectedIndex) : 0;
+    const percent = active && outputPercent > 0 ? `${outputPercent}%` : "";
+    const status = outputCardStatus(checked, complete, liveModelReady, generationFailed, active, outputPercent);
+    const statusLabel = outputCardStatusLabel(checked, complete, liveModelReady, generationFailed, active, outputPercent);
 
     return {
       id: output.id,
