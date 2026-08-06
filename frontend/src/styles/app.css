@@ -584,6 +584,15 @@ button:focus-visible {
   font-weight: 800;
 }
 
+button.status-pill {
+  border: 0;
+  cursor: pointer;
+}
+
+button.status-pill:hover {
+  box-shadow: inset 0 0 0 1px rgba(31, 157, 85, 0.28);
+}
+
 .status-pill.warning,
 .status-badge.as-needed {
   background: var(--amber-bg);
@@ -1891,6 +1900,12 @@ button:focus-visible {
   padding: 8px 10px;
 }
 
+.field-row.editing {
+  border-color: #382cff;
+  background: #fbfbff;
+  box-shadow: inset 0 0 0 1px rgba(56, 44, 255, 0.32);
+}
+
 .field-row strong {
   font-size: 12px;
 }
@@ -2384,7 +2399,7 @@ button:focus-visible {
   border: 1px solid var(--soft-line);
   border-radius: 7px;
   background: #ffffff;
-  padding: 16px;
+  padding: 16px 182px 16px 16px;
 }
 
 .generation-settings p {
@@ -2679,6 +2694,12 @@ button:focus-visible {
   font-weight: 800;
 }
 
+.export-status {
+  margin: 12px 0 0;
+  color: var(--green);
+  font-weight: 800;
+}
+
 .drawer {
   position: fixed;
   top: 0;
@@ -2861,6 +2882,18 @@ button:focus-visible {
 
 .drawer-field textarea {
   min-height: 86px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.drawer-field.readonly textarea {
+  background: #f7f8fb;
+  color: #465783;
+}
+
+.drawer-field p {
+  margin: 0;
+  color: #283965;
   font-size: 13px;
   line-height: 1.45;
 }
@@ -3065,5 +3098,14 @@ blockquote {
   .right-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .generation-settings {
+    padding: 16px;
+  }
+
+  .generation-settings button {
+    position: static;
+    margin-top: 12px;
   }
 }

@@ -228,7 +228,7 @@ export function OpportunityAudiencePage({
             <label className="upload-panel">
               <input
                 type="file"
-                accept=".pdf,.docx,.pptx,.xlsx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
                 onChange={(event) => {
                   setSourceInputMode("file");
                   setSourceFile(event.currentTarget.files?.[0] || null);
@@ -237,7 +237,7 @@ export function OpportunityAudiencePage({
               <span className="upload-cloud"><Icon name="upload" /></span>
               <strong>Select or upload approved source documents</strong>
               <small>Drag &amp; drop files here or <b>browse</b></small>
-              <em>Supported files: PDF, DOCX, PPTX, XLSX&nbsp;&nbsp;•&nbsp;&nbsp;Max 200MB each</em>
+              <em>Supported files: text-layer PDF, TXT, Markdown&nbsp;&nbsp;•&nbsp;&nbsp;Max 25MB each</em>
             </label>
             <button className="kb-button" type="button" onClick={() => setSourceInputMode("knowledge")}>
               <Icon name="book" />

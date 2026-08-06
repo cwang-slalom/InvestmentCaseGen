@@ -6,9 +6,12 @@ import type {
   FieldValue,
   GenerationResult,
   GeneratedSection,
+  GeneratedOutput,
+  InformationNeeded,
   Opportunity,
   OutputType,
   Project,
+  ReviewFinding,
   ReviewRole,
 } from "../types";
 
@@ -46,6 +49,19 @@ export async function apiJson<T>(path: string, method: "POST" | "PUT", body: unk
       body: JSON.stringify(body),
     }),
   );
+}
+
+async function apiBlob(path: string, method: "POST", body: unknown): Promise<Blob> {
+  const response = await fetch(path, {
+    method,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as ApiErrorPayload;
+    throw new ApiError(payload.detail || "Download could not be completed.", response.status);
+  }
+  return response.blob();
 }
 
 export const api = {
@@ -100,6 +116,15 @@ export const api = {
   generate: (projectId: string, simulateError: boolean) =>
     apiJson<GenerationResult>(`/api/projects/${projectId}/generate`, "POST", { simulateError }),
   generation: (generationId: string) => apiGet<GenerationResult>(`/api/generations/${generationId}`),
+  exportDocx: (
+    projectId: string,
+    body: {
+      output: GeneratedOutput;
+      informationNeeded: InformationNeeded[];
+      reviewFindings: ReviewFinding[];
+      metadata: Record<string, string>;
+    },
+  ) => apiBlob(`/api/projects/${projectId}/exports/docx`, "POST", body),
   regenerateSection: (generationId: string, sectionId: string) =>
     apiJson<GeneratedSection>(`/api/generations/${generationId}/sections/${sectionId}/regenerate`, "POST", {}),
   updateFinding: (generationId: string, findingId: string, resolved: boolean) =>

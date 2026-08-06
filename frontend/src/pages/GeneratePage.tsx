@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { api } from "../api/client";
 import { Icon, type IconName } from "../components/Icons";
@@ -7,35 +7,69 @@ import type { GenerationResult, Project } from "../types";
 
 type GeneratePageProps = {
   project: Project;
+  generation?: GenerationResult | null;
   onProject: (project: Project) => void;
   onGeneration: (generation: GenerationResult) => void;
   onNavigate: (path: string) => void;
 };
 
-export function GeneratePage({ project, onProject, onGeneration, onNavigate }: GeneratePageProps) {
-  const progress = 65;
-  const complete = false;
+export function GeneratePage({ project, generation, onProject, onGeneration, onNavigate }: GeneratePageProps) {
   const [error, setError] = useState("");
-  const startedRef = useRef(false);
+  const [generating, setGenerating] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const timerRef = useRef<number | null>(null);
+  const generationPromiseRef = useRef<Promise<GenerationResult | null> | null>(null);
   const selectedOutputs = project.opportunityAudience?.selectedOutputs || [];
+  const currentGeneration = generation?.projectId === project.id ? generation : null;
+  const complete = Boolean(project.generationId || currentGeneration?.status === "completed");
+  const progress = complete ? 100 : generating ? 78 : 65;
+  const outputCards = generationOutputCards(selectedOutputs, complete);
+
+  const runGeneration = useCallback(async () => {
+    if (project.generationId) return null;
+    if (generationPromiseRef.current) return generationPromiseRef.current;
+
+    setGenerating(true);
+    setError("");
+    const request = api.generate(project.id, false)
+      .then(async (nextGeneration) => {
+        onGeneration(nextGeneration);
+        const refreshed = await api.project(project.id);
+        onProject(refreshed);
+        return nextGeneration;
+      })
+      .catch((apiError) => {
+        setError(apiError instanceof Error ? apiError.message : "Generation could not be completed.");
+        return null;
+      })
+      .finally(() => {
+        generationPromiseRef.current = null;
+        setGenerating(false);
+      });
+
+    generationPromiseRef.current = request;
+    return request;
+  }, [onGeneration, onProject, project.generationId, project.id]);
 
   useEffect(() => {
-    if (project.generationId || startedRef.current) return;
-    startedRef.current = true;
-    const timer = window.setTimeout(() => {
-      api.generate(project.id, false)
-        .then(async (generation) => {
-          onGeneration(generation);
-          const refreshed = await api.project(project.id);
-          onProject(refreshed);
-        })
-        .catch((apiError) => {
-          setError(apiError instanceof Error ? apiError.message : "Generation could not be completed.");
-        });
+    if (project.generationId) return;
+    timerRef.current = window.setTimeout(() => {
+      void runGeneration();
     }, 18000);
 
-    return () => window.clearTimeout(timer);
-  }, [onGeneration, onProject, project.generationId, project.id]);
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    };
+  }, [project.generationId, runGeneration]);
+
+  async function viewResults() {
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    if (!project.generationId && !currentGeneration?.generationId) {
+      const nextGeneration = await runGeneration();
+      if (!nextGeneration) return;
+    }
+    onNavigate(`/projects/${project.id}/results`);
+  }
 
   return (
     <section className="wizard-page generate-page">
@@ -81,9 +115,9 @@ export function GeneratePage({ project, onProject, onGeneration, onNavigate }: G
         </section>
 
         <section className="panel outputs-generation-panel">
-          <h3>Outputs being generated (7)</h3>
+          <h3>Outputs being generated ({outputCards.length})</h3>
           <div className="generated-output-grid">
-            {generationOutputCards(selectedOutputs).map((output) => (
+            {outputCards.map((output) => (
               <article className={`generated-output-card ${output.status}`} key={output.label}>
                 <span className={`generated-icon ${output.tone}`}><Icon name={output.icon} /></span>
                 <input type="checkbox" checked={output.checked} readOnly />
@@ -102,7 +136,7 @@ export function GeneratePage({ project, onProject, onGeneration, onNavigate }: G
               Narrative style: Innovation-focused&nbsp;&nbsp;•&nbsp;&nbsp;Tone: Balanced and credible&nbsp;&nbsp;•&nbsp;&nbsp;Technical depth: Moderate
             </p>
             <p>Evidence density: High&nbsp;&nbsp;•&nbsp;&nbsp;External web search: Enabled (4-6 sources)</p>
-            <button type="button">View all settings <Icon name="arrow" /></button>
+            <button type="button" onClick={() => setSettingsOpen(true)}>View all settings <Icon name="arrow" /></button>
           </div>
         </section>
       </div>
@@ -137,26 +171,106 @@ export function GeneratePage({ project, onProject, onGeneration, onNavigate }: G
           <button className="secondary-button large" type="button" onClick={() => onNavigate("/projects")}>
             Save and exit
           </button>
-          <button className="primary-button large disabled-look" type="button" disabled={!complete}>
-            View results (coming soon)
+          <button className="primary-button large" type="button" disabled={generating} onClick={viewResults}>
+            {generating ? "Generating results..." : "View results"}
           </button>
         </div>
       </div>
+      {settingsOpen && (
+        <GenerationSettingsDrawer
+          project={project}
+          selectedOutputs={selectedOutputs}
+          onClose={() => setSettingsOpen(false)}
+          onEditSetup={() => onNavigate(`/projects/${project.id}/review-setup`)}
+        />
+      )}
     </section>
   );
 }
 
-function generationOutputCards(selectedOutputs: string[]) {
+function GenerationSettingsDrawer({
+  project,
+  selectedOutputs,
+  onClose,
+  onEditSetup,
+}: {
+  project: Project;
+  selectedOutputs: string[];
+  onClose: () => void;
+  onEditSetup: () => void;
+}) {
+  const approachFields = project.reviewSetup?.approachFields || [];
+  const roles = project.reviewSetup?.roles || [];
+  const sourceReadiness = project.reviewSetup?.sourceReadiness;
+
+  return (
+    <div className="drawer details-drawer" role="dialog" aria-modal="true" aria-label="All generation settings">
+      <button className="icon-button drawer-close" type="button" title="Close" onClick={onClose}>
+        <Icon name="close" />
+      </button>
+      <p className="eyebrow">Generation settings</p>
+      <h3>All settings</h3>
+      <h4>Approach</h4>
+      <div className="drawer-field-list">
+        {approachFields.map((field) => (
+          <div className="drawer-field readonly" key={field.id}>
+            <span>
+              <strong>{field.label}</strong>
+              <small>{field.provenanceLabel}</small>
+            </span>
+            <p>{field.value}</p>
+            <em>{field.metadata.required ? "Required" : "Optional"}</em>
+          </div>
+        ))}
+      </div>
+      <h4>Outputs</h4>
+      <div className="output-option-list">
+        {functionalOutputs.map((output) => (
+          <div className={`drawer-card output-option ${selectedOutputs.includes(output.id) ? "selected" : ""}`} key={output.id}>
+            <input type="checkbox" checked={selectedOutputs.includes(output.id)} readOnly />
+            <span>
+              <strong>{output.label}</strong>
+              <small>{output.description}</small>
+            </span>
+            <em>{selectedOutputs.includes(output.id) ? "Included" : "Not included"}</em>
+          </div>
+        ))}
+        {futureOutputs.map((label) => (
+          <div className="drawer-card output-option disabled" key={label}>
+            <input type="checkbox" disabled />
+            <span>
+              <strong>{label}</strong>
+              <small>Reserved for a later workflow.</small>
+            </span>
+            <em>Coming soon</em>
+          </div>
+        ))}
+      </div>
+      <h4>Review and sources</h4>
+      <dl className="drawer-metadata-grid">
+        <div><dt>Selected reviewers</dt><dd>{roles.filter((role) => role.selected).map((role) => role.label).join(", ") || "Unresolved"}</dd></div>
+        <div><dt>External-use readiness</dt><dd>{sourceReadiness?.ready ? "Ready" : "Needs review"}</dd></div>
+        <div><dt>Readiness checks</dt><dd>{sourceReadiness?.checks.join(", ") || "Unresolved"}</dd></div>
+      </dl>
+      <div className="drawer-actions">
+        <button className="secondary-button" type="button" onClick={onEditSetup}>Edit setup</button>
+        <button className="primary-button" type="button" onClick={onClose}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+function generationOutputCards(selectedOutputs: string[], complete: boolean) {
   const functionalCards = functionalOutputs.map((output, index) => ({
     label: output.label,
     description: output.description,
     checked: selectedOutputs.includes(output.id),
     icon: output.id === "talking_points" ? "file" : "document",
     tone: output.id === "talking_points" ? "green" : "blue",
-    status: index === 0 ? "in-progress" : index === 1 ? "in-progress" : index === 2 ? "completed" : "queued",
-    statusLabel: index === 0 ? "In progress" : index === 1 ? "In progress" : index === 2 ? "Completed" : "Queued",
-    percent: index === 0 ? "65%" : index === 1 ? "55%" : "",
-    done: index === 2,
+    status: complete ? "completed" : index === 0 ? "in-progress" : index === 1 ? "in-progress" : index === 2 ? "completed" : "queued",
+    statusLabel: complete ? "Completed" : index === 0 ? "In progress" : index === 1 ? "In progress" : index === 2 ? "Completed" : "Queued",
+    percent: complete ? "" : index === 0 ? "65%" : index === 1 ? "55%" : "",
+    done: complete || index === 2,
   }));
 
   const futureCards = futureOutputs.map((label) => ({

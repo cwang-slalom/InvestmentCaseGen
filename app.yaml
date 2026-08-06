@@ -5,4 +5,6 @@ command:
 
 env:
   - name: MODEL_PROVIDER_MODE
-    value: deterministic
+    value: databricks
+  - name: DATABRICKS_MODEL_SERVING_ENDPOINT
+    valueFrom: serving-endpoint

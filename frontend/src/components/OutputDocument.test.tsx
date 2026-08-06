@@ -35,6 +35,8 @@ describe("result rendering", () => {
     expect(html).toContain("Investment Case Draft");
     expect(html).toContain("Strategic Opportunity");
     expect(html).toContain("Synthetic source");
+    expect(html).toContain("Export DOCX");
+    expect(html).not.toContain("Future phase");
   });
 
   it("reports generation progress stage status", () => {

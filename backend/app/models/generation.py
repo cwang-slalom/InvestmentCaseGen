@@ -50,5 +50,12 @@ class GenerateRequest(APIModel):
     simulate_error: bool = Field(default=False, alias="simulateError")
 
 
+class ExportDraftRequest(APIModel):
+    output: GeneratedOutput
+    information_needed: list[InformationNeeded] = Field(default_factory=list, alias="informationNeeded")
+    review_findings: list[ReviewFinding] = Field(default_factory=list, alias="reviewFindings")
+    metadata: dict[str, str] = Field(default_factory=dict)
+
+
 class FindingUpdate(APIModel):
     resolved: bool

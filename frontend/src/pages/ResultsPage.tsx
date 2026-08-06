@@ -18,6 +18,8 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [drawerCitation, setDrawerCitation] = useState<CitationRef | null>(null);
   const [saveStatus, setSaveStatus] = useState("");
+  const [exportStatus, setExportStatus] = useState("");
+  const [exportingOutputId, setExportingOutputId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -81,6 +83,41 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
     onGeneration(updated);
   }
 
+  function filenameSafe(value: string) {
+    const slug = value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80);
+    return slug || "investment-case-draft";
+  }
+
+  async function exportOutput(output: GeneratedOutput) {
+    setExportingOutputId(output.id);
+    setExportStatus("");
+    try {
+      const blob = await api.exportDocx(project.id, {
+        output,
+        informationNeeded: generation?.informationNeeded || [],
+        reviewFindings: generation?.reviewFindings || [],
+        metadata: generation?.metadata || { mode: "mock" },
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${filenameSafe(output.title)}.docx`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setExportStatus("Draft DOCX downloaded.");
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Export could not be completed.");
+    } finally {
+      setExportingOutputId(null);
+    }
+  }
+
   if (!project.generationId && !generation) {
     return (
       <section className="panel full-panel">
@@ -115,6 +152,9 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
           onReset={resetSection}
           onRegenerate={regenerateSection}
           onCitation={setDrawerCitation}
+          onExport={exportOutput}
+          isExporting={exportingOutputId === activeOutput.id}
+          exportStatus={exportStatus}
         />
         {originalOutput && <p className="muted">Local edits are held in memory for this Phase 1 session.</p>}
       </div>

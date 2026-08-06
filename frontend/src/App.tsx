@@ -146,11 +146,20 @@ export function App() {
   } else if (path.endsWith("/extraction-review")) {
     content = <ExtractionReviewPage project={currentProject} onProject={updateProject} onNavigate={navigate} />;
   } else if (path.endsWith("/review-setup")) {
-    content = <ReviewSetupPage project={currentProject} onProject={updateProject} onNavigate={navigate} />;
+    content = (
+      <ReviewSetupPage
+        project={currentProject}
+        opportunities={opportunities}
+        config={config}
+        onProject={updateProject}
+        onNavigate={navigate}
+      />
+    );
   } else if (path.endsWith("/generate")) {
     content = (
       <GeneratePage
         project={currentProject}
+        generation={generation}
         onProject={updateProject}
         onGeneration={setGeneration}
         onNavigate={navigate}

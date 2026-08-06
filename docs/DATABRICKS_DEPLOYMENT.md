@@ -64,30 +64,35 @@ python -m backend.main
 
 No production port is hardcoded.
 
-## Mock-Mode Deployment
+## Claude Resource Deployment
 
-Default deployment uses:
+Default Databricks App deployment now uses the approved Serving endpoint
+resource:
 
 ```text
-MODEL_PROVIDER_MODE=deterministic
+MODEL_PROVIDER_MODE=databricks
+DATABRICKS_MODEL_SERVING_ENDPOINT=<valueFrom: serving-endpoint>
 ```
 
-This enables the fully functional `MockGenerationBackend`; no Databricks
-credentials or model endpoint are required for client access to the Phase 1
-workflow.
+The app resource key must match the Databricks Apps resource configuration. In
+the current client app, the resource key is `serving-endpoint` and the endpoint
+is the Claude-serving Databricks endpoint. Databricks Apps also injects
+`DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET` so the
+backend can authenticate as the app service principal.
 
-## Future Model Resource Configuration
+## Model Resource Configuration
 
-`DatabricksGenerationBackend` is present but intentionally returns
-not-configured until the client approves:
+`DatabricksGenerationBackend` maps the UI generation contract to Databricks
+Model Serving after the client-approved resource is available:
 
 - backend resource type
 - endpoint or agent identifier
 - request payload contract
 - App identity permissions
 
-The request mapping belongs behind `DatabricksRequestAdapter`. Do not hardcode
-an endpoint name or endpoint-specific payload before approval.
+The request mapping remains behind `DatabricksRequestAdapter`. Do not hardcode
+tokens or client-specific endpoint names; the endpoint name must continue to
+come from the App resource environment variable.
 
 ## Logs And Verification
 
@@ -95,6 +100,8 @@ After deployment, inspect App logs from the Databricks Apps UI. Verify:
 
 - FastAPI starts once.
 - `/api/health` returns `status: ok`.
+- `/api/config` reports `mode: live` and backend provider
+  `databricks-generation-backend` with `status: ok`.
 - Browser network calls target relative `/api/*` URLs.
 - Static assets are served from the same origin.
 - No privileged Databricks secrets appear in frontend assets or API responses.

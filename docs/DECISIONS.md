@@ -4,6 +4,36 @@ Planning checkpoint date: 2026-07-14
 
 ## Decisions
 
+## 2026-08-06: Uploaded Sources Drive New-Opportunity Phase 1 Output
+
+The "Create new opportunity" path now parses uploaded plain text and
+text-layer PDFs in the FastAPI runtime and builds extraction fields from the
+uploaded content. Generation for those projects uses the reviewed extraction
+fields and their citations instead of the bundled vaccine demo fixture.
+
+This remains deterministic Phase 1 generation rather than a final live-model
+investment case. It must preserve unresolved fields when the source does not
+identify a funding recipient, investment vehicle, role, figure, or timeline.
+Uploaded bytes are processed in memory and are not durable source storage.
+
+## 2026-08-06: Step 3 And Step 4 Detail Controls Are In-Page Drawers
+
+Review setup controls and generation settings use the same right-side drawer
+pattern as Step 2 detail controls. This keeps the user in the current wizard
+context while making visible actions such as Edit setup, View all sources,
+External web search, and View all settings perform observable work.
+
+The generation page now treats results review as part of the Phase 1 workflow,
+not a coming-soon placeholder. The View results action can trigger the mock
+generation endpoint if needed, then navigates to the existing generated-output
+review page.
+
+The results page now supports minimal DOCX draft export in the Phase 1
+FastAPI/Vite runtime. The export endpoint accepts the current visible output
+payload so browser-held section edits are included. The file is intentionally
+plain and draft-labeled; branded templates, citation footnotes or endnotes,
+comments, PowerPoint export, and production persistence remain future work.
+
 ## 2026-08-06: Step 2 Detail Controls Use In-Page Drawers
 
 The screenshot-style Step 2 controls for opportunity browsing, donor profile
@@ -81,11 +111,33 @@ code remains bypassed legacy work and is not part of the Phase 1 runtime.
 
 ## 2026-08-05: Production Databricks Generation Is Not Guessed
 
-`MockGenerationBackend` is fully functional for Phase 1. The
-`DatabricksGenerationBackend` exists as a server-side integration seam and
-returns not-configured until the client supplies the approved model-serving or
+`MockGenerationBackend` is fully functional for Phase 1. At this checkpoint,
+`DatabricksGenerationBackend` existed as a server-side integration seam and
+returned not-configured until the client supplied the approved model-serving or
 agent resource and request mapping. No endpoint name, request payload, token, or
-client-specific Databricks identifier is hardcoded.
+client-specific Databricks identifier was hardcoded.
+
+## 2026-08-06: UI Generation Uses The Databricks Claude Resource
+
+The client has supplied a Databricks App Serving endpoint resource for Claude,
+so the Phase 1 UI generation route now resolves the prior placeholder mapping.
+The frontend continues to call `/api/projects/{projectId}/generate`; when
+`MODEL_PROVIDER_MODE=databricks`, that backend route maps the project,
+selected concept, audience, review setup, source excerpts, approved facts, and
+locked facts into the existing backend-owned structured AI boundary.
+
+`DatabricksGenerationBackend` reuses `DatabricksModelServingProvider` instead
+of making a parallel provider implementation. This keeps Databricks App OAuth,
+AI Gateway chat-completions payloads, prompt loading from `prompts/`, JSON
+schema validation, source-grounding rules, and validated-output-only metadata
+consistent with `/ai/structured`. The app still does not hardcode client
+tokens; Databricks App runtime credentials or a local `DATABRICKS_TOKEN` must
+provide access.
+
+Root `app.yaml` now sets `MODEL_PROVIDER_MODE=databricks` and resolves
+`DATABRICKS_MODEL_SERVING_ENDPOINT` from the Databricks App resource key
+`serving-endpoint`, matching the client app resource instead of using the prior
+deterministic default.
 
 ## 2026-08-04: Databricks Is A Supported Backend Runtime
 

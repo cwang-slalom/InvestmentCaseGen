@@ -2,6 +2,49 @@
 
 Planning checkpoint date: 2026-07-14
 
+## 2026-08-06 UI Claude Generation Wiring
+
+- Route the Phase 1 UI generation API through the Databricks Model Serving
+  structured provider when `MODEL_PROVIDER_MODE=databricks`.
+- Reuse the backend-owned prompt loading, Databricks App OAuth, AI Gateway chat
+  completions, JSON schema validation, and validated-output-only metadata
+  boundary already used by `/ai/structured`.
+- Keep the frontend API contract stable: the Generate page continues to call
+  `/api/projects/{projectId}/generate`, but that route now receives Claude
+  output instead of the Databricks placeholder in configured Databricks Apps.
+- Add focused backend tests proving both initial UI generation and section
+  regeneration call the Databricks Claude structured provider.
+
+## 2026-08-06 Uploaded Source Parsing And Source-Grounded Generation
+
+- Replace uploaded-file mock extraction in the Phase 1 FastAPI runtime with
+  real in-memory parsing for plain text and text-layer PDFs through `pypdf`.
+- Build extracted fields from uploaded source text instead of synthetic vaccine
+  fixtures, with unresolved values where source evidence is not found.
+- Make generation for "Create new opportunity" projects use the reviewed
+  extraction fields, citations, unresolved evidence gaps, and selected outputs
+  rather than the bundled demo opportunity.
+- Keep existing-library generation on synthetic fixture data so screenshot demo
+  flows remain available.
+- Keep source documents temporary in Phase 1; uploaded bytes are parsed in
+  memory and are not durable project storage.
+
+## 2026-08-06 Review Setup And Results Clickability Fix
+
+- Wire Step 3 review setup affordances from the screenshot refresh:
+  field-level setup editing, full customization details, reviewer management,
+  internal-source review, and external web-search details all open in-page
+  drawers.
+- Wire Step 4 generation settings review through the same drawer pattern so
+  users can inspect all settings and return to setup for changes.
+- Replace the disabled "View results (coming soon)" state with a real results
+  action. If mock generation has not completed yet, clicking the action
+  completes generation before navigating to the existing results review page.
+- Replace the disabled "Export future phase" result affordance with a minimal
+  Phase 1 DOCX draft export from the current visible output payload, including
+  local section edits, citations, information-needed items, and integrity
+  findings.
+
 ## 2026-08-06 Opportunity Setup Interaction Fix
 
 - Wire the Step 2 detail affordances for viewing all opportunities, opening the

@@ -8,4 +8,4 @@ env:
   - name: MODEL_PROVIDER_MODE
     value: databricks
   - name: DATABRICKS_MODEL_SERVING_ENDPOINT
-    valueFrom: serving_endpoint
+    valueFrom: serving-endpoint

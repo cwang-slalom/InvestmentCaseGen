@@ -15,8 +15,10 @@ Material findings:
   `src/app` Next workspace. Phase 1 now uses React/TypeScript/Vite with FastAPI
   serving the compiled frontend and all `/api/*` routes from one public process.
 - Existing backend retained where useful: `/ai/structured` remains available
-  for the transitional provider tests, but the Phase 1 product workflow uses
-  the new `GenerationBackend` boundary and mock generation backend.
+  for the transitional provider tests. The Phase 1 product workflow uses the
+  new `GenerationBackend` boundary; new-opportunity drafts are deterministic
+  outputs from uploaded extraction fields, while existing-library demo flows
+  still use synthetic fixtures.
 - Prisma, SQLite, Vercel-style frontend runtime, Turbopack, and external
   backend URLs are not required for Phase 1.
 - No broad repository audit was performed. The preflight was scoped to existing
@@ -30,12 +32,14 @@ Material findings:
   request payload contract.
 - Uploaded documents are processed temporarily in Phase 1 and are not retained
   across application restarts.
-- Synthetic opportunity, audience, project, source, extraction, generation, and
-  review data are acceptable for the proof of concept.
+- Synthetic opportunity, audience, project, source, generation, and review data
+  remain acceptable for existing-library demo flows. New-opportunity uploads
+  should parse text-layer PDFs or plain text and generate from reviewed
+  extraction fields.
 
 ## Deferred Issues
 
-- Production document parsing for PDF and DOCX.
+- Production document parsing beyond plain text and text-layer PDF.
 - Durable project and source storage.
 - Live Databricks model or agent invocation mapping.
 - Production export to DOCX or PowerPoint.

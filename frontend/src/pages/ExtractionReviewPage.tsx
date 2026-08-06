@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { api } from "../api/client";
 import { Icon, type IconName } from "../components/Icons";
@@ -18,6 +18,8 @@ export function ExtractionReviewPage({ project, onProject, onNavigate }: Extract
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
+  const fieldRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
 
   useEffect(() => {
     let active = true;
@@ -51,6 +53,9 @@ export function ExtractionReviewPage({ project, onProject, onNavigate }: Extract
     intendedOutcome: project.opportunityAudience?.intendedOutcome,
     selectedOutputs: project.opportunityAudience?.selectedOutputs || [],
   });
+  const sourceLabel = fields[0]?.sourceLabel || "Uploaded source";
+  const sourceType = sourceLabel.toLowerCase().endsWith(".pdf") ? "PDF" : "Text";
+  const confirmedCount = fields.filter((field) => field.value && !field.value.toLowerCase().startsWith("unresolved")).length;
 
   async function continueToReviewSetup() {
     if (!validation.valid || !flowValidation.valid) return;
@@ -65,7 +70,8 @@ export function ExtractionReviewPage({ project, onProject, onNavigate }: Extract
     setSaving(true);
     setError("");
     try {
-      const extraction = await api.extractText(project.id, fields[0]?.sourceLabel || "Vaccine Strategy 2026.pdf", "rerun");
+      const extractionInput = fields.map((field) => `${field.label}: ${field.value}`).join("\n");
+      const extraction = await api.extractText(project.id, sourceLabel, extractionInput);
       setFields(extraction.fields.map((field) => ({ ...field, verified: true })));
       setConfirmed(true);
     } catch (apiError) {
@@ -73,6 +79,15 @@ export function ExtractionReviewPage({ project, onProject, onNavigate }: Extract
     } finally {
       setSaving(false);
     }
+  }
+
+  function focusField(fieldId: string) {
+    setActiveFieldId(fieldId);
+    window.requestAnimationFrame(() => {
+      const field = fieldRefs.current[fieldId];
+      field?.focus();
+      field?.select();
+    });
   }
 
   if (loading) {
@@ -105,8 +120,8 @@ export function ExtractionReviewPage({ project, onProject, onNavigate }: Extract
           <div className="source-header">
             <span className="file-icon"><Icon name="file" /></span>
             <div>
-              <strong>Vaccine Strategy 2026.pdf</strong>
-              <small>PDF&nbsp;&nbsp;•&nbsp;&nbsp;12 MB</small>
+              <strong>{sourceLabel}</strong>
+              <small>{sourceType}&nbsp;&nbsp;•&nbsp;&nbsp;temporary Phase 1 source</small>
             </div>
             <span className="status-pill ready">Approved</span>
             <button className="secondary-button" type="button" onClick={rerunExtraction} disabled={saving}>
@@ -119,14 +134,24 @@ export function ExtractionReviewPage({ project, onProject, onNavigate }: Extract
               <h3>Key information</h3>
               <div className="field-table">
                 {visibleFields.map((field) => (
-                  <label className="field-row" key={field.id}>
+                  <label className={`field-row ${activeFieldId === field.id ? "editing" : ""}`} key={field.id}>
                     <span className="field-icon"><Icon name={fieldIcon(field.id)} /></span>
                     <strong>{field.label}</strong>
                     <textarea
+                      ref={(node) => {
+                        fieldRefs.current[field.id] = node;
+                      }}
                       value={field.value}
+                      onFocus={() => setActiveFieldId(field.id)}
                       onChange={(event) => setFields((current) => editExtractedField(current, field.id, { value: event.currentTarget.value, verified: true }))}
                     />
-                    <button type="button">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        focusField(field.id);
+                      }}
+                    >
                       <Icon name="edit" />
                       Edit
                     </button>
@@ -139,7 +164,7 @@ export function ExtractionReviewPage({ project, onProject, onNavigate }: Extract
               <div className="confidence-track"><span /></div>
               <div className="confidence-meta">
                 <span>High confidence</span>
-                <span>8 of 9 fields</span>
+                <span>{confirmedCount} of {fields.length} fields have source candidates</span>
               </div>
               <p className="review-note">Please review all items and make edits if needed before proceeding.</p>
               <label className="field-block compact notes-field">
