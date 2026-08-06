@@ -4,19 +4,18 @@ import { api } from "../api/client";
 import { Icon, type IconName } from "../components/Icons";
 import { editField } from "../state/workflow";
 import { validateReviewSetup } from "../state/validation";
-import type { AppConfig, FieldValue, Opportunity, Project, ReviewRole, SourceDocument, SourceReadiness } from "../types";
+import type { FieldValue, Opportunity, Project, ReviewRole, SourceDocument, SourceReadiness } from "../types";
 
 type ReviewSetupPageProps = {
   project: Project;
   opportunities: Opportunity[];
-  config?: AppConfig | null;
   onProject: (project: Project) => void;
   onNavigate: (path: string) => void;
 };
 
 type ReviewSetupDrawerName = "approach" | "reviewers" | "sources" | "web-search" | null;
 
-export function ReviewSetupPage({ project, opportunities, config, onProject, onNavigate }: ReviewSetupPageProps) {
+export function ReviewSetupPage({ project, opportunities, onProject, onNavigate }: ReviewSetupPageProps) {
   const [approachFields, setApproachFields] = useState<FieldValue[]>(project.reviewSetup?.approachFields || []);
   const [roles, setRoles] = useState<ReviewRole[]>(project.reviewSetup?.roles || []);
   const [confirmed, setConfirmed] = useState(true);
@@ -32,9 +31,11 @@ export function ReviewSetupPage({ project, opportunities, config, onProject, onN
   const readiness = project.reviewSetup?.sourceReadiness;
   const validation = validateReviewSetup(approachFields, roles, confirmed, Boolean(readiness?.ready));
   const selectedOpportunity = opportunities.find((opportunity) => opportunity.id === project.opportunityAudience?.opportunityId) || null;
-  const internalSources = config?.knowledgeSources?.length ? config.knowledgeSources : selectedOpportunity?.sourceList || [];
-  const sourceCount = internalSources.length || 8;
+  const sourceMode = project.opportunityAudience?.sourceMode;
+  const internalSources = sourceMode === "existing" ? selectedOpportunity?.sourceList || [] : [];
+  const sourceCount = sourceMode === "new" ? (project.extractionId ? 1 : 0) : internalSources.length;
   const externalSearchField = approachFields.find((field) => field.id === "external_web_search");
+  const externalSearchEnabled = externalSearchField?.value.trim().toLowerCase() === "enabled";
 
   async function continueToGenerate() {
     if (!validation.valid) return;
@@ -83,7 +84,9 @@ export function ReviewSetupPage({ project, opportunities, config, onProject, onN
                 <span><Icon name={approachIcon(field.id)} /></span>
                 <strong>{field.label}</strong>
                 <em>{field.value}</em>
-                {field.id === "external_web_search" && <small>Recent data, trends, and case studies</small>}
+                {field.id === "external_web_search" && (
+                  <small>{externalSearchEnabled ? "Recent data, trends, and case studies" : "No external web sources requested"}</small>
+                )}
               </div>
             ))}
           </div>
@@ -124,7 +127,7 @@ export function ReviewSetupPage({ project, opportunities, config, onProject, onN
             <h3>Source &amp; evidence plan</h3>
             <p>Confirm the sources and search approach.</p>
             <div className="source-box">
-              <strong>Internal sources <small>(from Gates Foundation)</small></strong>
+              <strong>{sourceMode === "new" ? "Attached source" : "Internal sources"}</strong>
               <div className="source-count-row">
                 <span>{sourceCount} approved sources</span>
                 <div className="file-stack">
@@ -140,10 +143,10 @@ export function ReviewSetupPage({ project, opportunities, config, onProject, onN
             <div className="source-box">
               <strong>External web search</strong>
               <button className="status-pill ready status-button" type="button" onClick={() => setDetailsDrawer("web-search")}>
-                {externalSearchField?.value || "Enabled"}
+                {externalSearchField?.value || "Disabled"}
               </button>
-              <p>Topics: Background context, recent data &amp; trends, case studies, policy landscape</p>
-              <p>Estimated 4-6 web sources</p>
+              <p>{externalSearchEnabled ? "Topics: Background context, recent data & trends, case studies, policy landscape" : "No external web sources will be added."}</p>
+              {externalSearchEnabled && <p>Estimated 4-6 web sources</p>}
             </div>
           </div>
           <div className="readiness-card">
@@ -221,6 +224,7 @@ function ReviewSetupDrawer({
     "web-search": "External web search",
   }[drawer];
   const externalSearch = approachFields.find((field) => field.id === "external_web_search");
+  const externalSearchEnabled = externalSearch?.value.trim().toLowerCase() === "enabled";
   const evidenceDensity = approachFields.find((field) => field.id === "evidence_density");
   const estimatedSources = approachFields.find((field) => field.id === "estimated_sources");
 
@@ -291,7 +295,7 @@ function ReviewSetupDrawer({
       {drawer === "sources" && (
         <>
           <p className="eyebrow">Source &amp; evidence plan</p>
-          <h3>All internal sources</h3>
+          <h3>{internalSources.length ? "All internal sources" : "Attached uploaded source"}</h3>
           <div className="drawer-list">
             {internalSources.length ? (
               internalSources.map((source) => (
@@ -311,7 +315,7 @@ function ReviewSetupDrawer({
                 </article>
               ))
             ) : (
-              <p className="muted">No internal sources are attached to this setup.</p>
+              <p className="muted">Uploaded-source excerpts are passed to the model from the reviewed extraction fields.</p>
             )}
           </div>
           {readiness?.checks.length ? (
@@ -327,12 +331,12 @@ function ReviewSetupDrawer({
       {drawer === "web-search" && (
         <>
           <p className="eyebrow">External web search</p>
-          <h3>{externalSearch?.value || "Enabled"}</h3>
+          <h3>{externalSearch?.value || "Disabled"}</h3>
           <dl className="drawer-metadata-grid">
-            <div><dt>Topics</dt><dd>Background context, recent data and trends, case studies, policy landscape</dd></div>
-            <div><dt>Estimated web sources</dt><dd>4-6 sources</dd></div>
+            <div><dt>Topics</dt><dd>{externalSearchEnabled ? "Background context, recent data and trends, case studies, policy landscape" : "Not requested"}</dd></div>
+            <div><dt>Estimated web sources</dt><dd>{externalSearchEnabled ? "4-6 sources" : "0 sources"}</dd></div>
             <div><dt>Evidence density</dt><dd>{evidenceDensity?.value || "High"}</dd></div>
-            <div><dt>Total source estimate</dt><dd>{estimatedSources?.value || "~12 internal + web"}</dd></div>
+            <div><dt>Total source estimate</dt><dd>{estimatedSources?.value || "Attached internal/uploaded sources only"}</dd></div>
           </dl>
           <div className="drawer-note">
             External web sources can add current context, but generated claims still require citation review before external use.
@@ -386,7 +390,8 @@ function sourceIcon(sourceType: string): IconName {
 
 function sourceLabel(source: FieldValue["metadata"]["source"]) {
   if (source === "audience_profile") return "Audience profile";
-  if (source === "ai_suggestion") return "AI suggestion";
+  if (source === "ai_suggestion") return "Model suggestion";
+  if (source === "system_setup") return "Setup default";
   if (source === "opportunity") return "Opportunity";
   if (source === "extracted_source") return "Extracted source";
   return "User edited";

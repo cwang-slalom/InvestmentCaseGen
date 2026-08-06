@@ -150,7 +150,6 @@ export function App() {
       <ReviewSetupPage
         project={currentProject}
         opportunities={opportunities}
-        config={config}
         onProject={updateProject}
         onNavigate={navigate}
       />

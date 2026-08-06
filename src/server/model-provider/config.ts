@@ -90,10 +90,12 @@ export function getModelProviderMode(env: Env = process.env) {
   const explicit = normalized(env.MODEL_PROVIDER_MODE);
   if (
     explicit === "deterministic" ||
+    explicit === "model_required" ||
+    explicit === "model-required" ||
     explicit === "none" ||
     explicit === "off"
   ) {
-    return "deterministic" as const;
+    return "not_configured" as const;
   }
 
   if (explicit === "mock") {
@@ -150,7 +152,7 @@ export function getModelProviderMode(env: Env = process.env) {
     return "backend" as const;
   }
 
-  return "deterministic" as const;
+  return "not_configured" as const;
 }
 
 export function getConfiguredModelProvider({

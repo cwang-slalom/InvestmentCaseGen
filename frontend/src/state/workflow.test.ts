@@ -62,10 +62,10 @@ const extracted: ExtractedField = {
 };
 
 describe("workflow state helpers", () => {
-  it("creates editable AI suggestions with provenance", () => {
+  it("creates editable setup suggestions with provenance", () => {
     const suggestions = suggestionFromSelection(opportunity, audience);
     expect(suggestions).toHaveLength(5);
-    expect(suggestions.find((field) => field.id === "narrative_approach")?.metadata.source).toBe("ai_suggestion");
+    expect(suggestions.find((field) => field.id === "narrative_approach")?.metadata.source).toBe("audience_profile");
   });
 
   it("marks edited suggestions as user-confirmed", () => {

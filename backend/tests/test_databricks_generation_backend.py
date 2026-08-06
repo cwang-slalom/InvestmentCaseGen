@@ -145,7 +145,7 @@ def test_ui_generation_backend_calls_databricks_claude_provider() -> None:
     assert result.metadata["provider"] == "backend-databricks-model-serving"
     assert result.metadata["modelName"] == "databricks-claude-opus-5"
     assert result.metadata["generatedVia"] == "/api/projects/{projectId}/generate"
-    assert all(output.status == "Claude generated - human review required" for output in result.outputs)
+    assert all(output.status == "Model generated - human review required" for output in result.outputs)
 
 
 def test_databricks_generation_request_includes_ui_setup_and_uploaded_source() -> None:
@@ -221,7 +221,7 @@ def test_databricks_section_regeneration_uses_claude_provider() -> None:
                 "id": "out-investment-case",
                 "type": "investment_case",
                 "title": "Investment Case Draft",
-                "status": "Claude generated - human review required",
+                "status": "Model generated - human review required",
                 "sections": [
                     GeneratedSection(
                         id="case-summary",

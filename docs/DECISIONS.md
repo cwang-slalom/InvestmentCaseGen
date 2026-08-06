@@ -589,6 +589,10 @@ explicitly asks for comparison across multiple concepts.
 
 ## 2026-07-16: Live AI Is Optional And Must Preserve Deterministic Fallback
 
+Superseded for the active Phase 1 UI on 2026-08-06: donor-facing generation
+now requires the configured live Databricks backend and does not produce local
+fallback drafts.
+
 Live model behavior is available through the existing `ModelProvider`
 interface, starting with a Vertex Gemini provider that reads local `.env`
 configuration. Application routes should attempt live model-backed extraction
@@ -601,6 +605,10 @@ stored as validated application records. Raw source text, prompt text, and raw
 model responses should not be persisted by default.
 
 ## 2026-07-16: Gemini Authors Final Draft Language From A Source-Grounded Scaffold
+
+Superseded for the active Phase 1 UI on 2026-08-06: the scaffold may still be
+used as model input, but it is not stored as a donor-facing fallback draft when
+live model generation is missing or fails.
 
 The live model may author the final donor-facing section language when a Gemini
 provider is configured. The deterministic renderer still creates the scaffold

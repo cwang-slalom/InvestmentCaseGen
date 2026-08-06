@@ -12,6 +12,7 @@ FieldSource = Literal[
     "opportunity",
     "audience_profile",
     "ai_suggestion",
+    "system_setup",
     "extracted_source",
 ]
 

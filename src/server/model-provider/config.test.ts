@@ -91,11 +91,14 @@ describe("model-provider config", () => {
     expect(provider?.modelName).toBe("claude-sonnet-5");
   });
 
-  it("honors an explicit deterministic mode", () => {
+  it("does not configure a local deterministic provider", () => {
+    expect(getModelProviderMode({})).toBe("not_configured");
+    expect(getModelProviderMode({ MODEL_PROVIDER_MODE: "model_required" })).toBe("not_configured");
+    expect(getModelProviderMode({ MODEL_PROVIDER_MODE: "deterministic" })).toBe("not_configured");
     expect(
       getConfiguredModelProvider({
         env: {
-          MODEL_PROVIDER_MODE: "deterministic",
+          MODEL_PROVIDER_MODE: "model_required",
           GOOGLE_CLOUD_PROJECT: "project-1",
           VERTEX_AI_LOCATION: "us-central1",
           VERTEX_AI_MODEL: "gemini-test",

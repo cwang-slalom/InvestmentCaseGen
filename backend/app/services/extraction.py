@@ -207,7 +207,7 @@ class SourceBackedProcessor(SourceProcessor):
             sourceLabel=source_label,
             temporaryStatus="Phase 1 temporary processing - uploaded content is parsed in memory and not retained after restart",
             confidence=round(found_count / len(fields), 2),
-            notes="Text-layer extraction from uploaded source. Fields are deterministic candidates and require human review before generation is used externally.",
+            notes="Text-layer extraction from uploaded source. Fields are parser-derived candidates and require human review before generation is used externally.",
             fields=fields,
         )
 

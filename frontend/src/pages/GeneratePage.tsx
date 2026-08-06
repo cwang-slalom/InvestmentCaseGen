@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { api } from "../api/client";
 import { Icon, type IconName } from "../components/Icons";
 import { functionalOutputs, futureOutputs, generationStages } from "../state/options";
-import type { AppConfig, GenerationResult, Project } from "../types";
+import type { AppConfig, FieldValue, GenerationResult, Project } from "../types";
 
 type GeneratePageProps = {
   project: Project;
@@ -26,6 +26,12 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
   const complete = Boolean(project.generationId || currentGeneration?.status === "completed");
   const progress = !liveModelReady ? 0 : complete ? 100 : generating ? 78 : 65;
   const outputCards = generationOutputCards(selectedOutputs, complete, liveModelReady);
+  const approachFields = project.reviewSetup?.approachFields || [];
+  const narrativeStyle = settingValue(approachFields, "narrative_style");
+  const tone = settingValue(approachFields, "tone");
+  const technicalDepth = settingValue(approachFields, "technical_depth");
+  const evidenceDensity = settingValue(approachFields, "evidence_density");
+  const externalWebSearch = settingValue(approachFields, "external_web_search");
 
   const runGeneration = useCallback(async () => {
     if (!liveModelReady) {
@@ -144,9 +150,9 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
           <div className="generation-settings">
             <strong>Generation settings</strong>
             <p>
-              Narrative style: Innovation-focused&nbsp;&nbsp;•&nbsp;&nbsp;Tone: Balanced and credible&nbsp;&nbsp;•&nbsp;&nbsp;Technical depth: Moderate
+              Narrative style: {narrativeStyle}&nbsp;&nbsp;•&nbsp;&nbsp;Tone: {tone}&nbsp;&nbsp;•&nbsp;&nbsp;Technical depth: {technicalDepth}
             </p>
-            <p>Evidence density: High&nbsp;&nbsp;•&nbsp;&nbsp;External web search: Enabled (4-6 sources)</p>
+            <p>Evidence density: {evidenceDensity}&nbsp;&nbsp;•&nbsp;&nbsp;External web search: {externalWebSearch}</p>
             <button type="button" onClick={() => setSettingsOpen(true)}>View all settings <Icon name="arrow" /></button>
           </div>
         </section>
@@ -197,6 +203,10 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
       )}
     </section>
   );
+}
+
+function settingValue(fields: FieldValue[] | undefined, id: string) {
+  return fields?.find((field) => field.id === id)?.value || "Unresolved";
 }
 
 function GenerationSettingsDrawer({

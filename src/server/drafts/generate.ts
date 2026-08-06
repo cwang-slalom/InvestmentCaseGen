@@ -28,6 +28,10 @@ function promptNameForOutput(outputType: OutputType) {
     : "generate-investment-case";
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unknown model error.";
+}
+
 export async function createDraftForOpportunity({
   storage,
   record,
@@ -56,87 +60,81 @@ export async function createDraftForOpportunity({
     storage,
     record.sourceDocumentIds,
   );
-  let draft = renderDraft(record, citations, {
-    outputType,
-    investorSegment,
-    audienceTailoring: normalizedTailoring,
-    prospectusBuilder: normalizedBuilder,
-    strengthenNarrative,
-  });
-  let generationRunId: string | undefined;
   const renderRunType = generationRunTypeForOutput(outputType);
 
-  if (provider) {
-    try {
-      const modelDraft = await generateDraftWithModel({
-        scaffold: draft,
-        citations,
-        investorSegment,
-        audienceTailoring: normalizedTailoring,
-        prospectusBuilder: normalizedBuilder,
-        externalWebSearch,
-        provider,
-      });
-      draft = modelDraft.draft;
-      const modelRun = await storage.createGenerationRun({
-        id: randomUUID(),
-        projectId: record.projectId,
-        opportunityId: record.opportunity.id,
-        runType: renderRunType,
-        promptName: modelDraft.prompt.name,
-        promptVersion: modelDraft.prompt.version,
-        modelProvider: modelDraft.response.modelProvider,
-        modelName: modelDraft.response.modelName,
-        inputChunkIds: citations
-          .map((citation) => citation.chunkId)
-          .filter((chunkId): chunkId is string => Boolean(chunkId)),
-        validationResult: draft.validation,
-        status: "completed",
-        storedPayloadMode: modelDraft.response.storedPayloadMode,
-      });
-      generationRunId = modelRun.id;
-    } catch (error) {
-      console.warn(
-        "Model-authored draft generation failed; keeping deterministic draft.",
-        error instanceof Error ? error.message : "Unknown model error.",
-      );
-      const failedRun = await storage.createGenerationRun({
-        id: randomUUID(),
-        projectId: record.projectId,
-        opportunityId: record.opportunity.id,
-        runType: renderRunType,
-        promptName: prompt.name,
-        promptVersion: prompt.version,
-        modelProvider: provider.providerName,
-        modelName: provider.modelName,
-        inputChunkIds: citations
-          .map((citation) => citation.chunkId)
-          .filter((chunkId): chunkId is string => Boolean(chunkId)),
-        status: "failed",
-        storedPayloadMode: "validated_outputs_only",
-      });
-      generationRunId = failedRun.id;
-    }
-  }
-
-  if (!generationRunId) {
-    const generationRun = await storage.createGenerationRun({
+  if (!provider) {
+    await storage.createGenerationRun({
       id: randomUUID(),
       projectId: record.projectId,
       opportunityId: record.opportunity.id,
       runType: renderRunType,
       promptName: prompt.name,
       promptVersion: prompt.version,
-      modelProvider: "deterministic",
-      modelName: "source-grounded-draft-renderer-v1",
+      modelProvider: "not_configured",
+      modelName: "live-model-required",
+      inputChunkIds: citations
+        .map((citation) => citation.chunkId)
+        .filter((chunkId): chunkId is string => Boolean(chunkId)),
+      status: "failed",
+      storedPayloadMode: "validated_outputs_only",
+    });
+    throw new Error("Live model generation is required before donor-facing drafts can be created.");
+  }
+
+  let draft = renderDraft(record, citations, {
+    outputType,
+    investorSegment,
+    audienceTailoring: normalizedTailoring,
+    prospectusBuilder: normalizedBuilder,
+    strengthenNarrative: false,
+  });
+  let generationRunId: string | undefined;
+
+  try {
+    const modelDraft = await generateDraftWithModel({
+      scaffold: draft,
+      citations,
+      investorSegment,
+      audienceTailoring: normalizedTailoring,
+      prospectusBuilder: normalizedBuilder,
+      externalWebSearch,
+      provider,
+    });
+    draft = modelDraft.draft;
+    const modelRun = await storage.createGenerationRun({
+      id: randomUUID(),
+      projectId: record.projectId,
+      opportunityId: record.opportunity.id,
+      runType: renderRunType,
+      promptName: modelDraft.prompt.name,
+      promptVersion: modelDraft.prompt.version,
+      modelProvider: modelDraft.response.modelProvider,
+      modelName: modelDraft.response.modelName,
       inputChunkIds: citations
         .map((citation) => citation.chunkId)
         .filter((chunkId): chunkId is string => Boolean(chunkId)),
       validationResult: draft.validation,
       status: "completed",
+      storedPayloadMode: modelDraft.response.storedPayloadMode,
+    });
+    generationRunId = modelRun.id;
+  } catch (error) {
+    await storage.createGenerationRun({
+      id: randomUUID(),
+      projectId: record.projectId,
+      opportunityId: record.opportunity.id,
+      runType: renderRunType,
+      promptName: prompt.name,
+      promptVersion: prompt.version,
+      modelProvider: provider.providerName,
+      modelName: provider.modelName,
+      inputChunkIds: citations
+        .map((citation) => citation.chunkId)
+        .filter((chunkId): chunkId is string => Boolean(chunkId)),
+      status: "failed",
       storedPayloadMode: "validated_outputs_only",
     });
-    generationRunId = generationRun.id;
+    throw new Error(`Live model draft generation failed: ${errorMessage(error)}`);
   }
 
   if (provider && strengthenNarrative) {
@@ -169,8 +167,8 @@ export async function createDraftForOpportunity({
       generationRunId = strengthenRun.id;
     } catch (error) {
       console.warn(
-        "Model-backed narrative strengthening failed; keeping deterministic draft.",
-        error instanceof Error ? error.message : "Unknown model error.",
+        "Model-backed narrative strengthening failed; keeping model-authored draft.",
+        errorMessage(error),
       );
       const failedPrompt = await loadPrompt("strengthen-narrative");
       await storage.createGenerationRun({

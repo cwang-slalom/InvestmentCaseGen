@@ -670,7 +670,7 @@ export async function extractOpportunitiesForProject({
       }
     } catch (error) {
       console.warn(
-        "Model-backed opportunity extraction failed; falling back to deterministic extraction.",
+        "Model-backed opportunity extraction failed; falling back to rule-based extraction.",
         error instanceof Error ? error.message : "Unknown model error.",
       );
       await recordFailedModelExtractionRun({
@@ -727,7 +727,7 @@ export async function extractOpportunitiesForProject({
     runType: "extract_opportunities",
     promptName: prompt.name,
     promptVersion: prompt.version,
-    modelProvider: "deterministic",
+    modelProvider: "rule_based",
     modelName: "keyword-role-pathway-extractor-v1",
     inputChunkIds: allChunks.map((chunk) => chunk.id),
     validationResult: {

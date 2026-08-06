@@ -445,7 +445,7 @@ class DatabricksGenerationBackend(GenerationBackend):
 
         ordered_outputs = [
             by_type[output_type].model_copy(
-                update={"status": "Claude generated - human review required"},
+                update={"status": "Model generated - human review required"},
             )
             for output_type in selected_outputs
         ]

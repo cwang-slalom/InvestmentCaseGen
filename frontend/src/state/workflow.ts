@@ -17,18 +17,18 @@ export function suggestionFromSelection(opportunity: Opportunity, audience: Audi
     excerpt: opportunity.sourceList[0]?.excerpt || "",
   };
   return [
-    suggestion("relationship_stage", "Relationship stage", audience.relationshipStage, "audience_profile", "Suggested from demo profile"),
+    suggestion("relationship_stage", "Relationship stage", audience.relationshipStage, "audience_profile", "Suggested from audience profile"),
     suggestion(
       "geography_lens",
       "Geography lens",
       `${opportunity.geography}; audience lens: ${audience.geography}`,
-      "ai_suggestion",
-      "Suggested from demo opportunity and profile",
+      "opportunity",
+      "Suggested from library opportunity and audience profile",
       [citation],
     ),
-    suggestion("donor_persona", "Donor persona", audience.donorPersona, "audience_profile", "Suggested from demo profile"),
-    suggestion("technical_familiarity", "Technical familiarity", audience.technicalFamiliarity, "audience_profile", "Suggested from demo profile"),
-    suggestion("narrative_approach", "Narrative approach", audience.narrativeApproach, "ai_suggestion", "Suggested from AI using demo data", [citation]),
+    suggestion("donor_persona", "Donor persona", audience.donorPersona, "audience_profile", "Suggested from audience profile"),
+    suggestion("technical_familiarity", "Technical familiarity", audience.technicalFamiliarity, "audience_profile", "Suggested from audience profile"),
+    suggestion("narrative_approach", "Narrative approach", audience.narrativeApproach, "audience_profile", "Suggested from audience profile", [citation]),
   ];
 }
 

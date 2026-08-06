@@ -1,19 +1,9 @@
-import { randomUUID } from "node:crypto";
-
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 
 import { requireApiProjectAccess } from "@/server/auth";
-import { applyDonorFollowUpToDraft } from "@/server/drafts";
-import { loadPrompt } from "@/server/prompts";
 import { getStorage } from "@/server/storage";
 
 export const runtime = "nodejs";
-
-const DonorFollowUpRequestSchema = z.object({
-  donorName: z.string().trim().max(120).optional(),
-  message: z.string().trim().min(1).max(4000),
-});
 
 function wantsJson(request: NextRequest) {
   return request.headers.get("accept")?.includes("application/json");
@@ -95,75 +85,19 @@ export async function POST(
     );
   }
 
-  try {
-    const contentType = request.headers.get("content-type") ?? "";
-    const body = contentType.includes("application/json")
-      ? await request.json()
-      : Object.fromEntries((await request.formData()).entries());
-    const input = DonorFollowUpRequestSchema.parse(body);
-    const draft = applyDonorFollowUpToDraft({
-      draft: draftRecord.draft,
-      message: input.message,
-      donorName: input.donorName,
-    });
-    const prompt = await loadPrompt("apply-donor-followup");
-    const generationRun = await storage.createGenerationRun({
-      id: randomUUID(),
-      projectId,
-      opportunityId: draftRecord.opportunityId,
-      runType: "apply_donor_followup",
-      promptName: prompt.name,
-      promptVersion: prompt.version,
-      modelProvider: "deterministic",
-      modelName: "source-grounded-followup-updater-v1",
-      inputChunkIds: draft.citations
-        .map((citation) => citation.chunkId)
-        .filter((chunkId): chunkId is string => Boolean(chunkId)),
-      validationResult: draft.validation,
-      status: "completed",
-      storedPayloadMode: "validated_outputs_only",
-    });
-    const updated = await storage.updateDraftRecord(projectId, draftId, {
-      draft,
-      investorSegment: draft.investorSegment,
-      generationRunId: generationRun.id,
-    });
-
-    if (wantsJson(request)) {
-      return NextResponse.json({ draft: updated }, { status: 200 });
-    }
-
-    return redirectWithParam({
-      request,
-      projectId,
-      opportunityId,
-      draftId,
-      key: "followup",
-      value: "applied",
-    });
-  } catch (error) {
-    if (wantsJson(request)) {
-      return NextResponse.json(
-        {
-          error:
-            error instanceof z.ZodError
-              ? "Enter a donor follow-up message under 4,000 characters."
-              : "The donor follow-up could not be applied.",
-        },
-        { status: error instanceof z.ZodError ? 400 : 500 },
-      );
-    }
-
-    return redirectWithParam({
-      request,
-      projectId,
-      opportunityId,
-      draftId,
-      key: "followupError",
-      value:
-        error instanceof z.ZodError
-          ? "Enter a donor follow-up message under 4,000 characters."
-          : "The donor follow-up could not be applied.",
-    });
+  if (wantsJson(request)) {
+    return NextResponse.json(
+      { error: "Live model generation is required before donor follow-up edits can be applied." },
+      { status: 503 },
+    );
   }
+
+  return redirectWithParam({
+    request,
+    projectId,
+    opportunityId,
+    draftId,
+    key: "followup",
+    value: "model-required",
+  });
 }

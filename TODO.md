@@ -14,15 +14,16 @@
 - [x] Prompt loading and prompt-version metadata.
 - [x] Optional model-backed extraction behind `ModelProvider`.
 - [x] Unit coverage for Sprint 3 role, pathway, assessment, validation, prompt,
-      mock-model, and edit behavior.
+      test-provider, and edit behavior.
 
 ## Known Limitations
 
-- [ ] Role and funding-pathway extraction is deterministic and pattern-based.
+- [ ] Role and funding-pathway extraction is rule-based and pattern-based.
 - [ ] Citation validation is not yet a full sentence-level claim verifier.
 - [ ] Nested role, pathway, claim, beneficiary, and evidence-gap editing remains
       limited.
-- [ ] Donor-facing generation is deterministic rather than model-authored.
+- [ ] Donor-facing generation requires a configured live model backend; no
+      local fallback draft is produced.
 - [ ] DOCX export is minimal and unbranded.
 - [ ] Product-quality evaluation is heuristic until expert reviewer data exists.
 - [ ] No browser automation e2e suite exists yet.
@@ -37,7 +38,7 @@
 - [x] Add UI for draft format selection, generation, validation warnings,
       evidence panels, product-quality evaluation, section regeneration, and
       DOCX export.
-- [x] Add deterministic tests for donor-facing rendering, citation mapping,
+- [x] Add regression tests for donor-facing rendering, citation mapping,
       unresolved funding pathway rendering, segment tailoring, regeneration,
       DOCX export, and draft persistence.
 

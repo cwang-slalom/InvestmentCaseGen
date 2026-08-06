@@ -107,7 +107,8 @@ def test_uploaded_text_extraction_uses_source_content() -> None:
 def test_uploaded_pdf_extraction_reads_text_layer() -> None:
     test_client = client()
     project = test_client.post("/api/projects", json={"name": "PDF extraction test"}).json()
-    pdf_content = Path("../resources/reference-output-examples/maternal-newborn-health-spotlights.pdf").read_bytes()
+    repo_root = Path(__file__).resolve().parents[2]
+    pdf_content = (repo_root / "resources/reference-output-examples/maternal-newborn-health-spotlights.pdf").read_bytes()
 
     response = test_client.post(
         f"/api/sources/extract?projectId={project['id']}&filename=maternal-newborn-health-spotlights.pdf",

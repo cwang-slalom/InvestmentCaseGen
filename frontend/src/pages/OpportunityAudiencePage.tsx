@@ -104,6 +104,10 @@ export function OpportunityAudiencePage({
   }
 
   async function submitNewSource() {
+    if (sourceInputMode === "file" && !sourceFile) {
+      setError("Select a text-layer PDF, TXT, or Markdown source before continuing.");
+      return;
+    }
     setSubmitting(true);
     setError("");
     try {
@@ -117,11 +121,17 @@ export function OpportunityAudiencePage({
       });
       onProject(updated);
 
-      if (sourceInputMode === "file" && sourceFile) {
+      if (sourceInputMode === "file") {
+        if (!sourceFile) {
+          throw new Error("Select a text-layer PDF, TXT, or Markdown source before continuing.");
+        }
         await api.extractFile(project.id, sourceFile);
       } else {
         const source = config?.knowledgeSources.find((item) => item.id === knowledgeSourceId);
-        await api.extractKnowledgeSource(project.id, source?.title || "Vaccine Strategy 2026.pdf", knowledgeSourceId || "src-vaccine-strategy");
+        if (!source) {
+          throw new Error("Select a knowledge-base source before continuing.");
+        }
+        await api.extractKnowledgeSource(project.id, source.title, source.id);
       }
 
       const refreshed = await api.project(project.id);
@@ -239,11 +249,17 @@ export function OpportunityAudiencePage({
               <small>Drag &amp; drop files here or <b>browse</b></small>
               <em>Supported files: text-layer PDF, TXT, Markdown&nbsp;&nbsp;•&nbsp;&nbsp;Max 25MB each</em>
             </label>
-            <button className="kb-button" type="button" onClick={() => setSourceInputMode("knowledge")}>
+            <button className="kb-button" type="button" onClick={() => {
+              setSourceInputMode("knowledge");
+              setSourceFile(null);
+            }}>
               <Icon name="book" />
               Browse Knowledge Base
             </button>
-            <button className="choice-button" type="button" onClick={() => setSourceInputMode("knowledge")}>
+            <button className="choice-button" type="button" onClick={() => {
+              setSourceInputMode("knowledge");
+              setSourceFile(null);
+            }}>
               Or choose from Knowledge Base
             </button>
             {sourceInputMode === "knowledge" && (
@@ -282,7 +298,7 @@ export function OpportunityAudiencePage({
             <Icon name="arrow" />
           </button>
         ) : (
-          <button className="primary-button large" type="button" disabled={submitting} onClick={submitNewSource}>
+          <button className="primary-button large" type="button" disabled={submitting || (sourceInputMode === "file" && !sourceFile)} onClick={submitNewSource}>
             Continue to review setup
             <Icon name="arrow" />
           </button>
@@ -752,7 +768,8 @@ function suggestionIcon(id: string): IconName {
 
 function sourceLabel(source: FieldValue["metadata"]["source"]) {
   if (source === "audience_profile") return "Audience profile";
-  if (source === "ai_suggestion") return "AI suggestion";
+  if (source === "ai_suggestion") return "Model suggestion";
+  if (source === "system_setup") return "Setup default";
   if (source === "opportunity") return "Opportunity";
   if (source === "extracted_source") return "Extracted source";
   return "User edited";

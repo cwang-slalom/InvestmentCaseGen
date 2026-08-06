@@ -35,7 +35,7 @@ Backend:
 - `backend/app/backends/__init__.py`
 - `backend/app/backends/base.py`
 - `backend/app/backends/databricks_backend.py`
-- `backend/app/backends/mock_backend.py`
+- `backend/app/backends/model_required_backend.py`
 - `backend/app/models/__init__.py`
 - `backend/app/models/audience.py`
 - `backend/app/models/base.py`
@@ -48,6 +48,7 @@ Backend:
 - `backend/app/repositories/base.py`
 - `backend/app/repositories/memory.py`
 - `backend/app/services/__init__.py`
+- `backend/app/services/docx_export.py`
 - `backend/app/services/extraction.py`
 - `backend/app/services/generation.py`
 - `backend/app/services/integrity.py`

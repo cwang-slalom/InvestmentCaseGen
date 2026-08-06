@@ -3,6 +3,7 @@ export type FieldSource =
   | "opportunity"
   | "audience_profile"
   | "ai_suggestion"
+  | "system_setup"
   | "extracted_source";
 
 export type CitationRef = {

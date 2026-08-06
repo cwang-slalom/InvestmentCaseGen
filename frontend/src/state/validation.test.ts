@@ -13,8 +13,8 @@ const approachField: FieldValue = {
   id: "tone",
   label: "Tone",
   value: "Balanced",
-  provenanceLabel: "Suggested by Phase 1 setup",
-  metadata: { source: "ai_suggestion", required: true, editable: true, confirmed: false },
+  provenanceLabel: "Default setup value",
+  metadata: { source: "system_setup", required: true, editable: true, confirmed: false },
 };
 
 const role: ReviewRole = {

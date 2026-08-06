@@ -41,5 +41,5 @@ Material findings:
 - Production document parsing beyond plain text and text-layer PDF.
 - Durable project and source storage.
 - Live model invocation outside the approved Databricks generation path.
-- Production export to DOCX or PowerPoint.
+- Branded production DOCX export and PowerPoint export.
 - Reviewer notifications and user-level authorization.

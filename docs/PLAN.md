@@ -101,8 +101,9 @@ Planning checkpoint date: 2026-07-14
 - Add Claude as a first-class live model option through the existing FastAPI
   `/ai/structured` boundary, using Anthropic's Messages API.
 - Preserve backend-owned prompt loading, caller-supplied JSON schema
-  validation, validated-output-only persistence, and deterministic fallback
-  behavior.
+  validation, and validated-output-only persistence. The active Phase 1 UI
+  generation route was later changed to live-model-only with no deterministic
+  fallback draft.
 - Keep the TypeScript route layer provider-agnostic: Claude, Vertex Gemini, and
   Databricks Model Serving all flow through the same `BackendModelProvider`
   when `GENAI_BACKEND_BASE_URL` or `NEXT_PUBLIC_API_BASE_URL` is configured.
@@ -123,7 +124,9 @@ Planning checkpoint date: 2026-07-14
   extraction review for new opportunities, review setup, generation progress,
   and generated-materials review.
 - Use only synthetic opportunities, audiences, sources, projects, extraction
-  results, generated outputs, and review findings.
+  results, generated outputs, and review findings at that checkpoint. Uploaded
+  source extraction and generation behavior were later changed so real uploads
+  parse source text and generation requires the live model backend.
 - Prepare `GenerationBackend`, `CaseRepository`, `OpportunityRepository`,
   `AudienceRepository`, and `SourceProcessor` interfaces for later production
   replacements.

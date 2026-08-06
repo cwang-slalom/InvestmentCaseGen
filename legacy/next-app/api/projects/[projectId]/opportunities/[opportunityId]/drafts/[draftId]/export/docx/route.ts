@@ -59,7 +59,7 @@ export async function GET(
     runType: "export_docx",
     promptName: prompt.name,
     promptVersion: prompt.version,
-    modelProvider: "deterministic",
+    modelProvider: "local_exporter",
     modelName: "minimal-docx-exporter-v1",
     inputChunkIds: [],
     validationResult: draftRecord.draft.validation,

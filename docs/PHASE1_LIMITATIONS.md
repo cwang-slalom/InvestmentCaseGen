@@ -13,10 +13,9 @@ Current behavior and limitations:
   is no deterministic or mock generation fallback.
 - In-memory project state may survive browser refresh while the process runs,
   but it resets on application restart.
-- File upload UI still advertises additional formats, but the Phase 1 FastAPI
-  parser currently supports plain text and text-layer PDFs. DOCX, PPTX, XLSX,
-  OCR, scanned PDFs, charts, diagrams, and complex tables are not production
-  parsed in this runtime.
+- File upload parsing currently supports plain text, Markdown, and text-layer
+  PDFs. DOCX, PPTX, XLSX, OCR, scanned PDFs, charts, diagrams, and complex
+  tables are not production parsed in this runtime.
 - Uploaded bytes are parsed in memory and are not retained after extraction.
 - No durable document storage is implemented.
 - No external web search is performed.
@@ -24,8 +23,9 @@ Current behavior and limitations:
 - No reviewer notifications or approval workflow automation are implemented.
 - Minimal DOCX draft export is implemented from the current visible output
   payload. No branded production DOCX or PowerPoint export is implemented.
-- `DatabricksGenerationBackend` is a prepared integration seam only. It does
-  not guess endpoint names or payload formats.
+- `DatabricksGenerationBackend` maps the reviewed UI project state into the
+  structured model request, but it still requires approved Databricks endpoint
+  configuration and credentials at runtime.
 
 Future intended pattern:
 

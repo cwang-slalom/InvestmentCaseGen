@@ -6,7 +6,7 @@ import type {
 
 export class MockModelProvider implements ModelProvider {
   readonly providerName = "mock";
-  readonly modelName = "deterministic-foundation-mock";
+  readonly modelName = "schema-test-provider";
 
   constructor(private readonly resolver?: (request: unknown) => unknown) {}
 
