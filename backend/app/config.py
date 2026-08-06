@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         "@localhost:5432/investmentgen"
     )
     backend_cors_origins: str = "http://localhost:3000"
-    model_provider_mode: str = "deterministic"
+    model_provider_mode: str = "model_required"
     google_cloud_project: str | None = None
     vertex_ai_location: str | None = None
     google_cloud_location: str | None = None

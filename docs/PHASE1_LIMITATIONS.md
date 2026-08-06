@@ -7,8 +7,10 @@ Current behavior and limitations:
 - Existing-library opportunities, audiences, source records, recent projects,
   and demo review findings are synthetic.
 - New-opportunity uploads parse plain text and text-layer PDFs in memory.
-  Extracted fields and generated drafts use the uploaded source text, with
-  unresolved values where evidence is not found.
+  Extracted fields use the uploaded source text, with unresolved values where
+  evidence is not found.
+- Generated drafts require a configured live Databricks model backend. There
+  is no deterministic or mock generation fallback.
 - In-memory project state may survive browser refresh while the process runs,
   but it resets on application restart.
 - File upload UI still advertises additional formats, but the Phase 1 FastAPI

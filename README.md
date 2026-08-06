@@ -15,18 +15,20 @@ Browser
   -> same-origin FastAPI application
   -> /api/*
   -> server-side GenerationBackend
-  -> mock backend or future Databricks backend
+  -> live Databricks model backend for generation
 ```
 
 FastAPI serves the compiled React/Vite application and all `/api/*` routes from
 one public process. No production Node.js server, Prisma database, SQLite
-store, external API host, or live Databricks model endpoint is required.
+store, or external API host is required. Generated outputs require a configured
+live Databricks model endpoint; the app does not provide deterministic or mock
+generation fallback output.
 
 ## Repository Structure
 
 - `frontend/` - React, TypeScript, Vite Phase 1 app.
-- `backend/` - FastAPI API, in-memory repositories, mock generation backend,
-  and Databricks backend seam.
+- `backend/` - FastAPI API, in-memory repositories, uploaded-source parsing,
+  DOCX draft export, and Databricks generation backend.
 - `prompts/` - core prompt rules and task prompt examples.
 - `fixtures/` - reserved for future fixture files.
 - `docs/` - deployment notes, client checklist, limitations, plan, decisions.

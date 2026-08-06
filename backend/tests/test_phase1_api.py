@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.models.extraction import ExtractionResult
-from app.models.generation import GenerationResult
 from app.services.integrity import locked_facts_preserved
 
 
@@ -39,7 +38,9 @@ def test_api_health_and_config_do_not_expose_credentials() -> None:
     assert health.json()["status"] == "ok"
     assert config.status_code == 200
     payload = config.json()
-    assert payload["mode"] == "mock"
+    assert payload["mode"] == "not_configured"
+    assert payload["backend"]["status"] == "not_configured"
+    assert payload["backend"]["provider"] == "model-required-generation-backend"
     serialized = str(payload)
     for forbidden in [
         "DATABRICKS_CLIENT_SECRET",
@@ -121,36 +122,17 @@ def test_uploaded_pdf_extraction_reads_text_layer() -> None:
     assert "Global Vaccine Development Initiative" not in values
 
 
-def test_mock_generation_contract_and_response_validation() -> None:
+def test_generation_requires_live_model_by_default() -> None:
     test_client = client()
     project = test_client.post("/api/projects", json={"name": "Generation test"}).json()
-    project_id = project["id"]
-    opportunity = test_client.get("/api/opportunities").json()[0]
-    audience = test_client.get("/api/audiences").json()[0]
 
-    test_client.put(
-        f"/api/projects/{project_id}/opportunity-audience",
-        json={
-            "sourceMode": "existing",
-            "opportunityId": opportunity["id"],
-            "audienceId": audience["id"],
-            "intendedOutcome": "Explore a co-funding partnership",
-            "suggestions": [],
-            "selectedOutputs": ["investment_case", "one_page", "source_appendix"],
-        },
-    )
+    response = test_client.post(f"/api/projects/{project['id']}/generate", json={"simulateError": False})
 
-    response = test_client.post(f"/api/projects/{project_id}/generate", json={"simulateError": False})
-
-    assert response.status_code == 200
-    parsed = GenerationResult.model_validate(response.json())
-    assert parsed.generation_id.startswith("gen-")
-    assert {output.type for output in parsed.outputs} == {"investment_case", "one_page", "source_appendix"}
-    assert parsed.review_findings
-    assert parsed.metadata["storedPayloadMode"] == "validated_outputs_only"
+    assert response.status_code == 503
+    assert "Live model generation is required" in response.json()["detail"]
 
 
-def test_generation_for_new_opportunity_uses_uploaded_source_fields() -> None:
+def test_new_opportunity_generation_requires_live_model_after_extraction() -> None:
     test_client = client()
     project = test_client.post("/api/projects", json={"name": "Source generation test"}).json()
     project_id = project["id"]
@@ -182,39 +164,43 @@ def test_generation_for_new_opportunity_uses_uploaded_source_fields() -> None:
 
     generation_response = test_client.post(f"/api/projects/{project_id}/generate", json={"simulateError": False})
 
-    assert generation_response.status_code == 200
-    generation = generation_response.json()
-    body = "\n".join(
-        section["body"]
-        for output in generation["outputs"]
-        for section in output["sections"]
-    )
-    assert generation["metadata"]["mode"] == "uploaded_source_deterministic"
-    assert "Clean Water Opportunity" in body
-    assert "USD 12-18 million" in body
-    assert "Vaccine Development Platform" not in body
-    assert any(
-        citation["label"] == "clean-water.txt"
-        for output in generation["outputs"]
-        for section in output["sections"]
-        for citation in section["citations"]
-    )
+    assert generation_response.status_code == 503
+    assert "Live model generation is required" in generation_response.json()["detail"]
 
 
 def test_phase1_docx_export_uses_visible_output_payload() -> None:
     test_client = client()
     project = test_client.post("/api/projects", json={"name": "Export test"}).json()
-    generation = test_client.post(f"/api/projects/{project['id']}/generate", json={"simulateError": False}).json()
-    output = generation["outputs"][0]
-    output["sections"][0]["body"] = "Edited section text that only exists in the browser."
+    output = {
+        "id": "out-investment-case",
+        "type": "investment_case",
+        "title": "Investment Case Draft",
+        "status": "Model generated - human review required",
+        "sections": [
+            {
+                "id": "case-summary",
+                "type": "narrative",
+                "heading": "Strategic Opportunity",
+                "body": "Edited section text that only exists in the browser.",
+                "citations": [
+                    {
+                        "sourceId": "src-clean-water",
+                        "label": "clean-water.txt",
+                        "locator": "p. 1",
+                        "excerpt": "Clean Water Opportunity",
+                    }
+                ],
+            }
+        ],
+    }
 
     response = test_client.post(
         f"/api/projects/{project['id']}/exports/docx",
         json={
             "output": output,
-            "informationNeeded": generation["informationNeeded"],
-            "reviewFindings": generation["reviewFindings"],
-            "metadata": generation["metadata"],
+            "informationNeeded": [],
+            "reviewFindings": [],
+            "metadata": {"mode": "live"},
         },
     )
 
@@ -269,13 +255,9 @@ def test_locked_number_comparison_and_generation_preserves_locked_fact() -> None
     )
     assert reviewed.status_code == 200
 
-    generation = test_client.post(f"/api/projects/{project_id}/generate", json={"simulateError": False}).json()
-    body = "\n".join(
-        section["body"]
-        for output in generation["outputs"]
-        for section in output["sections"]
-    )
-    assert "USD 12-18 million" in body
+    generation = test_client.post(f"/api/projects/{project_id}/generate", json={"simulateError": False})
+    assert generation.status_code == 503
+    assert "Live model generation is required" in generation.json()["detail"]
 
 
 def test_sanitized_controlled_generation_error() -> None:
@@ -288,4 +270,4 @@ def test_sanitized_controlled_generation_error() -> None:
     )
 
     assert response.status_code == 500
-    assert response.json() == {"detail": "Mock generation failed in controlled test mode."}
+    assert response.json() == {"detail": "Generation failed in controlled test mode."}

@@ -14,6 +14,9 @@ Planning checkpoint date: 2026-07-14
   output instead of the Databricks placeholder in configured Databricks Apps.
 - Add focused backend tests proving both initial UI generation and section
   regeneration call the Databricks Claude structured provider.
+- Remove deterministic/mock generation fallbacks. If the live model backend is
+  not configured, generation and regeneration return a not-configured error
+  instead of producing demo output.
 
 ## 2026-08-06 Uploaded Source Parsing And Source-Grounded Generation
 
@@ -21,11 +24,12 @@ Planning checkpoint date: 2026-07-14
   real in-memory parsing for plain text and text-layer PDFs through `pypdf`.
 - Build extracted fields from uploaded source text instead of synthetic vaccine
   fixtures, with unresolved values where source evidence is not found.
-- Make generation for "Create new opportunity" projects use the reviewed
-  extraction fields, citations, unresolved evidence gaps, and selected outputs
-  rather than the bundled demo opportunity.
-- Keep existing-library generation on synthetic fixture data so screenshot demo
-  flows remain available.
+- Send reviewed extraction fields, citations, unresolved evidence gaps,
+  selected audience, approach setup, and selected outputs into the live model
+  request for "Create new opportunity" projects.
+- Existing-library opportunity, audience, and source records remain synthetic
+  demo inputs, but they are no longer used to produce deterministic generated
+  outputs.
 - Keep source documents temporary in Phase 1; uploaded bytes are parsed in
   memory and are not durable project storage.
 
@@ -38,8 +42,7 @@ Planning checkpoint date: 2026-07-14
 - Wire Step 4 generation settings review through the same drawer pattern so
   users can inspect all settings and return to setup for changes.
 - Replace the disabled "View results (coming soon)" state with a real results
-  action. If mock generation has not completed yet, clicking the action
-  completes generation before navigating to the existing results review page.
+  action that only becomes usable when live model generation is configured.
 - Replace the disabled "Export future phase" result affordance with a minimal
   Phase 1 DOCX draft export from the current visible output payload, including
   local section edits, citations, information-needed items, and integrity
@@ -822,8 +825,8 @@ Sprint 4 limitations:
 
 - added a Vertex Gemini `ModelProvider` implementation that uses existing
   Google/Vertex `.env` variables and validates structured outputs with Zod
-- added provider-mode resolution for deterministic, mock, and Vertex-backed
-  behavior without exposing secrets
+- added provider-mode resolution for live model-backed behavior without
+  exposing secrets
 - wired opportunity extraction to attempt live model-backed extraction when
   configured, then fall back to deterministic extraction on network,
   authentication, or validation failure

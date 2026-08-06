@@ -11,7 +11,6 @@ from ..fixtures import (
     SOURCES,
     default_review_setup,
     default_suggestions,
-    generated_example,
     recent_projects,
     source_readiness,
 )
@@ -67,8 +66,7 @@ class InMemoryAudienceRepository(AudienceRepository):
 
 class InMemoryGenerationStore(GenerationStore):
     def __init__(self):
-        seed = generated_example()
-        self.generations: dict[str, GenerationResult] = {seed.generation_id: seed}
+        self.generations: dict[str, GenerationResult] = {}
 
     def get_generation(self, generation_id: str) -> GenerationResult:
         try:

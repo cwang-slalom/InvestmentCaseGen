@@ -9,7 +9,7 @@ const output: GeneratedOutput = {
   id: "out-case",
   type: "investment_case",
   title: "Investment Case Draft",
-  status: "Mock generated - human review required",
+  status: "Model generated - human review required",
   sections: [
     {
       id: "sec-1",

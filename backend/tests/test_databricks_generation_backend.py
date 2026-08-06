@@ -1,13 +1,24 @@
 import asyncio
 from typing import Any
 
+from fastapi.testclient import TestClient
+
 from app.ai import StructuredGenerationRequest, StructuredGenerationResponse
+from app.main import app
 from app.api import config as config_api
 from app.backends.databricks_backend import DatabricksGenerationBackend
 from app.config import Settings
 from app.models.base import BackendHealth
 from app.models.generation import GeneratedSection, GenerationResult
 from app.repositories.memory import case_repository
+
+
+REAL_SOURCE_TEXT = b"""Clean Water Opportunity
+Problem: Rural clinics face unreliable water systems that interrupt safe care.
+Solution: Install solar-powered purification hubs with district maintenance teams.
+Funding range: USD 12-18 million.
+Diligence: funding recipient and investment vehicle are not yet defined.
+"""
 
 
 class FakeLiveBackend:
@@ -135,6 +146,58 @@ def test_ui_generation_backend_calls_databricks_claude_provider() -> None:
     assert result.metadata["modelName"] == "databricks-claude-opus-5"
     assert result.metadata["generatedVia"] == "/api/projects/{projectId}/generate"
     assert all(output.status == "Claude generated - human review required" for output in result.outputs)
+
+
+def test_databricks_generation_request_includes_ui_setup_and_uploaded_source() -> None:
+    test_client = TestClient(app)
+    provider = FakeStructuredProvider()
+    backend = DatabricksGenerationBackend(
+        Settings(
+            model_provider_mode="databricks",
+            databricks_host="https://workspace.cloud.databricks.com",
+            databricks_model_serving_endpoint="databricks-claude-opus-5",
+            databricks_token="token-1",
+        ),
+        provider=provider,  # type: ignore[arg-type]
+    )
+    project = test_client.post("/api/projects", json={"name": "Model request mapping"}).json()
+    project_id = project["id"]
+    audience = test_client.get("/api/audiences").json()[0]
+    test_client.put(
+        f"/api/projects/{project_id}/opportunity-audience",
+        json={
+            "sourceMode": "new",
+            "opportunityId": None,
+            "audienceId": audience["id"],
+            "intendedOutcome": "Explore a co-funding partnership",
+            "suggestions": [],
+            "selectedOutputs": ["investment_case", "source_appendix"],
+        },
+    )
+    extraction = test_client.post(
+        f"/api/sources/extract?projectId={project_id}&filename=clean-water.txt",
+        content=REAL_SOURCE_TEXT,
+        headers={"content-type": "text/plain"},
+    ).json()
+    for field in extraction["fields"]:
+        field["verified"] = True
+    test_client.put(
+        f"/api/projects/{project_id}/extraction-review",
+        json={"fields": extraction["fields"], "confirmed": True},
+    )
+    project_model = case_repository.get_project(project_id)
+
+    result = asyncio.run(backend.generate(project_model))
+
+    request = provider.requests[-1]
+    payload = request.input
+    assert result.metadata["mode"] == "live"
+    assert payload["caseBrief"]["selectedAudience"]["id"] == audience["id"]
+    assert payload["caseBrief"]["project"]["reviewSetup"]["approachFields"]
+    assert payload["caseBrief"]["selectedOutputs"] == ["investment_case", "source_appendix"]
+    assert any(fact["id"] == "funding_range" and "USD 12-18 million" in fact["value"] for fact in payload["approvedFactLedger"])
+    assert any(excerpt["label"] == "clean-water.txt" for excerpt in payload["sourceExcerpts"])
+    assert any(field["id"] == "funding_range" for field in payload["extractedFields"])
 
 
 def test_databricks_section_regeneration_uses_claude_provider() -> None:

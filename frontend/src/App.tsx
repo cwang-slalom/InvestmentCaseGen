@@ -159,6 +159,7 @@ export function App() {
     content = (
       <GeneratePage
         project={currentProject}
+        config={config}
         generation={generation}
         onProject={updateProject}
         onGeneration={setGeneration}

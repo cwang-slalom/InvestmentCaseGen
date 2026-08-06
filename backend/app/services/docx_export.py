@@ -85,7 +85,7 @@ def _document_xml(project: Project, request: ExportDraftRequest) -> str:
     body.append(_paragraph("Export Metadata", "Heading1"))
     generated_at = datetime.now(tz=UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     body.append(_paragraph(f"Generated at: {generated_at}"))
-    body.append(_paragraph(f"Generation mode: {request.metadata.get('mode', 'mock')}"))
+    body.append(_paragraph(f"Generation mode: {request.metadata.get('mode', 'unknown')}"))
     body.append(_paragraph("Stored payload mode: visible draft payload only"))
 
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

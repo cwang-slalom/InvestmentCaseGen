@@ -3,13 +3,6 @@ from __future__ import annotations
 from .models.audience import AudienceProfile
 from .models.base import CitationRef, FieldMetadata, FieldValue
 from .models.extraction import ExtractedField, ExtractionResult
-from .models.generation import (
-    GeneratedOutput,
-    GeneratedSection,
-    GenerationResult,
-    InformationNeeded,
-    ReviewFinding,
-)
 from .models.opportunity import Opportunity
 from .models.project import (
     OpportunityAudienceState,
@@ -518,83 +511,6 @@ def recent_projects(now_iso: str) -> list[Project]:
             ),
         ),
     ]
-
-
-def generated_example(project_id: str = "demo-project-1") -> GenerationResult:
-    opp = OPPORTUNITIES[0]
-    aud = AUDIENCES[0]
-    citation = CitationRef(
-        sourceId=opp.source_list[0].id,
-        label=opp.source_list[0].title,
-        locator=opp.source_list[0].locator,
-        excerpt=opp.source_list[0].excerpt,
-    )
-    outputs = [
-        GeneratedOutput(
-            id="out-investment-case",
-            type="investment_case",
-            title="Investment Case Draft",
-            status="Mock generated - human review required",
-            sections=[
-                GeneratedSection(id="case-exec", type="narrative", heading="Strategic Opportunity", body=f"{opp.title} is framed as a conversation-opening investment case for {aud.name}. The draft preserves the synthetic funding range of {opp.funding_range} and keeps the funding recipient unresolved until source evidence identifies a vehicle.", citations=[citation]),
-                GeneratedSection(id="case-metric", type="metric", heading="Metric Callouts", body=f"Illustrative reach: {opp.reach}. Primary outcomes include {', '.join(opp.primary_outcomes[:2])}. These figures remain demo-only and require human verification.", citations=[citation]),
-                GeneratedSection(id="case-team", type="team", heading="Team And Delivery Pathway", body="Concept owner, implementation organization, investment manager, and funding recipient are separated. The current mock source identifies a sponsoring design team only; the funding recipient is unresolved.", citations=[citation]),
-                GeneratedSection(id="case-diligence", type="diligence", heading="Diligence Priorities", body="Confirm the capital pathway, test maintenance-finance assumptions, and review district procurement dependencies before external use.", citations=[citation]),
-                GeneratedSection(id="case-risk", type="risk", heading="Risks And Open Questions", body="The largest Phase 1 risks are durable maintenance financing, supplier response time, and whether the example districts can sustain accountable reporting.", citations=[citation]),
-                GeneratedSection(id="case-engage", type="engage", heading="Suggested Next Conversation", body="Invite a focused discussion on whether a co-funding partnership should move into a diligence sprint, without presenting this as a direct funding ask.", citations=[citation]),
-            ],
-        ),
-        GeneratedOutput(
-            id="out-one-page",
-            type="one_page",
-            title="1-Page Opportunity Summary",
-            status="Mock generated - human review required",
-            sections=[
-                GeneratedSection(id="one-page-summary", type="opportunity", heading="Opportunity Summary", body=f"{opp.summary} Why now: {opp.why_now}", citations=[citation]),
-                GeneratedSection(id="one-page-fit", type="narrative", heading="Audience Fit", body=f"{aud.name} may find the concept relevant because it connects {aud.interests[0]} with practical implementation evidence.", citations=[citation]),
-            ],
-        ),
-        GeneratedOutput(
-            id="out-talking-points",
-            type="talking_points",
-            title="Meeting Talking Points",
-            status="Mock generated - human review required",
-            sections=[
-                GeneratedSection(id="talk-open", type="engage", heading="Opening", body="Start with the reliability constraint, then ask what evidence would be most useful before deeper diligence.", citations=[citation]),
-                GeneratedSection(id="talk-questions", type="diligence", heading="Questions To Invite", body="Which co-funding conditions matter most? What proof would make a follow-up conversation worthwhile?", citations=[]),
-            ],
-        ),
-        GeneratedOutput(
-            id="out-appendix",
-            type="source_appendix",
-            title="Source Appendix",
-            status="Mock generated - human review required",
-            sections=[
-                GeneratedSection(id="appendix-sources", type="diligence", heading="Source List", body="This appendix lists only synthetic Phase 1 sources used by the mock generator.", citations=[citation]),
-                GeneratedSection(id="appendix-boundary", type="risk", heading="Evidence Boundary", body="No external web research was performed. Uploaded real documents are not treated as durable stored sources in Phase 1.", citations=[]),
-            ],
-        ),
-    ]
-    return GenerationResult(
-        generationId=f"gen-{project_id}",
-        projectId=project_id,
-        status="needs_information",
-        outputs=outputs,
-        informationNeeded=[
-            InformationNeeded(id="info-funding-pathway", message="Funding recipient or investment vehicle is unresolved in the current source set.", relatedSection="case-team"),
-            InformationNeeded(id="info-cost-basis", message="Cost basis and per-beneficiary assumptions require human review before external circulation.", relatedSection="case-metric"),
-        ],
-        reviewFindings=[
-            ReviewFinding(id="finding-1", severity="warning", type="unresolved_role", message="Funding recipient is not established by the supplied sources.", resolved=False),
-            ReviewFinding(id="finding-2", severity="editorial", type="tone", message="Confirm the briefing language is appropriate for the selected audience.", resolved=False),
-            ReviewFinding(id="finding-3", severity="blocking", type="source_readiness", message="Human review is required before using this output externally.", resolved=False),
-        ],
-        metadata={
-            "mode": "mock",
-            "storedPayloadMode": "validated_outputs_only",
-            "externalWebSearch": "disabled",
-        },
-    )
 
 
 def source_readiness(

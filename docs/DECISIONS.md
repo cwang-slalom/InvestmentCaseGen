@@ -4,15 +4,20 @@ Planning checkpoint date: 2026-07-14
 
 ## Decisions
 
-## 2026-08-06: Uploaded Sources Drive New-Opportunity Phase 1 Output
+## 2026-08-06: UI Generation Requires The Live Model Backend
 
 The "Create new opportunity" path now parses uploaded plain text and
 text-layer PDFs in the FastAPI runtime and builds extraction fields from the
-uploaded content. Generation for those projects uses the reviewed extraction
-fields and their citations instead of the bundled vaccine demo fixture.
+uploaded content. Those reviewed extraction fields, citations, unresolved
+evidence gaps, selected audience, selected outputs, and approach setup are sent
+into the live model request.
 
-This remains deterministic Phase 1 generation rather than a final live-model
-investment case. It must preserve unresolved fields when the source does not
+Deterministic and mock generation fallbacks are removed from the Phase 1 UI
+generation path. If Databricks live model generation is not configured, the
+Generate page reports that a live model is required and the API returns a
+not-configured error instead of producing fixture output.
+
+Generated outputs must preserve unresolved fields when the source does not
 identify a funding recipient, investment vehicle, role, figure, or timeline.
 Uploaded bytes are processed in memory and are not durable source storage.
 
@@ -24,9 +29,9 @@ context while making visible actions such as Edit setup, View all sources,
 External web search, and View all settings perform observable work.
 
 The generation page now treats results review as part of the Phase 1 workflow,
-not a coming-soon placeholder. The View results action can trigger the mock
-generation endpoint if needed, then navigates to the existing generated-output
-review page.
+not a coming-soon placeholder. The View results action is available only when
+live model generation is configured; otherwise the page explains the missing
+model configuration.
 
 The results page now supports minimal DOCX draft export in the Phase 1
 FastAPI/Vite runtime. The export endpoint accepts the current visible output
@@ -111,11 +116,10 @@ code remains bypassed legacy work and is not part of the Phase 1 runtime.
 
 ## 2026-08-05: Production Databricks Generation Is Not Guessed
 
-`MockGenerationBackend` is fully functional for Phase 1. At this checkpoint,
-`DatabricksGenerationBackend` existed as a server-side integration seam and
-returned not-configured until the client supplied the approved model-serving or
-agent resource and request mapping. No endpoint name, request payload, token, or
-client-specific Databricks identifier was hardcoded.
+At this checkpoint, `DatabricksGenerationBackend` existed as a server-side
+integration seam and returned not-configured until the client supplied the
+approved model-serving or agent resource and request mapping. No endpoint name,
+request payload, token, or client-specific Databricks identifier was hardcoded.
 
 ## 2026-08-06: UI Generation Uses The Databricks Claude Resource
 

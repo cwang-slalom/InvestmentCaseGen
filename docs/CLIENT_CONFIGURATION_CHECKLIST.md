@@ -1,6 +1,6 @@
 # Client Configuration Checklist
 
-Request these items from the client before moving beyond Phase 1 mock mode:
+Request these items from the client before enabling Phase 1 live generation:
 
 - Client GitHub repository.
 - Deployment branch.

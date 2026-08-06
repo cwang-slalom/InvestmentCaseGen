@@ -16,9 +16,8 @@ Material findings:
   serving the compiled frontend and all `/api/*` routes from one public process.
 - Existing backend retained where useful: `/ai/structured` remains available
   for the transitional provider tests. The Phase 1 product workflow uses the
-  new `GenerationBackend` boundary; new-opportunity drafts are deterministic
-  outputs from uploaded extraction fields, while existing-library demo flows
-  still use synthetic fixtures.
+  new `GenerationBackend` boundary and requires a configured live Databricks
+  model backend for output generation.
 - Prisma, SQLite, Vercel-style frontend runtime, Turbopack, and external
   backend URLs are not required for Phase 1.
 - No broad repository audit was performed. The preflight was scoped to existing
@@ -28,19 +27,19 @@ Material findings:
 ## Assumptions
 
 - Databricks Apps will deploy from the repository root.
-- The client has not yet approved a specific model-serving endpoint, agent, or
-  request payload contract.
+- Output generation requires the approved Databricks model-serving endpoint or
+  agent resource and App identity permissions.
 - Uploaded documents are processed temporarily in Phase 1 and are not retained
   across application restarts.
-- Synthetic opportunity, audience, project, source, generation, and review data
-  remain acceptable for existing-library demo flows. New-opportunity uploads
-  should parse text-layer PDFs or plain text and generate from reviewed
-  extraction fields.
+- Synthetic opportunity, audience, project, source, and review data remain
+  acceptable for existing-library setup/demo flows. New-opportunity uploads
+  should parse text-layer PDFs or plain text, then pass reviewed extraction
+  fields into live generation.
 
 ## Deferred Issues
 
 - Production document parsing beyond plain text and text-layer PDF.
 - Durable project and source storage.
-- Live Databricks model or agent invocation mapping.
+- Live model invocation outside the approved Databricks generation path.
 - Production export to DOCX or PowerPoint.
 - Reviewer notifications and user-level authorization.

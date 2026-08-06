@@ -3,17 +3,18 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from "re
 import { api } from "../api/client";
 import { Icon, type IconName } from "../components/Icons";
 import { functionalOutputs, futureOutputs, generationStages } from "../state/options";
-import type { GenerationResult, Project } from "../types";
+import type { AppConfig, GenerationResult, Project } from "../types";
 
 type GeneratePageProps = {
   project: Project;
+  config?: AppConfig | null;
   generation?: GenerationResult | null;
   onProject: (project: Project) => void;
   onGeneration: (generation: GenerationResult) => void;
   onNavigate: (path: string) => void;
 };
 
-export function GeneratePage({ project, generation, onProject, onGeneration, onNavigate }: GeneratePageProps) {
+export function GeneratePage({ project, config, generation, onProject, onGeneration, onNavigate }: GeneratePageProps) {
   const [error, setError] = useState("");
   const [generating, setGenerating] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -21,11 +22,16 @@ export function GeneratePage({ project, generation, onProject, onGeneration, onN
   const generationPromiseRef = useRef<Promise<GenerationResult | null> | null>(null);
   const selectedOutputs = project.opportunityAudience?.selectedOutputs || [];
   const currentGeneration = generation?.projectId === project.id ? generation : null;
+  const liveModelReady = config?.mode === "live";
   const complete = Boolean(project.generationId || currentGeneration?.status === "completed");
-  const progress = complete ? 100 : generating ? 78 : 65;
-  const outputCards = generationOutputCards(selectedOutputs, complete);
+  const progress = !liveModelReady ? 0 : complete ? 100 : generating ? 78 : 65;
+  const outputCards = generationOutputCards(selectedOutputs, complete, liveModelReady);
 
   const runGeneration = useCallback(async () => {
+    if (!liveModelReady) {
+      setError(config?.backend.message || "Live model generation is required before outputs can be generated.");
+      return null;
+    }
     if (project.generationId) return null;
     if (generationPromiseRef.current) return generationPromiseRef.current;
 
@@ -49,9 +55,10 @@ export function GeneratePage({ project, generation, onProject, onGeneration, onN
 
     generationPromiseRef.current = request;
     return request;
-  }, [onGeneration, onProject, project.generationId, project.id]);
+  }, [config?.backend.message, liveModelReady, onGeneration, onProject, project.generationId, project.id]);
 
   useEffect(() => {
+    if (!liveModelReady) return;
     if (project.generationId) return;
     timerRef.current = window.setTimeout(() => {
       void runGeneration();
@@ -60,7 +67,7 @@ export function GeneratePage({ project, generation, onProject, onGeneration, onN
     return () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
     };
-  }, [project.generationId, runGeneration]);
+  }, [liveModelReady, project.generationId, runGeneration]);
 
   async function viewResults() {
     if (timerRef.current) window.clearTimeout(timerRef.current);
@@ -91,7 +98,7 @@ export function GeneratePage({ project, generation, onProject, onGeneration, onN
           <div className="progress-content">
             <div className="stage-list">
               {generationStages.map((stage, index) => {
-                const status = complete ? "completed" : index < 2 ? "completed" : index === 2 ? "in-progress" : "queued";
+                const status = !liveModelReady ? "queued" : complete ? "completed" : index < 2 ? "completed" : index === 2 ? "in-progress" : "queued";
                 return (
                   <div className={`stage-row ${status}`} key={stage}>
                     <span>{status === "completed" ? <Icon name="check" /> : <Icon name={status === "in-progress" ? "circle-check" : "clock"} />}</span>
@@ -103,13 +110,17 @@ export function GeneratePage({ project, generation, onProject, onGeneration, onN
             </div>
             <div className="progress-ring" style={{ "--progress": `${progress}%` } as CSSProperties}>
               <span>{progress}%</span>
-              <small>{complete ? "Completed" : "In progress"}</small>
+              <small>{!liveModelReady ? "Model required" : complete ? "Completed" : "In progress"}</small>
             </div>
           </div>
           <p className="duration-note">This usually takes 2-4 minutes.</p>
           <div className="info-callout slim">
             <Icon name="info" />
-            <p>You'll be notified when your materials are ready.</p>
+            <p>
+              {liveModelReady
+                ? "You'll be notified when your materials are ready."
+                : config?.backend.message || "Live model generation is required before outputs can be generated."}
+            </p>
           </div>
           {error && <p className="validation-message" role="alert">{error}</p>}
         </section>
@@ -171,8 +182,8 @@ export function GeneratePage({ project, generation, onProject, onGeneration, onN
           <button className="secondary-button large" type="button" onClick={() => onNavigate("/projects")}>
             Save and exit
           </button>
-          <button className="primary-button large" type="button" disabled={generating} onClick={viewResults}>
-            {generating ? "Generating results..." : "View results"}
+          <button className="primary-button large" type="button" disabled={!liveModelReady || generating} onClick={viewResults}>
+            {!liveModelReady ? "Configure model to generate" : generating ? "Generating results..." : "View results"}
           </button>
         </div>
       </div>
@@ -260,17 +271,17 @@ function GenerationSettingsDrawer({
   );
 }
 
-function generationOutputCards(selectedOutputs: string[], complete: boolean) {
+function generationOutputCards(selectedOutputs: string[], complete: boolean, liveModelReady: boolean) {
   const functionalCards = functionalOutputs.map((output, index) => ({
     label: output.label,
     description: output.description,
     checked: selectedOutputs.includes(output.id),
     icon: output.id === "talking_points" ? "file" : "document",
     tone: output.id === "talking_points" ? "green" : "blue",
-    status: complete ? "completed" : index === 0 ? "in-progress" : index === 1 ? "in-progress" : index === 2 ? "completed" : "queued",
-    statusLabel: complete ? "Completed" : index === 0 ? "In progress" : index === 1 ? "In progress" : index === 2 ? "Completed" : "Queued",
-    percent: complete ? "" : index === 0 ? "65%" : index === 1 ? "55%" : "",
-    done: complete || index === 2,
+    status: !liveModelReady ? "queued" : complete ? "completed" : index === 0 ? "in-progress" : index === 1 ? "in-progress" : index === 2 ? "completed" : "queued",
+    statusLabel: !liveModelReady ? "Model required" : complete ? "Completed" : index === 0 ? "In progress" : index === 1 ? "In progress" : index === 2 ? "Completed" : "Queued",
+    percent: !liveModelReady || complete ? "" : index === 0 ? "65%" : index === 1 ? "55%" : "",
+    done: liveModelReady && (complete || index === 2),
   }));
 
   const futureCards = futureOutputs.map((label) => ({

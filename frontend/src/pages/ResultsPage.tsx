@@ -100,7 +100,7 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
         output,
         informationNeeded: generation?.informationNeeded || [],
         reviewFindings: generation?.reviewFindings || [],
-        metadata: generation?.metadata || { mode: "mock" },
+        metadata: generation?.metadata || { mode: "unknown" },
       });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -194,7 +194,7 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
           <dl>
             <div><dt>Outcome</dt><dd>{project.opportunityAudience?.intendedOutcome || "Unresolved"}</dd></div>
             <div><dt>Review status</dt><dd>{project.reviewSetup?.confirmed ? "Confirmed" : "Unconfirmed"}</dd></div>
-            <div><dt>Mode</dt><dd>{generation?.metadata.mode || "mock"}</dd></div>
+            <div><dt>Mode</dt><dd>{generation?.metadata.mode || "Unknown"}</dd></div>
           </dl>
           <div className="action-stack">
             <button className="secondary-button" type="button" onClick={() => onNavigate(`/projects/${project.id}/review-setup`)}>

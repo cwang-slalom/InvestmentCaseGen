@@ -15,7 +15,7 @@ async def generate(project_id: str, request: GenerateRequest) -> GenerationResul
     if request.simulate_error:
         raise HTTPException(
             status_code=500,
-            detail="Mock generation failed in controlled test mode.",
+            detail="Generation failed in controlled test mode.",
         )
 
     project = case_repository.get_project(project_id)
