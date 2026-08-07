@@ -248,6 +248,26 @@ export type ProjectUpdateRefreshResult = {
   generationId: string;
 };
 
+export type OutputChangeDecision = "accepted" | "edited" | "ignored";
+
+export type OutputChangeProposal = {
+  id: string;
+  outputType: OutputType;
+  sectionName: string;
+  currentText: string;
+  suggestedText: string;
+  sourceLabel: string;
+  sourceDate: string;
+};
+
+export type OutputChangeReview = {
+  outputType: OutputType;
+  outputTitle: string;
+  currentVersion: number;
+  nextVersion: number;
+  changes: OutputChangeProposal[];
+};
+
 export type ReviewFinding = {
   id: string;
   severity: "blocking" | "warning" | "editorial";

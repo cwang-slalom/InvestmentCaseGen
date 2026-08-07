@@ -44,8 +44,9 @@ export function Shell({
 }: ShellProps) {
   const projectRouteMatch = currentPath.match(/^\/projects\/([^/]+)\/([^/]+)/);
   const rawStep = projectRouteMatch?.[2] || "";
-  const currentStep = rawStep === "extraction-review" ? "opportunity-audience" : rawStep === "updates" ? "generate" : rawStep;
+  const currentStep = rawStep === "extraction-review" ? "opportunity-audience" : rawStep;
   const isProjectFlow = Boolean(projectRouteMatch);
+  const isCompletedProjectWorkspace = rawStep === "results" || rawStep === "updates";
   const currentStepIndex = wizardSteps.findIndex((step) => step.path === currentStep);
 
   function isNavActive(path: string) {
@@ -119,9 +120,17 @@ export function Shell({
       </aside>
       <main className="main">
         <header className="app-header">
-          <div className="app-title">
-            <h1>Investment Case Generator</h1>
-          </div>
+          {isCompletedProjectWorkspace && project ? (
+            <nav className="app-breadcrumb" aria-label="Breadcrumb">
+              <button type="button" onClick={() => onNavigate("/projects")}>My projects</button>
+              <Icon name="chevron-right" />
+              <span>{project.name}</span>
+            </nav>
+          ) : (
+            <div className="app-title">
+              <h1>Investment Case Generator</h1>
+            </div>
+          )}
           <div className="top-actions" aria-label="User actions">
             <button className="header-icon-button" type="button" aria-label="Help">
               <Icon name="help" />
@@ -136,7 +145,7 @@ export function Shell({
             </button>
           </div>
         </header>
-        {isProjectFlow && (
+        {isProjectFlow && !isCompletedProjectWorkspace && (
           <div className="stepper" aria-label="Project workflow">
             {wizardSteps.map((step, index) => {
               const isActive = currentStep === step.path;

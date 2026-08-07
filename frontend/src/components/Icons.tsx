@@ -20,6 +20,8 @@ export type IconName =
     | "search"
     | "bell"
     | "chevron-down"
+    | "chevron-right"
+    | "star"
     | "sparkles"
     | "users"
     | "presentation"
@@ -78,6 +80,8 @@ export function Icon({ name }: IconProps) {
   if (name === "search") return <svg {...common}><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>;
   if (name === "bell") return <svg {...common}><path d="M18 9a6 6 0 0 0-12 0c0 7-2.5 7-2.5 7h17S18 16 18 9" /><path d="M9.8 20a2.4 2.4 0 0 0 4.4 0" /></svg>;
   if (name === "chevron-down") return <svg {...common}><path d="m6 9 6 6 6-6" /></svg>;
+  if (name === "chevron-right") return <svg {...common}><path d="m9 6 6 6-6 6" /></svg>;
+  if (name === "star") return <svg {...common}><path d="m12 4 2.4 5 5.5.8-4 3.9.9 5.5-4.8-2.6-4.8 2.6.9-5.5-4-3.9 5.5-.8z" /></svg>;
   if (name === "sparkles") return <svg {...common}><path d="m12 3 1.8 5.1L19 10l-5.2 1.9L12 17l-1.8-5.1L5 10l5.2-1.9z" /><path d="m19 3 .8 2.2L22 6l-2.2.8L19 9l-.8-2.2L16 6l2.2-.8z" /></svg>;
   if (name === "users") return <svg {...common}><circle cx="9" cy="9" r="3" /><path d="M3.8 19a5.2 5.2 0 0 1 10.4 0" /><circle cx="17" cy="10" r="2.4" /><path d="M14.8 15.5A4.6 4.6 0 0 1 21 19" /></svg>;
   if (name === "presentation") return <svg {...common}><path d="M4 5h16v10H4z" /><path d="M12 15v5M9 20h6M8 9h8" /></svg>;

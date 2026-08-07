@@ -14,15 +14,18 @@ from ..fixtures import (
     recent_projects,
     source_readiness,
 )
+from ..models.base import CitationRef
 from ..models.audience import AudienceProfile
 from ..models.extraction import ExtractionResult
-from ..models.generation import GeneratedOutput, GenerationResult
+from ..models.generation import GeneratedOutput, GeneratedSection, GenerationResult, InformationNeeded, ReviewFinding
 from ..models.memory import (
+    AffectedOutput,
     ArtifactVersion,
     ProjectMemoryItem,
     ProjectMemorySummary,
     ProjectUpdate,
     ProjectUpdateReview,
+    UpdateCandidate,
 )
 from ..models.opportunity import Opportunity
 from ..models.project import (
@@ -103,6 +106,322 @@ class InMemoryCaseRepository(CaseRepository):
         self.project_memory_items: dict[str, list[ProjectMemoryItem]] = {}
         self.artifact_versions: dict[str, list[ArtifactVersion]] = {}
         self.next_number = 4
+        self._seed_demo_project_overview()
+
+    def _seed_demo_project_overview(self) -> None:
+        project = self.projects.get("demo-project-1")
+        if not project:
+            return
+
+        project.created_at = "2025-07-30T09:00:00Z"
+        project.updated_at = "2026-08-04T09:00:00Z"
+        project.generation_id = "gen-demo-project-1-v3"
+        self.projects[project.id] = project
+
+        strategy_citation = CitationRef(
+            sourceId="src-vaccine-strategy",
+            label="Vaccine Strategy 2026",
+            locator="p. 2",
+            excerpt="Synthetic strategy excerpt describing a next-generation vaccine development platform.",
+        )
+        generation = GenerationResult(
+            generationId=project.generation_id,
+            projectId=project.id,
+            status="completed",
+            outputs=[
+                GeneratedOutput(
+                    id="out-demo-investment-memo",
+                    type="investment_case",
+                    title="Investment Memo",
+                    status="draft",
+                    sections=[
+                        GeneratedSection(
+                            id="memo-thesis",
+                            type="narrative",
+                            heading="Investment rationale",
+                            body="A therapeutic vaccine development platform can help accelerate R&D readiness for priority health threats in Asia while preserving unresolved implementation and capital-pathway questions for diligence.",
+                            citations=[strategy_citation],
+                        ),
+                        GeneratedSection(
+                            id="memo-diligence",
+                            type="diligence",
+                            heading="Diligence questions",
+                            body="Funding recipient, investment vehicle, investment manager, and delivery partner roles remain unresolved unless confirmed by source material.",
+                            citations=[strategy_citation],
+                        ),
+                    ],
+                ),
+                GeneratedOutput(
+                    id="out-demo-executive-summary",
+                    type="one_page",
+                    title="Executive Summary",
+                    status="draft",
+                    sections=[
+                        GeneratedSection(
+                            id="summary-overview",
+                            type="narrative",
+                            heading="Executive summary",
+                            body="The case frames HKJC as a potential donor audience for an Asia-focused therapeutic vaccine development concept, not as the funding recipient.",
+                            citations=[strategy_citation],
+                        ),
+                        GeneratedSection(
+                            id="summary-why-now",
+                            type="opportunity",
+                            heading="Why now",
+                            body="Scientific readiness and partner interest create a near-term window for a source-grounded donor conversation.",
+                            citations=[strategy_citation],
+                        ),
+                    ],
+                ),
+                GeneratedOutput(
+                    id="out-demo-donor-brief",
+                    type="talking_points",
+                    title="Donor Brief",
+                    status="draft",
+                    sections=[
+                        GeneratedSection(
+                            id="brief-conversation",
+                            type="engage",
+                            heading="Donor conversation",
+                            body="Use the donor brief to test appetite for co-funding, clarify unanswered questions, and avoid implying a confirmed funding recipient.",
+                            citations=[strategy_citation],
+                        )
+                    ],
+                ),
+                GeneratedOutput(
+                    id="out-demo-source-appendix",
+                    type="source_appendix",
+                    title="Source Appendix",
+                    status="draft",
+                    sections=[
+                        GeneratedSection(
+                            id="appendix-sources",
+                            type="diligence",
+                            heading="Source appendix",
+                            body="Initial cited materials include the vaccine strategy, R&D landscape report, concept note, budget excerpt, and risk register.",
+                            citations=[strategy_citation],
+                        )
+                    ],
+                ),
+            ],
+            informationNeeded=[
+                InformationNeeded(
+                    id="need-demo-capital-pathway",
+                    message="Confirm the funding recipient, investment vehicle, and investment manager before external circulation.",
+                    relatedSection="Diligence questions",
+                )
+            ],
+            reviewFindings=[
+                ReviewFinding(
+                    id="finding-demo-unresolved-recipient",
+                    severity="warning",
+                    type="unresolved_role",
+                    message="Funding recipient and investment vehicle are unresolved in the current source set.",
+                    resolved=False,
+                )
+            ],
+            metadata={"mode": "demo", "createdFor": "Project Overview seed"},
+        )
+        self.generation_store.save_generation(generation)
+
+        self.artifact_versions[project.id] = [
+            ArtifactVersion(
+                id="artifact-demo-project-1-investment_case-v1",
+                projectId=project.id,
+                outputId="out-demo-investment-memo",
+                outputType="investment_case",
+                title="Investment Memo",
+                version=1,
+                status="superseded",
+                generationId=project.generation_id,
+                createdFromUpdateId=None,
+                createdAt="2026-07-30T10:00:00Z",
+            ),
+            ArtifactVersion(
+                id="artifact-demo-project-1-investment_case-v2",
+                projectId=project.id,
+                outputId="out-demo-investment-memo",
+                outputType="investment_case",
+                title="Investment Memo",
+                version=2,
+                status="superseded",
+                generationId=project.generation_id,
+                createdFromUpdateId=None,
+                createdAt="2026-08-01T10:00:00Z",
+            ),
+            ArtifactVersion(
+                id="artifact-demo-project-1-investment_case-v3",
+                projectId=project.id,
+                outputId="out-demo-investment-memo",
+                outputType="investment_case",
+                title="Investment Memo",
+                version=3,
+                status="needs_refresh",
+                generationId=project.generation_id,
+                createdFromUpdateId=None,
+                createdAt="2026-08-02T10:00:00Z",
+            ),
+            ArtifactVersion(
+                id="artifact-demo-project-1-one_page-v2",
+                projectId=project.id,
+                outputId="out-demo-executive-summary",
+                outputType="one_page",
+                title="Executive Summary",
+                version=2,
+                status="needs_refresh",
+                generationId=project.generation_id,
+                createdFromUpdateId=None,
+                createdAt="2026-08-02T10:05:00Z",
+            ),
+            ArtifactVersion(
+                id="artifact-demo-project-1-talking_points-v1",
+                projectId=project.id,
+                outputId="out-demo-donor-brief",
+                outputType="talking_points",
+                title="Donor Brief",
+                version=1,
+                status="current",
+                generationId=project.generation_id,
+                createdFromUpdateId=None,
+                createdAt="2026-08-02T10:10:00Z",
+            ),
+            ArtifactVersion(
+                id="artifact-demo-project-1-source_appendix-v1",
+                projectId=project.id,
+                outputId="out-demo-source-appendix",
+                outputType="source_appendix",
+                title="Source Appendix",
+                version=1,
+                status="current",
+                generationId=project.generation_id,
+                createdFromUpdateId=None,
+                createdAt="2026-08-02T10:12:00Z",
+            ),
+        ]
+
+        meeting_citation = CitationRef(
+            sourceId="upd-demo-hkjc-meeting",
+            label="HKJC partner meeting",
+            locator="Aug 7 notes",
+            excerpt="HKJC team asked to move the expected funding start from Q1 2027 to Q2 2027 and requested clearer implementation-role language.",
+        )
+        budget_citation = CitationRef(
+            sourceId="upd-demo-hkjc-budget",
+            label="Budget model.xlsx",
+            locator="Phase 1 tab",
+            excerpt="The updated budget model separates R&D, clinical validation, and partnership-management assumptions.",
+        )
+        self.project_updates[project.id] = [
+            ProjectUpdate(
+                id="upd-demo-hkjc-meeting",
+                projectId=project.id,
+                updateType="meeting_notes",
+                sourceLabel="Meeting with HKJC team",
+                rawText="HKJC team asked to move the expected funding start from Q1 2027 to Q2 2027. They also asked for clearer language distinguishing the concept owner, implementing organization, and funding recipient. Follow up is needed on whether a pooled vehicle or separate research institution would receive funds.",
+                summary="HKJC feedback changes the expected funding timeline and asks for clearer role distinctions.",
+                status="pending_review",
+                extractedFacts=[
+                    UpdateCandidate(
+                        id="upd-demo-hkjc-meeting-fact-1",
+                        category="timeline",
+                        label="Funding timeline",
+                        value="Funding is expected to begin in Q2 2027 rather than Q1 2027.",
+                        confidence=0.78,
+                        sourceReference="HKJC partner meeting · Aug 7",
+                        citations=[meeting_citation],
+                    ),
+                    UpdateCandidate(
+                        id="upd-demo-hkjc-meeting-fact-2",
+                        category="implementation_roles",
+                        label="Role clarity",
+                        value="The materials should distinguish concept owner, implementing organization, funding recipient, and donor audience more explicitly.",
+                        confidence=0.76,
+                        sourceReference="HKJC partner meeting · Aug 7",
+                        citations=[meeting_citation],
+                    ),
+                    UpdateCandidate(
+                        id="upd-demo-hkjc-meeting-fact-3",
+                        category="audience_context",
+                        label="Audience emphasis",
+                        value="HKJC requested a sharper explanation of why the vaccine development concept is relevant to Asia-based philanthropic health innovation.",
+                        confidence=0.72,
+                        sourceReference="HKJC partner meeting · Aug 7",
+                        citations=[meeting_citation],
+                    ),
+                ],
+                openQuestions=[
+                    UpdateCandidate(
+                        id="upd-demo-hkjc-meeting-question-1",
+                        category="open_capital_pathway",
+                        label="Open question: capital pathway",
+                        value="It remains unresolved whether a pooled vehicle or a separate research institution would receive funds.",
+                        confidence=0.7,
+                        sourceReference="HKJC partner meeting · Aug 7",
+                        citations=[meeting_citation],
+                    )
+                ],
+                affectedOutputs=[
+                    AffectedOutput(
+                        outputType="investment_case",
+                        reason="Timeline, role clarity, and capital-pathway language affect the memo narrative and diligence section.",
+                        status="needs_refresh",
+                    ),
+                    AffectedOutput(
+                        outputType="one_page",
+                        reason="The summary should reflect the Q2 2027 timing and Asia-focused audience framing.",
+                        status="needs_refresh",
+                    ),
+                ],
+                createdAt="2026-08-07T09:30:00Z",
+                approvedAt=None,
+            ),
+            ProjectUpdate(
+                id="upd-demo-hkjc-budget",
+                projectId=project.id,
+                updateType="document_upload",
+                sourceLabel="Budget model.xlsx",
+                rawText="The updated budget model separates R&D, clinical validation, and partnership-management assumptions. No final funding gap or funding recipient is confirmed.",
+                summary="Budget model adds structure for discussion but does not confirm a funding gap or recipient.",
+                status="pending_review",
+                extractedFacts=[
+                    UpdateCandidate(
+                        id="upd-demo-hkjc-budget-fact-1",
+                        category="funding",
+                        label="Budget structure",
+                        value="The budget model separates R&D, clinical validation, and partnership-management assumptions.",
+                        confidence=0.73,
+                        sourceReference="Budget model.xlsx · Aug 6",
+                        citations=[budget_citation],
+                    )
+                ],
+                openQuestions=[],
+                affectedOutputs=[
+                    AffectedOutput(
+                        outputType="talking_points",
+                        reason="The donor brief should include a budget-discussion prompt without inventing a final funding gap.",
+                        status="needs_refresh",
+                    )
+                ],
+                createdAt="2026-08-06T15:00:00Z",
+                approvedAt=None,
+            ),
+        ]
+
+        self.project_memory_items[project.id] = [
+            ProjectMemoryItem(
+                id="mem-demo-capital-pathway",
+                projectId=project.id,
+                category="capital_pathway",
+                label="Capital pathway unresolved",
+                value="Funding recipient, investment vehicle, and investment manager are unresolved in the approved source set.",
+                sourceUpdateId="seed-source-set",
+                sourceReference="Initial source review",
+                status="approved",
+                citations=[strategy_citation],
+                createdAt="2026-08-02T10:20:00Z",
+                approvedAt="2026-08-02T10:20:00Z",
+            )
+        ]
 
     def list_projects(self) -> list[Project]:
         return sorted(

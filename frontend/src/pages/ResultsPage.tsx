@@ -155,7 +155,7 @@ export function ResultsPage({ project, generation, onProject, onGeneration, onNa
       ]);
       onGeneration(updatedGeneration);
       onProject(updatedProject);
-      setSaveStatus(`${activeOutput.title} saved as v${version.version}. Version history is in Project updates.`);
+      setSaveStatus(`${activeOutput.title} saved as v${version.version}. Version history is in Project Overview.`);
     } catch (error) {
       setSaveStatus(error instanceof Error ? error.message : "Version could not be saved.");
     } finally {
@@ -183,13 +183,13 @@ export function ResultsPage({ project, generation, onProject, onGeneration, onNa
       <div className="results-main">
         <section className="results-memory-panel">
           <div>
-            <p className="eyebrow">Living project memory</p>
-            <h3>Project updates</h3>
-            <p>Add meeting notes, new documents, or stakeholder feedback after this output package is generated.</p>
+            <p className="eyebrow">Project Overview</p>
+            <h3>Keep materials current</h3>
+            <p>Add new notes, documents, or feedback and review which outputs are affected.</p>
           </div>
           <div className="memory-summary-strip">
             <span><strong>{project.memorySummary?.updateCount || 0}</strong> updates</span>
-            <span><strong>{project.memorySummary?.approvedMemoryCount || 0}</strong> memory items</span>
+            <span><strong>{project.memorySummary?.approvedMemoryCount || 0}</strong> approved items</span>
             <span><strong>{project.memorySummary?.needsRefreshCount || 0}</strong> need refresh</span>
           </div>
           <button className="primary-button" type="button" onClick={() => onNavigate(`/projects/${project.id}/updates`)}>
@@ -257,7 +257,7 @@ export function ResultsPage({ project, generation, onProject, onGeneration, onNa
             <div><dt>Outcome</dt><dd>{project.opportunityAudience?.intendedOutcome || "Unresolved"}</dd></div>
             <div><dt>Review status</dt><dd>{project.reviewSetup?.confirmed ? "Confirmed" : "Unconfirmed"}</dd></div>
             <div><dt>Mode</dt><dd>{generation?.metadata.mode || "Unknown"}</dd></div>
-            <div><dt>Memory</dt><dd>{project.memorySummary?.approvedMemoryCount || 0} approved items</dd></div>
+            <div><dt>Updates</dt><dd>{project.memorySummary?.updateCount || 0} tracked</dd></div>
           </dl>
           {Boolean(project.memorySummary?.needsRefreshCount) && (
             <p className="info-flag">{project.memorySummary?.needsRefreshCount} output version needs refresh.</p>
