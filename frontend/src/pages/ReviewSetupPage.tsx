@@ -21,6 +21,7 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
   const [roles, setRoles] = useState<ReviewRole[]>(project.reviewSetup?.roles || []);
   const [confirmed, setConfirmed] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [detailsDrawer, setDetailsDrawer] = useState<ReviewSetupDrawerName>(null);
   const [activeSuggestionId, setActiveSuggestionId] = useState<string | null>(null);
 
@@ -29,6 +30,7 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
     setApproachFields(project.reviewSetup?.approachFields || []);
     setRoles(project.reviewSetup?.roles || []);
     setConfirmed(true);
+    setError("");
   }, [project.id, project.opportunityAudience, project.reviewSetup]);
 
   const readiness = project.reviewSetup?.sourceReadiness;
@@ -43,16 +45,27 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
   async function continueToGenerate() {
     if (!validation.valid) return;
     setSaving(true);
-    if (project.opportunityAudience) {
-      await api.updateOpportunityAudience(project.id, {
-        ...project.opportunityAudience,
-        suggestions: suggestionFields,
-      });
+    setError("");
+    try {
+      const opportunityAudience = project.opportunityAudience;
+      if (opportunityAudience) {
+        await api.updateOpportunityAudience(project.id, {
+          sourceMode: opportunityAudience.sourceMode,
+          opportunityId: opportunityAudience.opportunityId || null,
+          audienceId: opportunityAudience.audienceId || null,
+          intendedOutcome: opportunityAudience.intendedOutcome || null,
+          suggestions: suggestionFields,
+          selectedOutputs: opportunityAudience.selectedOutputs,
+        });
+      }
+      const updated = await api.updateReviewSetup(project.id, { approachFields, roles, confirmed });
+      onProject(updated);
+      setSaving(false);
+      onNavigate(`/projects/${project.id}/generate`);
+    } catch (apiError) {
+      setError(apiError instanceof Error ? apiError.message : "Review setup could not be saved.");
+      setSaving(false);
     }
-    const updated = await api.updateReviewSetup(project.id, { approachFields, roles, confirmed });
-    onProject(updated);
-    setSaving(false);
-    onNavigate(`/projects/${project.id}/generate`);
   }
 
   function updateSuggestionField(fieldId: string, value: string) {
@@ -103,8 +116,8 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
 
       <div className="review-grid">
         <section className="panel system-suggestions-card">
-          <h3>3. System suggestions <small>(based on KB, opportunity, and past work)</small></h3>
-          <p>Based on the selected opportunity, audience, and approved knowledge base.</p>
+          <h3>System suggestions</h3>
+          <p>Based on the selected opportunity, audience, approved knowledge base, and past work.</p>
           <div className="system-suggestion-list">
             {suggestionFields.map((field) => (
               <div className="system-suggestion-row" key={field.id}>
@@ -115,7 +128,7 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
               </div>
             ))}
           </div>
-          <button className="soft-button customize-button" type="button" onClick={() => openSystemSuggestions()}>
+          <button className="ghost-link customize-button" type="button" onClick={() => openSystemSuggestions()}>
             Customize details
             <Icon name="sliders" />
           </button>
@@ -184,11 +197,15 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
               {externalSearchEnabled && <p>Estimated 4-6 web sources</p>}
             </div>
           </div>
-          <div className="readiness-card">
-            <Icon name="check" />
+          <div className={`readiness-card ${readiness?.ready ? "ready" : "needs-review"}`}>
+            <Icon name={readiness?.ready ? "check" : "warning"} />
             <div>
               <strong>External-use readiness</strong>
-              <p>This setup meets requirements for external use.</p>
+              <p>
+                {readiness?.ready
+                  ? "This setup meets requirements for external use."
+                  : readiness?.blockingIssues[0] || "Source readiness has not been confirmed yet."}
+              </p>
             </div>
           </div>
         </section>
@@ -204,13 +221,14 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
       </div>
 
       {!validation.valid && <p className="validation-message" role="alert">{validation.messages[0]}</p>}
+      {error && <p className="validation-message" role="alert">{error}</p>}
       <div className="bottom-actions">
         <button className="secondary-button large" type="button" onClick={() => onNavigate(`/projects/${project.id}/opportunity-audience`)}>
           <Icon name="arrow-left" />
           Back
         </button>
         <button className="primary-button large" type="button" disabled={!validation.valid || saving} onClick={continueToGenerate}>
-          Continue to generate
+          {saving ? "Saving setup..." : "Continue to generate"}
           <Icon name="arrow" />
         </button>
       </div>

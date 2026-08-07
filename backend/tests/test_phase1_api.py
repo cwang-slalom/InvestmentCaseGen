@@ -181,6 +181,31 @@ def test_project_create_and_update_contract() -> None:
     assert task.json()["task"]["metadata"]["confirmed"] is True
 
 
+def test_opportunity_audience_update_prepares_review_setup() -> None:
+    test_client = client()
+    project = test_client.post("/api/projects", json={"name": "Review setup handoff test"}).json()
+    opportunity = test_client.get("/api/opportunities").json()[0]
+    audience = test_client.get("/api/audiences").json()[0]
+
+    response = test_client.put(
+        f"/api/projects/{project['id']}/opportunity-audience",
+        json={
+            "sourceMode": "existing",
+            "opportunityId": opportunity["id"],
+            "audienceId": audience["id"],
+            "intendedOutcome": "Explore a co-funding partnership",
+            "suggestions": [],
+            "selectedOutputs": ["investment_case"],
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["reviewSetup"]["approachFields"]
+    assert payload["reviewSetup"]["roles"]
+    assert payload["reviewSetup"]["sourceReadiness"]["ready"] is True
+
+
 def test_opportunity_and_audience_fixtures_load() -> None:
     test_client = client()
 
