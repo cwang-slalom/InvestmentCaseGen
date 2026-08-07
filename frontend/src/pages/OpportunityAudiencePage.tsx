@@ -17,6 +17,7 @@ type OpportunityAudiencePageProps = {
 };
 
 type SourceInputMode = "file" | "knowledge";
+type NewSourceProgressStage = "idle" | "saving" | "analyzing" | "preparing";
 type DetailsDrawer = "opportunities" | "donor-profile" | "customize-details" | "output-options" | null;
 
 export function OpportunityAudiencePage({
@@ -41,12 +42,19 @@ export function OpportunityAudiencePage({
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [knowledgeSourceId, setKnowledgeSourceId] = useState(config?.knowledgeSources[0]?.id || "");
   const [submitting, setSubmitting] = useState(false);
+  const [newSourceProgressStage, setNewSourceProgressStage] = useState<NewSourceProgressStage>("idle");
   const [error, setError] = useState("");
   const [detailsDrawer, setDetailsDrawer] = useState<DetailsDrawer>(null);
   const [activeSuggestionId, setActiveSuggestionId] = useState<string | null>(null);
 
   const selectedOpportunity = opportunities.find((opportunity) => opportunity.id === opportunityId) || null;
   const selectedAudience = audiences.find((audience) => audience.id === audienceId) || null;
+  const selectedKnowledgeSource = config?.knowledgeSources.find((source) => source.id === knowledgeSourceId) || null;
+  const newSourceLabel = sourceInputMode === "file"
+    ? sourceFile?.name || "Uploaded source"
+    : selectedKnowledgeSource?.title || "Knowledge-base source";
+  const newSourceReady = sourceInputMode === "file" ? Boolean(sourceFile) : Boolean(knowledgeSourceId);
+  const isExtractingNewSource = sourceMode === "new" && submitting;
 
   const filteredOpportunities = useMemo(
     () =>
@@ -90,17 +98,23 @@ export function OpportunityAudiencePage({
   async function saveExistingAndContinue() {
     if (!validation.valid) return;
     setSubmitting(true);
-    const updated = await api.updateOpportunityAudience(project.id, {
-      sourceMode: "existing",
-      opportunityId,
-      audienceId,
-      intendedOutcome,
-      suggestions,
-      selectedOutputs,
-    });
-    onProject(updated);
-    setSubmitting(false);
-    onNavigate(`/projects/${project.id}/review-setup`);
+    setError("");
+    try {
+      const updated = await api.updateOpportunityAudience(project.id, {
+        sourceMode: "existing",
+        opportunityId,
+        audienceId,
+        intendedOutcome,
+        suggestions,
+        selectedOutputs,
+      });
+      onProject(updated);
+      onNavigate(`/projects/${project.id}/review-setup`);
+    } catch (apiError) {
+      setError(apiError instanceof Error ? apiError.message : "Opportunity setup could not be saved.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function submitNewSource() {
@@ -109,6 +123,7 @@ export function OpportunityAudiencePage({
       return;
     }
     setSubmitting(true);
+    setNewSourceProgressStage("saving");
     setError("");
     try {
       const updated = await api.updateOpportunityAudience(project.id, {
@@ -121,19 +136,21 @@ export function OpportunityAudiencePage({
       });
       onProject(updated);
 
+      setNewSourceProgressStage("analyzing");
       if (sourceInputMode === "file") {
         if (!sourceFile) {
           throw new Error("Select a text-layer PDF, TXT, or Markdown source before continuing.");
         }
         await api.extractFile(project.id, sourceFile);
       } else {
-        const source = config?.knowledgeSources.find((item) => item.id === knowledgeSourceId);
+        const source = selectedKnowledgeSource;
         if (!source) {
           throw new Error("Select a knowledge-base source before continuing.");
         }
         await api.extractKnowledgeSource(project.id, source.title, source.id);
       }
 
+      setNewSourceProgressStage("preparing");
       const refreshed = await api.project(project.id);
       onProject(refreshed);
       onNavigate(`/projects/${project.id}/extraction-review`);
@@ -141,6 +158,7 @@ export function OpportunityAudiencePage({
       setError(apiError instanceof Error ? apiError.message : "Extraction could not be completed.");
     } finally {
       setSubmitting(false);
+      setNewSourceProgressStage("idle");
     }
   }
 
@@ -191,14 +209,14 @@ export function OpportunityAudiencePage({
       </div>
 
       <div className="tab-strip" role="tablist" aria-label="Opportunity source mode">
-        <button type="button" className={sourceMode === "existing" ? "active" : ""} onClick={() => setSourceMode("existing")}>
+        <button type="button" className={sourceMode === "existing" ? "active" : ""} onClick={() => setSourceMode("existing")} disabled={submitting}>
           <Icon name="search" />
           Search existing opportunity
         </button>
-        <button type="button" className={sourceMode === "new" ? "active" : ""} onClick={() => setSourceMode("new")}>
+        <button type="button" className={sourceMode === "new" ? "active" : ""} onClick={() => setSourceMode("new")} disabled={submitting}>
           Create new opportunity
         </button>
-        <button className="tab-plus" type="button" onClick={() => setSourceMode("new")} aria-label="Create new opportunity">
+        <button className="tab-plus" type="button" onClick={() => setSourceMode("new")} aria-label="Create new opportunity" disabled={submitting}>
           <Icon name="plus" />
         </button>
       </div>
@@ -235,10 +253,11 @@ export function OpportunityAudiencePage({
       ) : (
         <div className="new-opportunity-grid">
           <section className="new-source-column">
-            <label className="upload-panel">
+            <label className={`upload-panel ${submitting ? "disabled" : ""}`}>
               <input
                 type="file"
                 accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
+                disabled={submitting}
                 onChange={(event) => {
                   setSourceInputMode("file");
                   setSourceFile(event.currentTarget.files?.[0] || null);
@@ -252,20 +271,20 @@ export function OpportunityAudiencePage({
             <button className="kb-button" type="button" onClick={() => {
               setSourceInputMode("knowledge");
               setSourceFile(null);
-            }}>
+            }} disabled={submitting}>
               <Icon name="book" />
               Browse Knowledge Base
             </button>
             <button className="choice-button" type="button" onClick={() => {
               setSourceInputMode("knowledge");
               setSourceFile(null);
-            }}>
+            }} disabled={submitting}>
               Or choose from Knowledge Base
             </button>
             {sourceInputMode === "knowledge" && (
               <label className="field-block compact source-select">
                 <span>Approved knowledge-base source</span>
-                <select value={knowledgeSourceId} onChange={(event) => setKnowledgeSourceId(event.currentTarget.value)}>
+                <select value={knowledgeSourceId} onChange={(event) => setKnowledgeSourceId(event.currentTarget.value)} disabled={submitting}>
                   {(config?.knowledgeSources || []).map((source) => (
                     <option key={source.id} value={source.id}>{source.title}</option>
                   ))}
@@ -273,6 +292,13 @@ export function OpportunityAudiencePage({
               </label>
             )}
             {sourceFile && <p className="selected-file"><Icon name="file" /> {sourceFile.name}</p>}
+            {isExtractingNewSource && (
+              <SourceAnalysisProgress
+                stage={newSourceProgressStage}
+                sourceInputMode={sourceInputMode}
+                sourceLabel={newSourceLabel}
+              />
+            )}
             {error && <p className="validation-message" role="alert">{error}</p>}
             <div className="info-callout">
               <Icon name="info" />
@@ -282,13 +308,14 @@ export function OpportunityAudiencePage({
               </p>
             </div>
           </section>
-          <HowItWorks activeStep={1} />
+          <HowItWorks activeStep={1} processing={isExtractingNewSource} />
         </div>
       )}
 
       {sourceMode === "existing" && !validation.valid && <p className="validation-message" role="alert">{validation.messages[0]}</p>}
+      {sourceMode === "existing" && error && <p className="validation-message" role="alert">{error}</p>}
       <div className="bottom-actions">
-        <button className="secondary-button large" type="button" onClick={() => onNavigate(`/projects/${project.id}/task`)}>
+        <button className="secondary-button large" type="button" onClick={() => onNavigate(`/projects/${project.id}/task`)} disabled={submitting}>
           <Icon name="arrow-left" />
           Back
         </button>
@@ -298,9 +325,18 @@ export function OpportunityAudiencePage({
             <Icon name="arrow" />
           </button>
         ) : (
-          <button className="primary-button large" type="button" disabled={submitting || (sourceInputMode === "file" && !sourceFile)} onClick={submitNewSource}>
-            Continue to review setup
-            <Icon name="arrow" />
+          <button className="primary-button large" type="button" disabled={submitting || !newSourceReady} onClick={submitNewSource}>
+            {isExtractingNewSource ? (
+              <>
+                <span className="button-spinner" aria-hidden="true" />
+                {newSourceProgressCopy(newSourceProgressStage, sourceInputMode).buttonLabel}
+              </>
+            ) : (
+              <>
+                Continue to review setup
+                <Icon name="arrow" />
+              </>
+            )}
           </button>
         )}
       </div>
@@ -323,6 +359,68 @@ export function OpportunityAudiencePage({
         />
       )}
     </section>
+  );
+}
+
+function SourceAnalysisProgress({
+  stage,
+  sourceInputMode,
+  sourceLabel,
+}: {
+  stage: NewSourceProgressStage;
+  sourceInputMode: SourceInputMode;
+  sourceLabel: string;
+}) {
+  const copy = newSourceProgressCopy(stage, sourceInputMode);
+  const stages: Array<{ id: Exclude<NewSourceProgressStage, "idle">; title: string; detail: string }> = [
+    {
+      id: "saving",
+      title: "Save setup",
+      detail: "Keeping audience and output choices with this project.",
+    },
+    {
+      id: "analyzing",
+      title: sourceInputMode === "file" ? "Analyze uploaded source" : "Analyze knowledge-base source",
+      detail: "Extracting sourced opportunity facts and marking unsupported details as unresolved.",
+    },
+    {
+      id: "preparing",
+      title: "Prepare review",
+      detail: "Loading the draft opportunity card for human review and edits.",
+    },
+  ];
+  const activeIndex = Math.max(0, stages.findIndex((item) => item.id === stage));
+
+  return (
+    <div className="source-progress-card" role="status" aria-live="polite" aria-label={copy.title}>
+      <div className="source-progress-heading">
+        <span className="source-progress-spinner" aria-hidden="true" />
+        <div>
+          <strong>{copy.title}</strong>
+          <p>{copy.body}</p>
+        </div>
+      </div>
+      <div className="source-progress-track" aria-hidden="true">
+        <span />
+      </div>
+      <ol className="source-progress-steps" aria-label={`Progress for ${sourceLabel}`}>
+        {stages.map((item, index) => {
+          const status = index < activeIndex ? "completed" : index === activeIndex ? "in-progress" : "queued";
+          return (
+            <li className={status} key={item.id}>
+              <span>{status === "completed" ? <Icon name="check" /> : index + 1}</span>
+              <div>
+                <strong>{item.title}</strong>
+                <small>{item.detail}</small>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="source-progress-footnote">
+        Source: <strong>{sourceLabel}</strong>
+      </p>
+    </div>
   );
 }
 
@@ -731,7 +829,7 @@ function OpportunityAudienceDrawer({
   );
 }
 
-function HowItWorks({ activeStep }: { activeStep: number }) {
+function HowItWorks({ activeStep, processing = false }: { activeStep: number; processing?: boolean }) {
   const steps = [
     ["Upload approved materials", "Add source documents that have been reviewed and approved.", "clipboard"],
     ["We'll analyze your materials", "Our AI will extract key information and structure the opportunity.", "sparkles"],
@@ -742,17 +840,57 @@ function HowItWorks({ activeStep }: { activeStep: number }) {
   return (
     <aside className="panel how-card">
       <h3><Icon name="sparkles" /> How it works</h3>
-      {steps.map(([title, body, icon], index) => (
-        <div className={`how-step ${index === activeStep ? "active" : ""}`} key={title}>
-          <span><Icon name={icon} /></span>
-          <div>
-            <strong>{index + 1}. {title}</strong>
-            <p>{body}</p>
+      {steps.map(([title, body, icon], index) => {
+        const active = index === activeStep;
+        const processingStep = active && processing;
+
+        return (
+          <div className={`how-step ${active ? "active" : ""} ${processingStep ? "processing" : ""}`} key={title}>
+            <span>{processingStep ? <span className="how-step-spinner" aria-hidden="true" /> : <Icon name={icon} />}</span>
+            <div>
+              <strong>{index + 1}. {title}</strong>
+              <p>{body}</p>
+              {processingStep && (
+                <div className="how-step-live">
+                  <small>Analyzing now</small>
+                  <div className="source-progress-track" aria-hidden="true"><span /></div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </aside>
   );
+}
+
+function newSourceProgressCopy(stage: NewSourceProgressStage, sourceInputMode: SourceInputMode) {
+  if (stage === "saving") {
+    return {
+      title: "Preparing source analysis",
+      body: "Saving the selected audience and output package before extraction starts.",
+      buttonLabel: "Preparing analysis...",
+    };
+  }
+  if (stage === "preparing") {
+    return {
+      title: "Preparing review workspace",
+      body: "Loading the extracted opportunity card so you can review and refine it next.",
+      buttonLabel: "Preparing review...",
+    };
+  }
+  if (sourceInputMode === "knowledge") {
+    return {
+      title: "Analyzing knowledge-base source",
+      body: "Extracting source-backed opportunity facts from the approved knowledge-base material.",
+      buttonLabel: "Analyzing source...",
+    };
+  }
+  return {
+    title: "Analyzing uploaded materials",
+    body: "Reading the source text and extracting supported opportunity facts for review.",
+    buttonLabel: "Analyzing materials...",
+  };
 }
 
 function statusLabel(status: string) {

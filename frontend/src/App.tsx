@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { api } from "./api/client";
 import { Shell } from "./components/Shell";
+import { VoiceInputEnhancer } from "./components/VoiceInputEnhancer";
 import { GeneratePage } from "./pages/GeneratePage";
 import { HomePage } from "./pages/HomePage";
 import { ExtractionReviewPage } from "./pages/ExtractionReviewPage";
@@ -198,6 +199,7 @@ export function App() {
       onNewProject={createProject}
     >
       {content}
+      <VoiceInputEnhancer />
     </Shell>
   );
 }

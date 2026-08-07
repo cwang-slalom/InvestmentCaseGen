@@ -270,15 +270,7 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
 
       <div className="generation-grid">
         <section className="panel progress-panel">
-          <div className="progress-panel-header">
-            <h3>Generation progress</h3>
-            {generating && (
-              <button className="danger-button" type="button" onClick={() => void cancelGeneration()}>
-                <Icon name="close" />
-                Cancel generation
-              </button>
-            )}
-          </div>
+          <h3>Generation progress</h3>
           <div className="progress-content">
             <div className="stage-list">
               {generationStages.map((stage, index) => {
@@ -318,15 +310,22 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
               <span style={{ width: `${progress}%` }} />
             </div>
           </div>
-          <p className="duration-note">
-            {generating
-              ? "Estimated progress. Final completion depends on the model response."
-              : complete
-                ? "Generation completed. Results are ready for review."
-                : generationCanceled
-                  ? "Generation canceled. You can restart when ready."
-                : "This usually takes 2-4 minutes once generation starts."}
-          </p>
+          <div className="progress-support-row">
+            <p className="duration-note">
+              {generating
+                ? "Estimated progress. Final completion depends on the model response."
+                : complete
+                  ? "Generation completed. Results are ready for review."
+                  : generationCanceled
+                    ? "Generation canceled. You can restart when ready."
+                    : "This usually takes 2-4 minutes once generation starts."}
+            </p>
+            {generating && (
+              <button className="progress-cancel-button" type="button" onClick={() => void cancelGeneration()}>
+                Cancel
+              </button>
+            )}
+          </div>
           <div className="info-callout slim">
             <Icon name="info" />
             <p>

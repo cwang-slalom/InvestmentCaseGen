@@ -71,6 +71,37 @@ export function editField(fields: FieldValue[], id: string, value: string): Fiel
   );
 }
 
+export function setExternalWebSearch(fields: FieldValue[], enabled: boolean): FieldValue[] {
+  const searchValue = enabled ? "Enabled" : "Disabled";
+  const sourceEstimate = enabled
+    ? "Attached internal/uploaded sources plus 4-6 external web sources"
+    : "Attached internal/uploaded sources only";
+
+  return fields.map((field) => {
+    if (field.id === "external_web_search") {
+      return {
+        ...field,
+        value: searchValue,
+        provenanceLabel: "User selected source plan",
+        metadata: {
+          ...field.metadata,
+          source: "user",
+          editable: true,
+          confirmed: true,
+        },
+      };
+    }
+    if (field.id === "estimated_sources") {
+      return {
+        ...field,
+        value: sourceEstimate,
+        metadata: { ...field.metadata, confirmed: true },
+      };
+    }
+    return field;
+  });
+}
+
 export function editExtractedField(fields: ExtractedField[], id: string, patch: Partial<ExtractedField>): ExtractedField[] {
   return fields.map((field) =>
     field.id === id

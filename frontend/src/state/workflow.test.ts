@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import type { AudienceProfile, ExtractedField, Opportunity } from "../types";
+import type { AudienceProfile, ExtractedField, FieldValue, Opportunity } from "../types";
 import {
   editField,
   editExtractedField,
+  setExternalWebSearch,
   simulateExistingOpportunitySmoke,
   simulateNewOpportunitySmoke,
   suggestionFromSelection,
@@ -79,6 +80,34 @@ describe("workflow state helpers", () => {
     const [locked] = editExtractedField([extracted], "funding_range", { verified: true, locked: true });
     expect(locked.verified).toBe(true);
     expect(locked.locked).toBe(true);
+  });
+
+  it("sets external web search mode and source estimates together", () => {
+    const fields = [
+      {
+        id: "external_web_search",
+        label: "External web search",
+        value: "Disabled",
+        provenanceLabel: "Default setup value",
+        metadata: { source: "system_setup", required: true, editable: true, confirmed: true },
+      },
+      {
+        id: "estimated_sources",
+        label: "Estimated sources",
+        value: "Attached internal/uploaded sources only",
+        provenanceLabel: "Computed from current source plan",
+        metadata: { source: "system_setup", required: true, editable: false, confirmed: true },
+      },
+    ] satisfies FieldValue[];
+
+    const enabled = setExternalWebSearch(fields, true);
+    expect(enabled.find((field) => field.id === "external_web_search")?.value).toBe("Enabled");
+    expect(enabled.find((field) => field.id === "external_web_search")?.metadata.source).toBe("user");
+    expect(enabled.find((field) => field.id === "estimated_sources")?.value).toContain("4-6 external web sources");
+
+    const disabled = setExternalWebSearch(enabled, false);
+    expect(disabled.find((field) => field.id === "external_web_search")?.value).toBe("Disabled");
+    expect(disabled.find((field) => field.id === "estimated_sources")?.value).toBe("Attached internal/uploaded sources only");
   });
 
   it("passes the existing-opportunity smoke path", () => {

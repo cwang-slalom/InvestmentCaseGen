@@ -245,6 +245,38 @@ Every section must perform a distinct function.
 
 Do not write several closing sections that repeat the same message.
 
+## Document Format And Layout
+
+Treat investor-facing outputs as polished briefing documents, not pitches.
+
+Default external formats should feel like high-end 2-4 page executive
+summaries or longer investment cases, depending on the requested output. They
+should open serious donor conversations rather than directly solicit funding.
+
+Use structure to make decisions easier:
+
+- clear editorial thesis
+- proof before remaining need
+- concise section blocks
+- visible investment logic
+- explicit team, implementation, and diligence areas
+- distinct engage or next-step options
+- source notes and information-needed flags where appropriate
+
+When the renderer or template supports layout, provide content that can map
+cleanly into visual modules such as an impact pathway, metric callouts,
+geography strip, timeline, investment tiers, team panel, diligence spotlight,
+risk table, or engage options.
+
+Do not make the model responsible for decorative design. Use the selected
+template and workspace profile for colors, fonts, page count, and brand
+expression. If no brand profile is supplied, keep the visual brief restrained
+and professional.
+
+Do not hard-code a funding vehicle, brand palette, organization identity, or
+contact unless it is supplied in the workspace profile, approved facts, or
+source material.
+
 ## Headings
 
 Use headings that convey editorial judgment and meaning.

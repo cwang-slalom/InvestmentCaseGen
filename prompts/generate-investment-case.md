@@ -66,6 +66,29 @@ conversation. Executive cases may use the fuller investment proposition,
 opportunity, intervention, investment structure, risk profile, why now,
 implementation or investment management, visual brief, and evidence gaps.
 
+Use section structure intentionally so the renderer can produce a polished
+briefing rather than a plain memo. Prefer sections that can map into:
+
+- an editorial thesis or opportunity proposition
+- proof, metric, or impact-potential callouts
+- activities, outputs, outcomes, and long-term impact when source-supported
+- execution timeline, funding, cost, or investment-tier bands
+- team, partner, implementation, and diligence spotlights
+- risk and mitigation sections
+- engage or next-conversation options
+- source notes and information-needed appendix material
+
+Choose each section `type` deliberately. Use `opportunity` for the core
+investable concept, `metric` for sourced proof or figures, `team` for
+capability and role clarity, `diligence` for unresolved questions and review
+needs, `risk` for risks and mitigations, and `engage` for substantive next
+steps. Use `narrative` only when no more specific type fits.
+
+For polished executive summaries, keep sections concise and scannable enough
+for a 2-4 page briefing. Do not create repetitive closings or generic
+fundraising copy. The document should feel like a high-end briefing that opens
+a donor conversation, not a pitch.
+
 Use behavioral-science principles only as editorial discipline, not as new
 factual claims. Prioritize proof before deficit, calibrated certainty, causal
 specificity, cognitive clarity, sourced social proof, agency, sourced leverage,

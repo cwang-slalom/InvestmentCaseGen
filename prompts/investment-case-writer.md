@@ -45,6 +45,15 @@ callouts, opportunity summary, team and role distinctions, diligence, risk,
 investment structure, and engagement or next steps when supported by the case
 brief and required content.
 
+Shape the blocks for a polished investor briefing format, not a plain prose
+memo. When evidence supports it, create distinct blocks that a renderer can
+place into an opportunity thesis, impact pathway, metric callout, timeline or
+investment tier, team and diligence panel, risk table, and engage options.
+
+Use section headings that sound like editorial judgment rather than generic
+labels. Keep every block concise enough for a high-end executive summary
+unless the requested format explicitly calls for a longer case.
+
 Use donor- and investor-ready language, but do not create new facts or make a
 direct funding ask.
 

@@ -16,6 +16,10 @@ document_positioning:
   type: "executive briefing"
   direct_solicitation: false
   default_length: "2–4 pages"
+  default_external_formats:
+    - "polished 2-4 page executive summary"
+    - "longer investment case when source depth supports it"
+    - "one-page opportunity spotlight for early donor conversations"
   primary_goal: >
     Help the reader recognize a credible, strategically logical and
     well-managed opportunity.
@@ -44,6 +48,25 @@ editorial_preferences:
     - technical teams
     - diligence spotlights
 
+format_preferences:
+  document_role: "briefing that opens a substantive conversation, not a pitch"
+  section_style: "editorial judgment rather than generic AI labels"
+  layout_progression:
+    - "choose single-column, two-column, color, labels, and section naming from the selected template or user direction"
+    - "prefer scannable modules over uninterrupted prose"
+    - "keep each section doing distinct persuasive work"
+  preferred_modules:
+    - "opportunity thesis"
+    - "impact pathway"
+    - "metric callouts"
+    - "geography strip"
+    - "timeline"
+    - "investment tier table"
+    - "team and diligence panel"
+    - "risk and mitigation table"
+    - "engage options"
+  information_needed_flags: "Use visible red INFO NEEDED callouts when required information is missing."
+
 framing_preferences:
   donor_role: "participant and potential author of outcomes"
   philanthropy_role: "configurable; only use catalytic or first-mover framing when sourced"
@@ -67,6 +90,22 @@ brand:
   primary_color: "{{HEX}}"
   accent_color: "{{HEX}}"
   background_color: "{{HEX}}"
+  available_profiles:
+    proponent_labs:
+      primary_color: "#428F90"
+      accent_color: "#EB6056"
+      neutral_color: "{{PF_GREY_HEX}}"
+      light_accent_color: "{{PF_LIGHT_GREEN_HEX}}"
+      notes:
+        - "Use only when this brand profile is selected."
+    gates_foundation:
+      primary_color: "#313A44"
+      accent_color: "#EBCB00"
+      background_color: "#F5F3ED"
+      heading_font: "Noto Serif"
+      body_font: "Noto Sans"
+      notes:
+        - "Use only when this brand profile is selected."
 
 contacts:
   default_contact:
@@ -77,6 +116,23 @@ contacts:
 benchmarks:
   approved_reference_cases:
     - "{{REFERENCE_CASE_ID}}"
+  use_for:
+    - "format"
+    - "tone"
+    - "section architecture"
+  do_not_use_for:
+    - "case facts"
+    - "funding recipient inference"
+    - "investment vehicle inference"
+
+production_workflow:
+  editable_source_format: "DOCX or app-based structured sections"
+  final_share_format: "PDF generated after human review"
+  qa_loop:
+    - "build"
+    - "validate"
+    - "convert to PDF for layout preview"
+    - "inspect rendered pages"
 
 governance:
   workspace_memory_requires_admin_approval: true

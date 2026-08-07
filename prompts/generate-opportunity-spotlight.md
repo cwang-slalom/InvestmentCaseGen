@@ -51,6 +51,24 @@ Include outputs, outcomes, long-term impact, risks, investor relevance,
 supporting evidence, required team or diligence content, and missing
 information when those fields are supported or required.
 
+For one-page opportunity summaries, organize content for a visual spotlight
+layout rather than a long prose memo. Prefer concise sections that can map
+into:
+
+- opportunity thesis
+- impact potential: activities, outputs, outcomes, impact
+- execution snapshot: timeframe, cost, funding gap, or investment tiers when
+  source-supported
+- partner, team, and diligence spotlight
+- risks, unresolved roles, and evidence boundary
+- engage or next-conversation option
+
+Choose each section `type` deliberately. Use `opportunity` for the core
+concept, `metric` for sourced proof or figures, `team` for implementer or
+delivery capability, `diligence` for unresolved questions, `risk` for risks,
+and `engage` for next steps. Keep each section compact enough for a polished
+one-page or short executive-summary renderer.
+
 Use behavioral-science framing as an editorial discipline only. Make the
 opportunity concrete, salient, credible, and action-oriented without
 overstating certainty.

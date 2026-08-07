@@ -26,6 +26,7 @@ export type IconName =
     | "document"
     | "clipboard"
     | "mail"
+    | "mic"
     | "sliders"
     | "heart"
     | "flask"
@@ -83,6 +84,7 @@ export function Icon({ name }: IconProps) {
   if (name === "document") return <svg {...common}><path d="M7 3h7l4 4v14H7z" /><path d="M14 3v5h5M10 12h5M10 16h5" /></svg>;
   if (name === "clipboard") return <svg {...common}><path d="M8 5h8v3H8z" /><path d="M7 6H5v15h14V6h-2" /><path d="M9 13h6M9 17h6" /></svg>;
   if (name === "mail") return <svg {...common}><path d="M4 6h16v12H4z" /><path d="m4 7 8 6 8-6" /></svg>;
+  if (name === "mic") return <svg {...common}><path d="M12 3.5a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0v-5a3 3 0 0 0-3-3Z" /><path d="M19 10.5v1a7 7 0 0 1-14 0v-1" /><path d="M12 18.5V21" /><path d="M8.5 21h7" /></svg>;
   if (name === "sliders") return <svg {...common}><path d="M4 7h10M18 7h2M4 17h2M10 17h10M8 14v6M16 4v6" /></svg>;
   if (name === "heart") return <svg {...common}><path d="M20 8.8c0 5.2-8 9.2-8 9.2s-8-4-8-9.2A4.3 4.3 0 0 1 11.4 6l.6.7.6-.7A4.3 4.3 0 0 1 20 8.8Z" /></svg>;
   if (name === "flask") return <svg {...common}><path d="M9 3h6M10 3v6l-5 8.5A2.2 2.2 0 0 0 7 21h10a2.2 2.2 0 0 0 2-3.5L14 9V3" /><path d="M8 15h8" /></svg>;

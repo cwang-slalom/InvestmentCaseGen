@@ -356,8 +356,8 @@ def default_review_fields() -> list[FieldValue]:
             id="external_web_search",
             label="External web search",
             value="Disabled",
-            provenanceLabel="System constraint",
-            metadata=FieldMetadata(source="system_setup", required=True, editable=False, confirmed=True),
+            provenanceLabel="Default setup value",
+            metadata=FieldMetadata(source="system_setup", required=True, editable=True, confirmed=True),
         ),
         FieldValue(
             id="estimated_sources",

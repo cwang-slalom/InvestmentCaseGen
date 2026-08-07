@@ -338,7 +338,7 @@ def test_phase1_docx_export_uses_visible_output_payload() -> None:
                 "id": "case-summary",
                 "type": "narrative",
                 "heading": "Strategic Opportunity",
-                "body": "Edited section text that only exists in the browser.",
+                "body": "Edited section text that only exists in the browser. Essential tools are available in **45% of facilities**.",
                 "citations": [
                     {
                         "sourceId": "src-clean-water",
@@ -347,7 +347,21 @@ def test_phase1_docx_export_uses_visible_output_payload() -> None:
                         "excerpt": "Clean Water Opportunity",
                     }
                 ],
-            }
+            },
+            {
+                "id": "activities",
+                "type": "opportunity",
+                "heading": "Activities",
+                "body": "Deliver a core set of low-cost interventions.",
+                "citations": [],
+            },
+            {
+                "id": "outputs",
+                "type": "metric",
+                "heading": "Outputs",
+                "body": "Clinics have access to improved delivery tools.",
+                "citations": [],
+            },
         ],
     }
 
@@ -371,6 +385,11 @@ def test_phase1_docx_export_uses_visible_output_payload() -> None:
         document_xml = archive.read("word/document.xml").decode()
     assert "Edited section text that only exists in the browser." in document_xml
     assert "Draft export - human review required" in document_xml
+    assert "Impact Potential" in document_xml
+    assert "<w:tbl" in document_xml
+    assert "A9DCCA" in document_xml
+    assert "**45% of facilities**" not in document_xml
+    assert "45% of facilities" in document_xml
 
 
 def test_locked_number_comparison_and_generation_preserves_locked_fact(monkeypatch) -> None:

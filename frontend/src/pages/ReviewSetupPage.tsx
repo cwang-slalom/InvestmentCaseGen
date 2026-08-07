@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { api } from "../api/client";
 import { Icon, type IconName } from "../components/Icons";
-import { editField } from "../state/workflow";
+import { editField, setExternalWebSearch } from "../state/workflow";
 import { validateReviewSetup } from "../state/validation";
 import type { FieldValue, Opportunity, Project, ReviewRole, SourceDocument, SourceReadiness } from "../types";
 
@@ -48,6 +48,10 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
 
   function updateApproachField(fieldId: string, value: string) {
     setApproachFields((current) => editField(current, fieldId, value));
+  }
+
+  function updateExternalSearch(enabled: boolean) {
+    setApproachFields((current) => setExternalWebSearch(current, enabled));
   }
 
   function toggleRole(roleId: string) {
@@ -141,10 +145,20 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
               </div>
             </div>
             <div className="source-box">
-              <strong>External web search</strong>
-              <button className="status-pill ready status-button" type="button" onClick={() => setDetailsDrawer("web-search")}>
-                {externalSearchField?.value || "Disabled"}
-              </button>
+              <div className="source-box-header">
+                <strong>External web search</strong>
+                <div className="source-box-actions">
+                  <WebSearchToggle enabled={externalSearchEnabled} onChange={updateExternalSearch} />
+                  <button
+                    className="icon-button compact"
+                    type="button"
+                    title="View external web search details"
+                    onClick={() => setDetailsDrawer("web-search")}
+                  >
+                    <Icon name="info" />
+                  </button>
+                </div>
+              </div>
               <p>{externalSearchEnabled ? "Topics: Background context, recent data & trends, case studies, policy landscape" : "No external web sources will be added."}</p>
               {externalSearchEnabled && <p>Estimated 4-6 web sources</p>}
             </div>
@@ -188,6 +202,7 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
           readiness={readiness}
           onClose={() => setDetailsDrawer(null)}
           onEditApproach={updateApproachField}
+          onSetExternalSearch={updateExternalSearch}
           onToggleRole={toggleRole}
           onOpenApproach={() => setDetailsDrawer("approach")}
         />
@@ -204,6 +219,7 @@ function ReviewSetupDrawer({
   readiness,
   onClose,
   onEditApproach,
+  onSetExternalSearch,
   onToggleRole,
   onOpenApproach,
 }: {
@@ -214,6 +230,7 @@ function ReviewSetupDrawer({
   readiness?: SourceReadiness;
   onClose: () => void;
   onEditApproach: (fieldId: string, value: string) => void;
+  onSetExternalSearch: (enabled: boolean) => void;
   onToggleRole: (roleId: string) => void;
   onOpenApproach: () => void;
 }) {
@@ -238,33 +255,54 @@ function ReviewSetupDrawer({
           <p className="eyebrow">Recommended setup</p>
           <h3>Full customization details</h3>
           <div className="drawer-field-list">
-            {approachFields.map((field) => (
-              <label className={`drawer-field ${field.metadata.editable ? "" : "readonly"}`} key={field.id}>
-                <span>
-                  <strong>{field.label}</strong>
-                  <small>{field.provenanceLabel}</small>
-                </span>
-                <textarea
-                  value={field.value}
-                  readOnly={!field.metadata.editable}
-                  onChange={(event) => onEditApproach(field.id, event.currentTarget.value)}
-                />
-                <em>
+            {approachFields.map((field) => {
+              const fieldMeta = (
+                <>
                   {sourceLabel(field.metadata.source)}
                   {field.metadata.required ? " · Required" : ""}
                   {field.metadata.confidence ? ` · ${Math.round(field.metadata.confidence * 100)}% confidence` : ""}
-                </em>
-                {field.metadata.citations?.length ? (
-                  <div className="drawer-citation-list">
-                    {field.metadata.citations.map((citation) => (
-                      <span key={`${field.id}-${citation.sourceId}-${citation.locator}`}>
-                        {citation.label}{citation.locator ? `, ${citation.locator}` : ""}
-                      </span>
-                    ))}
+                </>
+              );
+              const citations = field.metadata.citations?.length ? (
+                <div className="drawer-citation-list">
+                  {field.metadata.citations.map((citation) => (
+                    <span key={`${field.id}-${citation.sourceId}-${citation.locator}`}>
+                      {citation.label}{citation.locator ? `, ${citation.locator}` : ""}
+                    </span>
+                  ))}
+                </div>
+              ) : null;
+
+              if (field.id === "external_web_search") {
+                return (
+                  <div className="drawer-field" key={field.id}>
+                    <span>
+                      <strong>{field.label}</strong>
+                      <small>{field.provenanceLabel}</small>
+                    </span>
+                    <WebSearchToggle enabled={externalSearchEnabled} onChange={onSetExternalSearch} />
+                    <em>{fieldMeta}</em>
+                    {citations}
                   </div>
-                ) : null}
-              </label>
-            ))}
+                );
+              }
+
+              return (
+                <label className={`drawer-field ${field.metadata.editable ? "" : "readonly"}`} key={field.id}>
+                  <span>
+                    <strong>{field.label}</strong>
+                    <small>{field.provenanceLabel}</small>
+                  </span>
+                  <textarea
+                    value={field.value}
+                    readOnly={!field.metadata.editable}
+                    onChange={(event) => onEditApproach(field.id, event.currentTarget.value)}
+                  />
+                  <em>{fieldMeta}</em>
+                  {citations}
+                </label>
+              );
+            })}
           </div>
           <div className="drawer-actions">
             <button className="primary-button" type="button" onClick={onClose}>Done</button>
@@ -331,7 +369,8 @@ function ReviewSetupDrawer({
       {drawer === "web-search" && (
         <>
           <p className="eyebrow">External web search</p>
-          <h3>{externalSearch?.value || "Disabled"}</h3>
+          <h3>Search mode</h3>
+          <WebSearchToggle enabled={externalSearchEnabled} onChange={onSetExternalSearch} />
           <dl className="drawer-metadata-grid">
             <div><dt>Topics</dt><dd>{externalSearchEnabled ? "Background context, recent data and trends, case studies, policy landscape" : "Not requested"}</dd></div>
             <div><dt>Estimated web sources</dt><dd>{externalSearchEnabled ? "4-6 sources" : "0 sources"}</dd></div>
@@ -347,6 +386,31 @@ function ReviewSetupDrawer({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function WebSearchToggle({ enabled, onChange }: { enabled: boolean; onChange: (enabled: boolean) => void }) {
+  return (
+    <div className="segmented-control web-search-toggle" role="group" aria-label="External web search">
+      <button
+        className={enabled ? "active" : ""}
+        type="button"
+        aria-pressed={enabled}
+        onClick={() => onChange(true)}
+      >
+        <Icon name="globe" />
+        Enabled
+      </button>
+      <button
+        className={!enabled ? "active" : ""}
+        type="button"
+        aria-pressed={!enabled}
+        onClick={() => onChange(false)}
+      >
+        <Icon name="lock" />
+        Disabled
+      </button>
     </div>
   );
 }
