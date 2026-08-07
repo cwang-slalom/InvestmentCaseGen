@@ -131,6 +131,10 @@ export const api = {
     updateId: string,
     body: { selectedOutputs: OutputType[] },
   ) => apiJson<ProjectUpdateRefreshResult>(`/api/projects/${projectId}/updates/${updateId}/refresh`, "POST", body),
+  saveArtifactVersion: (
+    projectId: string,
+    body: { generationId: string; output: GeneratedOutput },
+  ) => apiJson<ArtifactVersion>(`/api/projects/${projectId}/artifact-versions`, "POST", body),
   projectExtraction: (projectId: string) => apiGet<ExtractionResult>(`/api/projects/${projectId}/extraction`),
   updateTask: (
     projectId: string,

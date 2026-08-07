@@ -16,7 +16,7 @@ from ..fixtures import (
 )
 from ..models.audience import AudienceProfile
 from ..models.extraction import ExtractionResult
-from ..models.generation import GenerationResult
+from ..models.generation import GeneratedOutput, GenerationResult
 from ..models.memory import (
     ArtifactVersion,
     ProjectMemoryItem,
@@ -359,6 +359,31 @@ class InMemoryCaseRepository(CaseRepository):
             reverse=True,
         )
 
+    def save_artifact_version(
+        self,
+        project_id: str,
+        generation_id: str,
+        output: GeneratedOutput,
+    ) -> ArtifactVersion:
+        project = self.get_project(project_id)
+        generation = self.generation_store.get_generation(generation_id)
+        if generation.project_id != project_id:
+            raise HTTPException(status_code=400, detail="Generation does not belong to this project.")
+
+        replaced = False
+        generation.outputs = [
+            output if existing.id == output.id else existing
+            for existing in generation.outputs
+        ]
+        replaced = any(existing.id == output.id for existing in generation.outputs)
+        if not replaced:
+            raise HTTPException(status_code=404, detail="Output not found in this generation.")
+
+        self.generation_store.save_generation(generation)
+        version = self._record_single_artifact_version(project_id, generation_id, output)
+        self._touch(project)
+        return version
+
     def _touch(self, project: Project) -> Project:
         project.updated_at = utc_now()
         self.projects[project.id] = project
@@ -401,6 +426,44 @@ class InMemoryCaseRepository(CaseRepository):
                 )
             )
         self.artifact_versions[project_id] = next_versions
+
+    def _record_single_artifact_version(
+        self,
+        project_id: str,
+        generation_id: str,
+        output: GeneratedOutput,
+    ) -> ArtifactVersion:
+        created_at = utc_now()
+        versions = self.artifact_versions.get(project_id, [])
+        prior_versions = [
+            item.version
+            for item in versions
+            if item.output_type == output.type
+        ]
+        next_version = max(prior_versions, default=0) + 1
+        next_versions = [
+            (
+                version.model_copy(update={"status": "superseded"})
+                if version.output_type == output.type and version.status in {"current", "needs_refresh"}
+                else version
+            )
+            for version in versions
+        ]
+        saved = ArtifactVersion(
+            id=f"artifact-{project_id}-{output.type}-v{next_version}",
+            projectId=project_id,
+            outputId=output.id,
+            outputType=output.type,
+            title=output.title,
+            version=next_version,
+            status="current",
+            generationId=generation_id,
+            createdFromUpdateId=None,
+            createdAt=created_at,
+        )
+        next_versions.append(saved)
+        self.artifact_versions[project_id] = next_versions
+        return saved
 
     def _mark_affected_artifacts(self, project_id: str, update: ProjectUpdate) -> None:
         affected = {

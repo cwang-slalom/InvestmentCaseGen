@@ -1,5 +1,6 @@
 import type { Project } from "../types";
 import { Icon } from "../components/Icons";
+import { projectResumeTarget } from "../state/projectNavigation";
 
 type ProjectsPageProps = {
   projects: Project[];
@@ -21,14 +22,27 @@ export function ProjectsPage({ projects, onNewProject, onNavigate }: ProjectsPag
         </button>
       </div>
       <div className="table-list">
-        {projects.map((project) => (
-          <button className="table-row" key={project.id} type="button" onClick={() => onNavigate(`/projects/${project.id}/task`)}>
-            <span>{project.name}</span>
-            <span>{project.task?.taskLabel || "Setup not started"}</span>
-            <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
-            <Icon name="arrow" />
-          </button>
-        ))}
+        {projects.map((project) => {
+          const resume = projectResumeTarget(project);
+          return (
+            <button className="table-row project-table-row" key={project.id} type="button" onClick={() => onNavigate(resume.path)}>
+              <span>
+                <strong>{project.name}</strong>
+                <small>{project.task?.taskLabel || "Setup not started"}</small>
+              </span>
+              <span className="project-memory-meta">
+                <strong>{project.memorySummary?.approvedMemoryCount || 0} memory items</strong>
+                <small>{project.memorySummary?.updateCount || 0} project updates</small>
+              </span>
+              <span className={`status-badge ${resume.tone}`}>{resume.status}</span>
+              <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
+              <span className="row-action">
+                {resume.label}
+                <Icon name="arrow" />
+              </span>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

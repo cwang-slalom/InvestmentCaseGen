@@ -1,4 +1,5 @@
 import { Icon, type IconName } from "../components/Icons";
+import { projectResumeTarget } from "../state/projectNavigation";
 import type { AppConfig, AudienceProfile, Opportunity, Project, SourceDocument } from "../types";
 
 type HomePageProps = {
@@ -91,7 +92,7 @@ export function HomePage({
             {projects.slice(0, 4).map((project, index) => {
               const opportunity = findOpportunity(project, opportunities);
               const audience = findAudience(project, audiences);
-              const nextStep = getNextStep(project);
+              const nextStep = projectResumeTarget(project);
               return (
                 <button
                   className="dashboard-project-row"
@@ -213,7 +214,7 @@ export function HomePage({
               {focusAudience?.name || "unresolved"}.
             </small>
           </span>
-          <button className="outline-action" type="button" onClick={() => onNavigate(getNextStep(focusProject).path)}>
+          <button className="outline-action" type="button" onClick={() => onNavigate(projectResumeTarget(focusProject).path)}>
             Continue
             <Icon name="arrow" />
           </button>
@@ -283,7 +284,7 @@ function buildRecommendations(
   const primaryProject = projects[0];
   const primaryOpportunity = primaryProject ? findOpportunity(primaryProject, opportunities) : null;
   const primaryAudience = primaryProject ? findAudience(primaryProject, audiences) : null;
-  const nextPrimaryStep = primaryProject ? getNextStep(primaryProject) : null;
+  const nextPrimaryStep = primaryProject ? projectResumeTarget(primaryProject) : null;
 
   return [
     primaryProject && nextPrimaryStep
@@ -320,27 +321,6 @@ function buildRecommendations(
       tone: "ready",
     },
   ];
-}
-
-function getNextStep(project: Project): { label: string; path: string; status: string; tone: string } {
-  if (!project.task?.selectedTaskId) {
-    return { label: "Describe task", path: `/projects/${project.id}/task`, status: "Not started", tone: "as-needed" };
-  }
-  if (!project.opportunityAudience?.opportunityId || !project.opportunityAudience.audienceId) {
-    return {
-      label: "Select opportunity",
-      path: `/projects/${project.id}/opportunity-audience`,
-      status: "Needs setup",
-      tone: "as-needed",
-    };
-  }
-  if (!project.reviewSetup?.confirmed) {
-    return { label: "Review setup", path: `/projects/${project.id}/review-setup`, status: "In review", tone: "as-needed" };
-  }
-  if (!project.generationId) {
-    return { label: "Generate", path: `/projects/${project.id}/generate`, status: "Ready", tone: "required" };
-  }
-  return { label: "Review outputs", path: `/projects/${project.id}/results`, status: "Generated", tone: "optional" };
 }
 
 function findOpportunity(project: Project, opportunities: Opportunity[]) {

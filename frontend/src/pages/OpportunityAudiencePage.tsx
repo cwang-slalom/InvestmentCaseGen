@@ -20,6 +20,12 @@ type SourceInputMode = "file" | "knowledge";
 type NewSourceProgressStage = "idle" | "saving" | "analyzing" | "preparing";
 type DetailsDrawer = "opportunities" | "donor-profile" | "customize-details" | "output-options" | null;
 
+const SOURCE_PROGRESS_MIN_STAGE_MS = {
+  saving: 800,
+  analyzing: 1800,
+  preparing: 1600,
+} satisfies Record<Exclude<NewSourceProgressStage, "idle">, number>;
+
 export function OpportunityAudiencePage({
   project,
   opportunities,
@@ -55,6 +61,7 @@ export function OpportunityAudiencePage({
     : selectedKnowledgeSource?.title || "Knowledge-base source";
   const newSourceReady = sourceInputMode === "file" ? Boolean(sourceFile) : Boolean(knowledgeSourceId);
   const isExtractingNewSource = sourceMode === "new" && submitting;
+  const howItWorksProgress = newSourceHowItWorksProgress(newSourceProgressStage);
 
   const filteredOpportunities = useMemo(
     () =>
@@ -117,41 +124,54 @@ export function OpportunityAudiencePage({
     }
   }
 
+  async function runSourceProgressStage<T>(
+    stage: Exclude<NewSourceProgressStage, "idle">,
+    task: () => Promise<T>,
+  ) {
+    setNewSourceProgressStage(stage);
+    await waitForStagePaint();
+    const startedAt = performance.now();
+    const result = await task();
+    await waitForMinimumElapsed(startedAt, SOURCE_PROGRESS_MIN_STAGE_MS[stage]);
+    return result;
+  }
+
   async function submitNewSource() {
     if (sourceInputMode === "file" && !sourceFile) {
       setError("Select a text-layer PDF, TXT, or Markdown source before continuing.");
       return;
     }
     setSubmitting(true);
-    setNewSourceProgressStage("saving");
     setError("");
     try {
-      const updated = await api.updateOpportunityAudience(project.id, {
-        sourceMode: "new",
-        opportunityId: null,
-        audienceId,
-        intendedOutcome,
-        suggestions,
-        selectedOutputs,
-      });
+      const updated = await runSourceProgressStage("saving", () =>
+        api.updateOpportunityAudience(project.id, {
+          sourceMode: "new",
+          opportunityId: null,
+          audienceId,
+          intendedOutcome,
+          suggestions,
+          selectedOutputs,
+        }),
+      );
       onProject(updated);
 
-      setNewSourceProgressStage("analyzing");
-      if (sourceInputMode === "file") {
-        if (!sourceFile) {
-          throw new Error("Select a text-layer PDF, TXT, or Markdown source before continuing.");
+      await runSourceProgressStage("analyzing", async () => {
+        if (sourceInputMode === "file") {
+          if (!sourceFile) {
+            throw new Error("Select a text-layer PDF, TXT, or Markdown source before continuing.");
+          }
+          await api.extractFile(project.id, sourceFile);
+        } else {
+          const source = selectedKnowledgeSource;
+          if (!source) {
+            throw new Error("Select a knowledge-base source before continuing.");
+          }
+          await api.extractKnowledgeSource(project.id, source.title, source.id);
         }
-        await api.extractFile(project.id, sourceFile);
-      } else {
-        const source = selectedKnowledgeSource;
-        if (!source) {
-          throw new Error("Select a knowledge-base source before continuing.");
-        }
-        await api.extractKnowledgeSource(project.id, source.title, source.id);
-      }
+      });
 
-      setNewSourceProgressStage("preparing");
-      const refreshed = await api.project(project.id);
+      const refreshed = await runSourceProgressStage("preparing", () => api.project(project.id));
       onProject(refreshed);
       onNavigate(`/projects/${project.id}/extraction-review`);
     } catch (apiError) {
@@ -308,7 +328,11 @@ export function OpportunityAudiencePage({
               </p>
             </div>
           </section>
-          <HowItWorks activeStep={1} processing={isExtractingNewSource} />
+          <HowItWorks
+            activeStep={howItWorksProgress.activeStep}
+            processing={isExtractingNewSource}
+            processingLabel={howItWorksProgress.label}
+          />
         </div>
       )}
 
@@ -362,6 +386,30 @@ export function OpportunityAudiencePage({
   );
 }
 
+function waitForMinimumElapsed(startedAt: number, minimumMs: number) {
+  const remainingMs = minimumMs - (performance.now() - startedAt);
+  if (remainingMs <= 0) return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, remainingMs);
+  });
+}
+
+function waitForStagePaint() {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, 50);
+  });
+}
+
+function newSourceHowItWorksProgress(stage: NewSourceProgressStage) {
+  if (stage === "preparing") {
+    return { activeStep: 2, label: "Preparing review" };
+  }
+  if (stage === "saving") {
+    return { activeStep: 1, label: "Saving setup" };
+  }
+  return { activeStep: 1, label: "Analyzing now" };
+}
+
 function SourceAnalysisProgress({
   stage,
   sourceInputMode,
@@ -392,7 +440,7 @@ function SourceAnalysisProgress({
   const activeIndex = Math.max(0, stages.findIndex((item) => item.id === stage));
 
   return (
-    <div className="source-progress-card" role="status" aria-live="polite" aria-label={copy.title}>
+    <div className="source-progress-card" role="status" aria-live="polite" aria-atomic="true" aria-label={copy.title}>
       <div className="source-progress-heading">
         <span className="source-progress-spinner" aria-hidden="true" />
         <div>
@@ -829,7 +877,15 @@ function OpportunityAudienceDrawer({
   );
 }
 
-function HowItWorks({ activeStep, processing = false }: { activeStep: number; processing?: boolean }) {
+function HowItWorks({
+  activeStep,
+  processing = false,
+  processingLabel = "Analyzing now",
+}: {
+  activeStep: number;
+  processing?: boolean;
+  processingLabel?: string;
+}) {
   const steps = [
     ["Upload approved materials", "Add source documents that have been reviewed and approved.", "clipboard"],
     ["We'll analyze your materials", "Our AI will extract key information and structure the opportunity.", "sparkles"],
@@ -852,7 +908,7 @@ function HowItWorks({ activeStep, processing = false }: { activeStep: number; pr
               <p>{body}</p>
               {processingStep && (
                 <div className="how-step-live">
-                  <small>Analyzing now</small>
+                  <small>{processingLabel}</small>
                   <div className="source-progress-track" aria-hidden="true"><span /></div>
                 </div>
               )}

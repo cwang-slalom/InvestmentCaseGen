@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from ..models.audience import AudienceProfile
 from ..models.extraction import ExtractionResult
-from ..models.generation import GenerationResult
+from ..models.generation import GeneratedOutput, GenerationResult
 from ..models.memory import ArtifactVersion, ProjectMemoryItem, ProjectUpdate, ProjectUpdateReview
 from ..models.opportunity import Opportunity
 from ..models.project import (
@@ -84,6 +84,15 @@ class CaseRepository(ABC):
 
     @abstractmethod
     def list_artifact_versions(self, project_id: str) -> list[ArtifactVersion]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def save_artifact_version(
+        self,
+        project_id: str,
+        generation_id: str,
+        output: GeneratedOutput,
+    ) -> ArtifactVersion:
         raise NotImplementedError
 
 

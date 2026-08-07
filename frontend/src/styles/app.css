@@ -546,7 +546,7 @@ input:disabled {
   border-radius: 50%;
   border: 2px solid currentColor;
   border-right-color: transparent;
-  animation: spin 800ms linear infinite;
+  animation: spin 1.15s linear infinite;
 }
 
 .button-spinner {
@@ -1942,11 +1942,11 @@ button.status-pill:hover {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -38%;
-  width: 38%;
+  left: -44%;
+  width: 44%;
   border-radius: inherit;
-  background: linear-gradient(90deg, transparent, #3328ff, transparent);
-  animation: indeterminate-progress 1.35s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(51, 40, 255, 0.28), #3328ff, rgba(51, 40, 255, 0.28), transparent);
+  animation: indeterminate-progress 3.25s cubic-bezier(0.45, 0, 0.22, 1) infinite;
 }
 
 .source-progress-steps {
@@ -2781,7 +2781,22 @@ button.status-pill:hover {
   }
 
   to {
-    transform: translateX(365%);
+    transform: translateX(330%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .source-progress-track span {
+    left: 0;
+    width: 100%;
+    animation: none;
+    background: linear-gradient(90deg, rgba(51, 40, 255, 0.18), rgba(51, 40, 255, 0.42), rgba(51, 40, 255, 0.18));
+  }
+
+  .button-spinner,
+  .source-progress-spinner,
+  .how-step-spinner {
+    animation-duration: 2.4s;
   }
 }
 
@@ -3291,6 +3306,33 @@ button.status-pill:hover {
   grid-template-columns: minmax(180px, 1.4fr) minmax(160px, 1fr) 140px 28px;
 }
 
+.project-table-row {
+  grid-template-columns: minmax(190px, 1.35fr) minmax(140px, 0.8fr) 112px 118px minmax(120px, 0.7fr);
+}
+
+.project-table-row span {
+  min-width: 0;
+}
+
+.project-table-row strong,
+.project-table-row small {
+  display: block;
+}
+
+.project-table-row small,
+.project-memory-meta small {
+  overflow: hidden;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-memory-meta strong {
+  font-size: 13px;
+}
+
 .table-row.static {
   grid-template-columns: minmax(180px, 1.4fr) minmax(160px, 0.6fr) minmax(160px, 0.6fr);
 }
@@ -3706,6 +3748,54 @@ button.status-pill:hover {
   gap: 14px;
 }
 
+.results-memory-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  border: 1px solid #bedacf;
+  border-left: 8px solid #45af86;
+  border-radius: 8px;
+  background: #f4fbf8;
+  padding: 16px;
+}
+
+.results-memory-panel h3,
+.results-memory-panel p {
+  margin: 0;
+}
+
+.results-memory-panel p:not(.eyebrow) {
+  margin-top: 4px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.memory-summary-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.memory-summary-strip span {
+  display: grid;
+  min-width: 92px;
+  border: 1px solid #cfe1d9;
+  border-radius: 7px;
+  background: #ffffff;
+  padding: 9px 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.memory-summary-strip strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
 .finding-row.blocking {
   border-color: #f0b8b2;
 }
@@ -4106,6 +4196,7 @@ blockquote {
   .two-column.uneven,
   .three-column,
   .three-panel,
+  .results-memory-panel,
   .generated-output-grid,
   .output-grid,
   .next-step-columns,

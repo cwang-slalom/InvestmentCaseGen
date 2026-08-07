@@ -8,16 +8,18 @@ import type { CitationRef, ExportFormat, GeneratedOutput, GenerationResult, Proj
 type ResultsPageProps = {
   project: Project;
   generation?: GenerationResult | null;
+  onProject: (project: Project) => void;
   onGeneration: (generation: GenerationResult) => void;
   onNavigate: (path: string) => void;
 };
 
-export function ResultsPage({ project, generation, onGeneration, onNavigate }: ResultsPageProps) {
+export function ResultsPage({ project, generation, onProject, onGeneration, onNavigate }: ResultsPageProps) {
   const [activeOutputId, setActiveOutputId] = useState("");
   const [editedOutputs, setEditedOutputs] = useState<GeneratedOutput[]>([]);
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [drawerCitation, setDrawerCitation] = useState<CitationRef | null>(null);
   const [saveStatus, setSaveStatus] = useState("");
+  const [savingVersion, setSavingVersion] = useState(false);
   const [exportStatus, setExportStatus] = useState("");
   const [exportingOutputId, setExportingOutputId] = useState<string | null>(null);
   const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
@@ -64,6 +66,7 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
     [activeOutputId, editedOutputs],
   );
   const originalOutput = generation?.outputs.find((output) => output.id === activeOutput?.id);
+  const activeGenerationId = generation?.generationId || project.generationId || "";
 
   function editSection(sectionId: string, body: string) {
     setEditedOutputs((outputs) =>
@@ -137,6 +140,29 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
     }
   }
 
+  async function saveVersion() {
+    if (!activeOutput || !activeGenerationId) return;
+    setSavingVersion(true);
+    setSaveStatus("");
+    try {
+      const version = await api.saveArtifactVersion(project.id, {
+        generationId: activeGenerationId,
+        output: activeOutput,
+      });
+      const [updatedGeneration, updatedProject] = await Promise.all([
+        api.generation(activeGenerationId),
+        api.project(project.id),
+      ]);
+      onGeneration(updatedGeneration);
+      onProject(updatedProject);
+      setSaveStatus(`${activeOutput.title} saved as v${version.version}. Version history is in Project updates.`);
+    } catch (error) {
+      setSaveStatus(error instanceof Error ? error.message : "Version could not be saved.");
+    } finally {
+      setSavingVersion(false);
+    }
+  }
+
   if (!project.generationId && !generation) {
     return (
       <section className="panel full-panel">
@@ -155,6 +181,22 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
   return (
     <section className="results-layout">
       <div className="results-main">
+        <section className="results-memory-panel">
+          <div>
+            <p className="eyebrow">Living project memory</p>
+            <h3>Project updates</h3>
+            <p>Add meeting notes, new documents, or stakeholder feedback after this output package is generated.</p>
+          </div>
+          <div className="memory-summary-strip">
+            <span><strong>{project.memorySummary?.updateCount || 0}</strong> updates</span>
+            <span><strong>{project.memorySummary?.approvedMemoryCount || 0}</strong> memory items</span>
+            <span><strong>{project.memorySummary?.needsRefreshCount || 0}</strong> need refresh</span>
+          </div>
+          <button className="primary-button" type="button" onClick={() => onNavigate(`/projects/${project.id}/updates`)}>
+            <Icon name="plus" />
+            Add update
+          </button>
+        </section>
         <div className="tabs" role="tablist" aria-label="Generated outputs">
           {editedOutputs.map((output) => (
             <button key={output.id} type="button" className={output.id === activeOutput.id ? "active" : ""} onClick={() => setActiveOutputId(output.id)}>
@@ -176,7 +218,7 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
           exportingFormat={exportingOutputId === activeOutput.id ? exportingFormat : null}
           exportStatus={exportStatus}
         />
-        {originalOutput && <p className="muted">Local edits are held in memory for this Phase 1 session.</p>}
+        {originalOutput && <p className="muted">Local edits are held in the browser until you save a version or export the visible draft.</p>}
       </div>
       <aside className="results-side">
         <section className="panel">
@@ -228,9 +270,9 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
             <button className="secondary-button" type="button" onClick={() => onNavigate(`/projects/${project.id}/review-setup`)}>
               Return to setup
             </button>
-            <button className="primary-button" type="button" onClick={() => setSaveStatus("Saved in memory for this running session.")}>
+            <button className="primary-button" type="button" disabled={savingVersion || !activeGenerationId} onClick={() => void saveVersion()}>
               <Icon name="save" />
-              Save version
+              {savingVersion ? "Saving version" : "Save version"}
             </button>
             {saveStatus && <p className="saved-note">{saveStatus}</p>}
           </div>

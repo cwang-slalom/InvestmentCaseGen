@@ -76,6 +76,11 @@ class ProjectUpdateRefreshResult(APIModel):
     generation_id: str = Field(alias="generationId")
 
 
+class ArtifactVersionSaveRequest(APIModel):
+    generation_id: str = Field(alias="generationId")
+    output: dict[str, object]
+
+
 class ProjectMemoryItem(APIModel):
     id: str
     project_id: str = Field(alias="projectId")

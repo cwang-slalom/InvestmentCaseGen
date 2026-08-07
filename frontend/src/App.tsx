@@ -172,6 +172,7 @@ export function App() {
       <ResultsPage
         project={currentProject}
         generation={generation}
+        onProject={updateProject}
         onGeneration={setGeneration}
         onNavigate={navigate}
       />

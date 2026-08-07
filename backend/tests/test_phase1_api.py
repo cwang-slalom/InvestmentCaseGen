@@ -8,6 +8,8 @@ from fastapi.testclient import TestClient
 from app.ai import StructuredGenerationRequest, StructuredGenerationResponse
 from app.main import app
 from app.models.extraction import ExtractionResult
+from app.models.generation import GenerationResult
+from app.repositories.memory import case_repository
 from app.services.extraction import ALL_FIELD_SPECS, source_processor
 from app.services.integrity import locked_facts_preserved
 
@@ -484,6 +486,43 @@ def test_export_rejects_unsupported_format() -> None:
 
     assert response.status_code == 400
     assert "Unsupported export format" in response.json()["detail"]
+
+
+def test_save_artifact_version_uses_visible_output_payload() -> None:
+    test_client = client()
+    project = test_client.post("/api/projects", json={"name": "Version save test"}).json()
+    project_id = project["id"]
+    output = export_output_payload()
+    generation_id = f"gen-{project_id}-version-test"
+    case_repository.save_generation(
+        project_id,
+        GenerationResult(
+            generationId=generation_id,
+            projectId=project_id,
+            status="completed",
+            outputs=[output],
+            informationNeeded=[],
+            reviewFindings=[],
+            metadata={"mode": "test"},
+        ),
+    )
+
+    edited_output = export_output_payload()
+    edited_output["sections"][0]["body"] = "Saved visible edit from the browser."
+    response = test_client.post(
+        f"/api/projects/{project_id}/artifact-versions",
+        json={"generationId": generation_id, "output": edited_output},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["version"] == 2
+    assert response.json()["status"] == "current"
+
+    generation = test_client.get(f"/api/generations/{generation_id}").json()
+    versions = test_client.get(f"/api/projects/{project_id}/artifact-versions").json()
+    assert generation["outputs"][0]["sections"][0]["body"] == "Saved visible edit from the browser."
+    assert any(item["version"] == 1 and item["status"] == "superseded" for item in versions)
+    assert any(item["version"] == 2 and item["status"] == "current" for item in versions)
 
 
 def test_locked_number_comparison_and_generation_preserves_locked_fact(monkeypatch) -> None:

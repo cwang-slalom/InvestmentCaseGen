@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { Project } from "../types";
+import { projectResumeTarget } from "../state/projectNavigation";
 import { wizardSteps } from "../state/options";
 import { Icon } from "./Icons";
 
@@ -86,20 +87,23 @@ export function Shell({
         {!collapsed && (
           <div className="recent-projects" aria-label="Recent projects">
             <h2>Recent projects</h2>
-            {(projects.length ? projects : []).slice(0, 3).map((item, index) => (
-              <button
-                type="button"
-                className={`recent-project ${index === 0 ? "active" : ""}`}
-                key={item.id}
-                onClick={() => onNavigate(`/projects/${item.id}/task`)}
-              >
-                <strong>{item.name}</strong>
-                <span>
-                  {index === 0 ? "Donor deck" : index === 1 ? "Proposal" : "One-pager"}
-                  <b>{index === 0 ? "In review" : index === 1 ? "Draft" : "Approved"}</b>
-                </span>
-              </button>
-            ))}
+            {(projects.length ? projects : []).slice(0, 3).map((item, index) => {
+              const resume = projectResumeTarget(item);
+              return (
+                <button
+                  type="button"
+                  className={`recent-project ${index === 0 ? "active" : ""}`}
+                  key={item.id}
+                  onClick={() => onNavigate(resume.path)}
+                >
+                  <strong>{item.name}</strong>
+                  <span>
+                    {resume.label}
+                    <b>{resume.status}</b>
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
         <div className="sidebar-footer">

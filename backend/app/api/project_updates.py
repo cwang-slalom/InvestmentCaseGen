@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 
-from ..models.generation import GenerationResult
+from ..models.generation import GeneratedOutput, GenerationResult
 from ..models.memory import (
     ArtifactVersion,
+    ArtifactVersionSaveRequest,
     ProjectMemoryItem,
     ProjectUpdate,
     ProjectUpdateCreate,
@@ -71,6 +72,15 @@ def list_project_memory(project_id: str) -> list[ProjectMemoryItem]:
 @router.get("/{project_id}/artifact-versions")
 def list_artifact_versions(project_id: str) -> list[ArtifactVersion]:
     return case_repository.list_artifact_versions(project_id)
+
+
+@router.post("/{project_id}/artifact-versions")
+def save_artifact_version(
+    project_id: str,
+    request: ArtifactVersionSaveRequest,
+) -> ArtifactVersion:
+    output = GeneratedOutput.model_validate(request.output)
+    return case_repository.save_artifact_version(project_id, request.generation_id, output)
 
 
 @router.post("/{project_id}/updates/{update_id}/refresh")
