@@ -2,6 +2,7 @@ from io import BytesIO
 from pathlib import Path
 from zipfile import ZipFile
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.ai import StructuredGenerationRequest, StructuredGenerationResponse
@@ -325,10 +326,8 @@ def test_new_opportunity_generation_requires_live_model_after_extraction(monkeyp
     assert "Live model generation is required" in generation_response.json()["detail"]
 
 
-def test_phase1_docx_export_uses_visible_output_payload() -> None:
-    test_client = client()
-    project = test_client.post("/api/projects", json={"name": "Export test"}).json()
-    output = {
+def export_output_payload() -> dict:
+    return {
         "id": "out-investment-case",
         "type": "investment_case",
         "title": "Investment Case Draft",
@@ -365,6 +364,12 @@ def test_phase1_docx_export_uses_visible_output_payload() -> None:
         ],
     }
 
+
+def test_phase1_docx_export_uses_visible_output_payload() -> None:
+    test_client = client()
+    project = test_client.post("/api/projects", json={"name": "Export test"}).json()
+    output = export_output_payload()
+
     response = test_client.post(
         f"/api/projects/{project['id']}/exports/docx",
         json={
@@ -390,6 +395,95 @@ def test_phase1_docx_export_uses_visible_output_payload() -> None:
     assert "A9DCCA" in document_xml
     assert "**45% of facilities**" not in document_xml
     assert "45% of facilities" in document_xml
+
+
+@pytest.mark.parametrize(
+    ("export_format", "expected_content_type", "extension"),
+    [
+        ("pdf", "application/pdf", ".pdf"),
+        (
+            "pptx",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ".pptx",
+        ),
+        ("markdown", "text/markdown", ".md"),
+        ("txt", "text/plain", ".txt"),
+    ],
+)
+def test_phase1_export_formats_use_visible_output_payload(
+    export_format: str,
+    expected_content_type: str,
+    extension: str,
+) -> None:
+    test_client = client()
+    project = test_client.post("/api/projects", json={"name": f"{export_format} export test"}).json()
+    output = export_output_payload()
+
+    response = test_client.post(
+        f"/api/projects/{project['id']}/exports/{export_format}",
+        json={
+            "output": output,
+            "informationNeeded": [{"id": "info-1", "message": "Confirm funding recipient.", "relatedSection": "diligence"}],
+            "reviewFindings": [
+                {
+                    "id": "finding-1",
+                    "severity": "warning",
+                    "type": "citation_gap",
+                    "message": "Review one claim before external use.",
+                    "resolved": False,
+                }
+            ],
+            "metadata": {"mode": "live"},
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith(expected_content_type)
+    assert response.headers["content-disposition"].endswith(f'{extension}"')
+
+    if export_format == "pdf":
+        assert response.content.startswith(b"%PDF")
+        assert b"Edited section text that only exists in the browser." in response.content
+        assert b"Confirm funding recipient." in response.content
+    elif export_format == "pptx":
+        assert response.content[:2] == b"PK"
+        with ZipFile(BytesIO(response.content)) as archive:
+            slide_xml = "\n".join(
+                archive.read(name).decode()
+                for name in archive.namelist()
+                if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+            )
+        assert "Edited section text that only exists in the browser." in slide_xml
+        assert "Confirm funding recipient." in slide_xml
+    elif export_format == "markdown":
+        markdown = response.content.decode()
+        assert "Edited section text that only exists in the browser." in markdown
+        assert "**45% of facilities**" in markdown
+        assert "Confirm funding recipient." in markdown
+    else:
+        text = response.content.decode()
+        assert "Edited section text that only exists in the browser." in text
+        assert "45% of facilities" in text
+        assert "**45% of facilities**" not in text
+        assert "Confirm funding recipient." in text
+
+
+def test_export_rejects_unsupported_format() -> None:
+    test_client = client()
+    project = test_client.post("/api/projects", json={"name": "Unsupported export test"}).json()
+
+    response = test_client.post(
+        f"/api/projects/{project['id']}/exports/keynote",
+        json={
+            "output": export_output_payload(),
+            "informationNeeded": [],
+            "reviewFindings": [],
+            "metadata": {"mode": "live"},
+        },
+    )
+
+    assert response.status_code == 400
+    assert "Unsupported export format" in response.json()["detail"]
 
 
 def test_locked_number_comparison_and_generation_preserves_locked_fact(monkeypatch) -> None:
@@ -448,3 +542,46 @@ def test_sanitized_controlled_generation_error() -> None:
 
     assert response.status_code == 500
     assert response.json() == {"detail": "Generation failed in controlled test mode."}
+
+
+def test_project_update_review_commits_approved_memory() -> None:
+    test_client = client()
+    project = test_client.post("/api/projects", json={"name": "Update memory test"}).json()
+    project_id = project["id"]
+
+    update_response = test_client.post(
+        f"/api/projects/{project_id}/updates",
+        json={
+            "updateType": "meeting_notes",
+            "sourceLabel": "Aug 7 donor meeting",
+            "text": (
+                "The donor confirmed interest in Kenya clinics and asked for sharper meeting talking points. "
+                "Funding recipient and investment vehicle are not yet defined. "
+                "Need to confirm whether district health offices will be the delivery partners?"
+            ),
+        },
+    )
+
+    assert update_response.status_code == 200
+    update = update_response.json()
+    assert update["status"] == "pending_review"
+    assert update["extractedFacts"]
+    assert update["openQuestions"]
+    assert any(item["outputType"] == "talking_points" for item in update["affectedOutputs"])
+
+    review_response = test_client.put(
+        f"/api/projects/{project_id}/updates/{update['id']}/review",
+        json={
+            "approvedFactIds": [item["id"] for item in update["extractedFacts"]],
+            "approvedQuestionIds": [item["id"] for item in update["openQuestions"]],
+        },
+    )
+
+    assert review_response.status_code == 200
+    assert review_response.json()["status"] == "approved"
+
+    memory = test_client.get(f"/api/projects/{project_id}/memory").json()
+    refreshed_project = test_client.get(f"/api/projects/{project_id}").json()
+    assert len(memory) == len(update["extractedFacts"]) + len(update["openQuestions"])
+    assert refreshed_project["memorySummary"]["updateCount"] == 1
+    assert refreshed_project["memorySummary"]["approvedMemoryCount"] == len(memory)

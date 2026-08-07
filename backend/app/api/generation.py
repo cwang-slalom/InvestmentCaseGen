@@ -13,7 +13,8 @@ from ..models.generation import (
     GenerationResult,
 )
 from ..repositories.memory import case_repository, generation_store
-from ..services.docx_export import draft_output_to_docx, filename_safe
+from ..services.docx_export import filename_safe
+from ..services.draft_export import export_draft_output
 from ..services.generation import get_generation_backend
 
 router = APIRouter(prefix="/api", tags=["generation"])
@@ -210,15 +211,27 @@ async def _generate_and_save(project_id: str, backend=None) -> GenerationResult:
 
 @router.post("/projects/{project_id}/exports/docx", response_model=None)
 def export_project_output_docx(project_id: str, request: ExportDraftRequest) -> Response:
+    return _export_project_output(project_id, "docx", request)
+
+
+@router.post("/projects/{project_id}/exports/{export_format}", response_model=None)
+def export_project_output(project_id: str, export_format: str, request: ExportDraftRequest) -> Response:
+    return _export_project_output(project_id, export_format, request)
+
+
+def _export_project_output(project_id: str, export_format: str, request: ExportDraftRequest) -> Response:
     project = case_repository.get_project(project_id)
-    buffer = draft_output_to_docx(project, request)
-    filename = f"{filename_safe(request.output.title)}.docx"
+    try:
+        exported = export_draft_output(project, request, export_format)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    filename = f"{filename_safe(request.output.title)}.{exported.profile.extension}"
     return Response(
-        content=buffer,
-        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        content=exported.content,
+        media_type=exported.profile.media_type,
         headers={
             "content-disposition": f'attachment; filename="{filename}"',
-            "content-length": str(len(buffer)),
+            "content-length": str(len(exported.content)),
         },
     )
 

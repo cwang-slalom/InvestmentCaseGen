@@ -35,7 +35,9 @@ describe("result rendering", () => {
     expect(html).toContain("Investment Case Draft");
     expect(html).toContain("Strategic Opportunity");
     expect(html).toContain("Synthetic source");
+    expect(html).toContain("Export PDF");
     expect(html).toContain("Export DOCX");
+    expect(html).toContain("Export PPTX");
     expect(html).not.toContain("Future phase");
   });
 

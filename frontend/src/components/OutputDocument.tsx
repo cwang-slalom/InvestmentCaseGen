@@ -1,18 +1,19 @@
-import type { CitationRef, GeneratedOutput, GeneratedSection } from "../types";
-import { Icon } from "./Icons";
+import type { CitationRef, ExportFormat, GeneratedOutput, GeneratedSection } from "../types";
+import { Icon, type IconName } from "./Icons";
 
 type OutputDocumentProps = {
   output: GeneratedOutput;
   sections: GeneratedSection[];
   editingSectionId?: string | null;
   isExporting?: boolean;
+  exportingFormat?: ExportFormat | null;
   exportStatus?: string;
   onEditSection?: (sectionId: string, body: string) => void;
   onBeginEdit?: (sectionId: string) => void;
   onReset?: (sectionId: string) => void;
   onRegenerate?: (sectionId: string) => void;
   onCitation?: (citation: CitationRef) => void;
-  onExport?: (output: GeneratedOutput) => void;
+  onExport?: (output: GeneratedOutput, format: ExportFormat) => void;
 };
 
 type PathwaySlot = {
@@ -50,6 +51,14 @@ const spotlightTerms = [
   "engage",
   "recipient",
   "vehicle",
+];
+
+const exportOptions: { format: ExportFormat; label: string; icon: IconName }[] = [
+  { format: "pdf", label: "Export PDF", icon: "pdf" },
+  { format: "docx", label: "Export DOCX", icon: "docx" },
+  { format: "pptx", label: "Export PPTX", icon: "presentation" },
+  { format: "markdown", label: "Export Markdown", icon: "document" },
+  { format: "txt", label: "Export Text", icon: "file" },
 ];
 
 function sectionText(section: GeneratedSection) {
@@ -211,6 +220,7 @@ export function OutputDocument({
   sections,
   editingSectionId,
   isExporting,
+  exportingFormat,
   exportStatus,
   onEditSection,
   onBeginEdit,
@@ -234,16 +244,25 @@ export function OutputDocument({
             <span>Human review required</span>
           </div>
         </div>
-        <button
-          className="secondary-button"
-          type="button"
-          disabled={!onExport || isExporting}
-          aria-busy={isExporting || undefined}
-          onClick={() => onExport?.(output)}
-        >
-          <Icon name="docx" />
-          {isExporting ? "Exporting" : "Export DOCX"}
-        </button>
+        <div className="export-actions" aria-label="Export formats">
+          <span className="export-actions-label">Export options</span>
+          {exportOptions.map((option) => {
+            const exportingThisFormat = Boolean(isExporting && exportingFormat === option.format);
+            return (
+              <button
+                className="secondary-button export-button"
+                type="button"
+                key={option.format}
+                disabled={!onExport || isExporting}
+                aria-busy={exportingThisFormat || undefined}
+                onClick={() => onExport?.(output, option.format)}
+              >
+                <Icon name={option.icon} />
+                {exportingThisFormat ? "Exporting" : option.label}
+              </button>
+            );
+          })}
+        </div>
       </header>
       {exportStatus && <p className="export-status">{exportStatus}</p>}
       {layout.lead && (

@@ -1,6 +1,8 @@
 import type {
   AppConfig,
+  ArtifactVersion,
   AudienceProfile,
+  ExportFormat,
   ExtractionResult,
   ExtractedField,
   FieldValue,
@@ -12,12 +14,23 @@ import type {
   Opportunity,
   OutputType,
   Project,
+  ProjectMemoryItem,
+  ProjectUpdate,
+  ProjectUpdateRefreshResult,
+  ProjectUpdateType,
   ReviewFinding,
   ReviewRole,
 } from "../types";
 
 type ApiErrorPayload = {
   detail?: string;
+};
+
+type ExportDraftBody = {
+  output: GeneratedOutput;
+  informationNeeded: InformationNeeded[];
+  reviewFindings: ReviewFinding[];
+  metadata: Record<string, string>;
 };
 
 export class ApiError extends Error {
@@ -90,6 +103,34 @@ export const api = {
   projects: () => apiGet<Project[]>("/api/projects"),
   createProject: (name?: string) => apiJson<Project>("/api/projects", "POST", { name }),
   project: (projectId: string) => apiGet<Project>(`/api/projects/${projectId}`),
+  projectUpdates: (projectId: string) => apiGet<ProjectUpdate[]>(`/api/projects/${projectId}/updates`),
+  projectMemory: (projectId: string) => apiGet<ProjectMemoryItem[]>(`/api/projects/${projectId}/memory`),
+  artifactVersions: (projectId: string) => apiGet<ArtifactVersion[]>(`/api/projects/${projectId}/artifact-versions`),
+  createProjectUpdateText: (
+    projectId: string,
+    body: { updateType: ProjectUpdateType; sourceLabel?: string | null; text: string },
+  ) => apiJson<ProjectUpdate>(`/api/projects/${projectId}/updates`, "POST", body),
+  createProjectUpdateFile: async (projectId: string, updateType: ProjectUpdateType, file: File) =>
+    parseJson<ProjectUpdate>(
+      await fetch(
+        `/api/projects/${projectId}/updates?updateType=${encodeURIComponent(updateType)}&filename=${encodeURIComponent(file.name)}`,
+        {
+          method: "POST",
+          headers: { accept: "application/json", "content-type": file.type || "application/octet-stream" },
+          body: file,
+        },
+      ),
+    ),
+  reviewProjectUpdate: (
+    projectId: string,
+    updateId: string,
+    body: { approvedFactIds: string[]; approvedQuestionIds: string[] },
+  ) => apiJson<ProjectUpdate>(`/api/projects/${projectId}/updates/${updateId}/review`, "PUT", body),
+  refreshProjectUpdate: (
+    projectId: string,
+    updateId: string,
+    body: { selectedOutputs: OutputType[] },
+  ) => apiJson<ProjectUpdateRefreshResult>(`/api/projects/${projectId}/updates/${updateId}/refresh`, "POST", body),
   projectExtraction: (projectId: string) => apiGet<ExtractionResult>(`/api/projects/${projectId}/extraction`),
   updateTask: (
     projectId: string,
@@ -141,15 +182,10 @@ export const api = {
   generationStatus: (projectId: string) => apiGet<GenerationJobStatus>(`/api/projects/${projectId}/generation-status`),
   cancelGeneration: (projectId: string) => apiDelete<GenerationJobStatus>(`/api/projects/${projectId}/generation`),
   generation: (generationId: string) => apiGet<GenerationResult>(`/api/generations/${generationId}`),
-  exportDocx: (
-    projectId: string,
-    body: {
-      output: GeneratedOutput;
-      informationNeeded: InformationNeeded[];
-      reviewFindings: ReviewFinding[];
-      metadata: Record<string, string>;
-    },
-  ) => apiBlob(`/api/projects/${projectId}/exports/docx`, "POST", body),
+  exportDraft: (projectId: string, format: ExportFormat, body: ExportDraftBody) =>
+    apiBlob(`/api/projects/${projectId}/exports/${format}`, "POST", body),
+  exportDocx: (projectId: string, body: ExportDraftBody) =>
+    apiBlob(`/api/projects/${projectId}/exports/docx`, "POST", body),
   regenerateSection: (generationId: string, sectionId: string) =>
     apiJson<GeneratedSection>(`/api/generations/${generationId}/sections/${sectionId}/regenerate`, "POST", {}),
   updateFinding: (generationId: string, findingId: string, resolved: boolean) =>

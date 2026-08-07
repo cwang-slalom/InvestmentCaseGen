@@ -8,6 +8,7 @@ import { HomePage } from "./pages/HomePage";
 import { ExtractionReviewPage } from "./pages/ExtractionReviewPage";
 import { DonorProfilesPage, KnowledgeBasePage, OpportunityLibraryPage, PlaceholderPage } from "./pages/LibraryPages";
 import { OpportunityAudiencePage } from "./pages/OpportunityAudiencePage";
+import { ProjectUpdatesPage } from "./pages/ProjectUpdatesPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ResultsPage } from "./pages/ResultsPage";
 import { ReviewSetupPage } from "./pages/ReviewSetupPage";
@@ -171,6 +172,15 @@ export function App() {
       <ResultsPage
         project={currentProject}
         generation={generation}
+        onGeneration={setGeneration}
+        onNavigate={navigate}
+      />
+    );
+  } else if (path.endsWith("/updates")) {
+    content = (
+      <ProjectUpdatesPage
+        project={currentProject}
+        onProject={updateProject}
         onGeneration={setGeneration}
         onNavigate={navigate}
       />

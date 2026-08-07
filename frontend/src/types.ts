@@ -76,6 +76,16 @@ export type OutputType =
   | "talking_points"
   | "source_appendix";
 
+export type ProjectUpdateType =
+  | "meeting_notes"
+  | "document_upload"
+  | "stakeholder_feedback"
+  | "manual_note";
+
+export type ProjectUpdateStatus = "pending_review" | "approved" | "rejected";
+export type MemoryItemStatus = "proposed" | "approved" | "deprecated";
+export type ArtifactVersionStatus = "current" | "needs_refresh" | "superseded";
+
 export type TaskState = {
   selectedTaskId?: string | null;
   taskLabel?: string | null;
@@ -125,6 +135,14 @@ export type Project = {
   extractionId?: string | null;
   reviewSetup?: ReviewSetupState | null;
   generationId?: string | null;
+  memorySummary?: ProjectMemorySummary | null;
+};
+
+export type ProjectMemorySummary = {
+  updateCount: number;
+  pendingUpdateCount: number;
+  approvedMemoryCount: number;
+  needsRefreshCount: number;
 };
 
 export type ExtractedField = {
@@ -163,6 +181,71 @@ export type GeneratedOutput = {
   title: string;
   status: string;
   sections: GeneratedSection[];
+};
+
+export type ExportFormat = "pdf" | "docx" | "pptx" | "markdown" | "txt";
+
+export type UpdateCandidate = {
+  id: string;
+  category: string;
+  label: string;
+  value: string;
+  confidence: number;
+  sourceReference: string;
+  citations: CitationRef[];
+};
+
+export type AffectedOutput = {
+  outputType: OutputType;
+  reason: string;
+  status: "needs_refresh" | "optional";
+};
+
+export type ProjectUpdate = {
+  id: string;
+  projectId: string;
+  updateType: ProjectUpdateType;
+  sourceLabel: string;
+  rawText: string;
+  summary: string;
+  status: ProjectUpdateStatus;
+  extractedFacts: UpdateCandidate[];
+  openQuestions: UpdateCandidate[];
+  affectedOutputs: AffectedOutput[];
+  createdAt: string;
+  approvedAt?: string | null;
+};
+
+export type ProjectMemoryItem = {
+  id: string;
+  projectId: string;
+  category: string;
+  label: string;
+  value: string;
+  sourceUpdateId: string;
+  sourceReference: string;
+  status: MemoryItemStatus;
+  citations: CitationRef[];
+  createdAt: string;
+  approvedAt?: string | null;
+};
+
+export type ArtifactVersion = {
+  id: string;
+  projectId: string;
+  outputId: string;
+  outputType: OutputType;
+  title: string;
+  version: number;
+  status: ArtifactVersionStatus;
+  generationId: string;
+  createdFromUpdateId?: string | null;
+  createdAt: string;
+};
+
+export type ProjectUpdateRefreshResult = {
+  update: ProjectUpdate;
+  generationId: string;
 };
 
 export type ReviewFinding = {

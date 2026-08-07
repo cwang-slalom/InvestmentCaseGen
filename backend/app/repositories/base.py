@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from ..models.audience import AudienceProfile
 from ..models.extraction import ExtractionResult
 from ..models.generation import GenerationResult
+from ..models.memory import ArtifactVersion, ProjectMemoryItem, ProjectUpdate, ProjectUpdateReview
 from ..models.opportunity import Opportunity
 from ..models.project import (
     OpportunityAudienceUpdate,
@@ -48,7 +49,41 @@ class CaseRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def save_generation(self, project_id: str, generation: GenerationResult) -> Project:
+    def save_generation(
+        self,
+        project_id: str,
+        generation: GenerationResult,
+        created_from_update_id: str | None = None,
+    ) -> Project:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_project_updates(self, project_id: str) -> list[ProjectUpdate]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def save_project_update(self, update: ProjectUpdate) -> ProjectUpdate:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_project_update(self, project_id: str, update_id: str) -> ProjectUpdate:
+        raise NotImplementedError
+
+    @abstractmethod
+    def approve_project_update(
+        self,
+        project_id: str,
+        update_id: str,
+        request: ProjectUpdateReview,
+    ) -> ProjectUpdate:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_project_memory(self, project_id: str) -> list[ProjectMemoryItem]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_artifact_versions(self, project_id: str) -> list[ArtifactVersion]:
         raise NotImplementedError
 
 

@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import Field
 
 from .base import APIModel, FieldValue
+from .memory import ProjectMemorySummary
 
 
 OutputType = Literal[
@@ -77,6 +78,7 @@ class Project(APIModel):
     extraction_id: str | None = Field(default=None, alias="extractionId")
     review_setup: ReviewSetupState | None = Field(default=None, alias="reviewSetup")
     generation_id: str | None = Field(default=None, alias="generationId")
+    memory_summary: ProjectMemorySummary | None = Field(default=None, alias="memorySummary")
 
 
 class ProjectCreate(APIModel):

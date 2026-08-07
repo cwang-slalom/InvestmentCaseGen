@@ -87,6 +87,8 @@ class DatabricksRequestAdapter:
         opportunity = self.selected_opportunity(project)
         audience = self.selected_audience(project)
         extraction = self.extraction(project)
+        project_memory = case_repository.list_project_memory(project.id)
+        artifact_versions = case_repository.list_artifact_versions(project.id)
         return {
             "documentType": "coordinated_donor_output_package",
             "caseTitle": project.name,
@@ -107,6 +109,15 @@ class DatabricksRequestAdapter:
                 ),
             },
             "approvedFactLedger": self.approved_fact_ledger(opportunity, extraction),
+            "approvedProjectMemory": [
+                item.model_dump(by_alias=True)
+                for item in project_memory
+                if item.status == "approved"
+            ],
+            "artifactHistory": [
+                version.model_dump(by_alias=True)
+                for version in artifact_versions
+            ],
             "lockedFacts": self.locked_facts(extraction),
             "requiredContent": [
                 "Return exactly the selected output types and no additional outputs.",
@@ -115,6 +126,7 @@ class DatabricksRequestAdapter:
                 "Use generationId and projectId from caseBrief exactly.",
                 "Every metadata value must be a string.",
                 "Label unresolved funding recipient, investment vehicle, fiscal sponsor, investment manager, and implementation roles as unresolved unless directly supported.",
+                "Use approvedProjectMemory as user-reviewed project context, while preserving source citations and unresolved-role boundaries.",
                 "Treat all generated content as a human-review-required draft.",
             ],
             "sourceExcerpts": self.source_excerpts(opportunity, extraction),

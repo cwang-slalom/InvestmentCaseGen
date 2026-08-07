@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import { Icon } from "../components/Icons";
 import { OutputDocument } from "../components/OutputDocument";
-import type { CitationRef, GeneratedOutput, GenerationResult, Project } from "../types";
+import type { CitationRef, ExportFormat, GeneratedOutput, GenerationResult, Project } from "../types";
 
 type ResultsPageProps = {
   project: Project;
@@ -20,6 +20,23 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
   const [saveStatus, setSaveStatus] = useState("");
   const [exportStatus, setExportStatus] = useState("");
   const [exportingOutputId, setExportingOutputId] = useState<string | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
+
+  const exportExtensions: Record<ExportFormat, string> = {
+    pdf: "pdf",
+    docx: "docx",
+    pptx: "pptx",
+    markdown: "md",
+    txt: "txt",
+  };
+
+  const exportLabels: Record<ExportFormat, string> = {
+    pdf: "PDF",
+    docx: "DOCX",
+    pptx: "PPTX",
+    markdown: "Markdown",
+    txt: "Text",
+  };
 
   useEffect(() => {
     let active = true;
@@ -92,11 +109,12 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
     return slug || "investment-case-draft";
   }
 
-  async function exportOutput(output: GeneratedOutput) {
+  async function exportOutput(output: GeneratedOutput, format: ExportFormat) {
     setExportingOutputId(output.id);
+    setExportingFormat(format);
     setExportStatus("");
     try {
-      const blob = await api.exportDocx(project.id, {
+      const blob = await api.exportDraft(project.id, format, {
         output,
         informationNeeded: generation?.informationNeeded || [],
         reviewFindings: generation?.reviewFindings || [],
@@ -105,16 +123,17 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${filenameSafe(output.title)}.docx`;
+      link.download = `${filenameSafe(output.title)}.${exportExtensions[format]}`;
       document.body.append(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      setExportStatus("Draft DOCX downloaded.");
+      setExportStatus(`Draft ${exportLabels[format]} downloaded.`);
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : "Export could not be completed.");
     } finally {
       setExportingOutputId(null);
+      setExportingFormat(null);
     }
   }
 
@@ -154,6 +173,7 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
           onCitation={setDrawerCitation}
           onExport={exportOutput}
           isExporting={exportingOutputId === activeOutput.id}
+          exportingFormat={exportingOutputId === activeOutput.id ? exportingFormat : null}
           exportStatus={exportStatus}
         />
         {originalOutput && <p className="muted">Local edits are held in memory for this Phase 1 session.</p>}
@@ -195,8 +215,16 @@ export function ResultsPage({ project, generation, onGeneration, onNavigate }: R
             <div><dt>Outcome</dt><dd>{project.opportunityAudience?.intendedOutcome || "Unresolved"}</dd></div>
             <div><dt>Review status</dt><dd>{project.reviewSetup?.confirmed ? "Confirmed" : "Unconfirmed"}</dd></div>
             <div><dt>Mode</dt><dd>{generation?.metadata.mode || "Unknown"}</dd></div>
+            <div><dt>Memory</dt><dd>{project.memorySummary?.approvedMemoryCount || 0} approved items</dd></div>
           </dl>
+          {Boolean(project.memorySummary?.needsRefreshCount) && (
+            <p className="info-flag">{project.memorySummary?.needsRefreshCount} output version needs refresh.</p>
+          )}
           <div className="action-stack">
+            <button className="secondary-button" type="button" onClick={() => onNavigate(`/projects/${project.id}/updates`)}>
+              <Icon name="plus" />
+              Add update
+            </button>
             <button className="secondary-button" type="button" onClick={() => onNavigate(`/projects/${project.id}/review-setup`)}>
               Return to setup
             </button>

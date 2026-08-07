@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .ai import router as ai_router
-from .api import audiences, config, generation, health, opportunities, projects, sources
+from .api import audiences, config, generation, health, opportunities, project_updates, projects, sources
 from .config import get_settings
 
 
@@ -32,6 +32,7 @@ app.include_router(config.router)
 app.include_router(projects.router)
 app.include_router(opportunities.router)
 app.include_router(audiences.router)
+app.include_router(project_updates.router)
 app.include_router(sources.router)
 app.include_router(generation.router)
 app.include_router(ai_router)

@@ -43,12 +43,13 @@ export function Shell({
 }: ShellProps) {
   const projectRouteMatch = currentPath.match(/^\/projects\/([^/]+)\/([^/]+)/);
   const rawStep = projectRouteMatch?.[2] || "";
-  const currentStep = rawStep === "extraction-review" ? "opportunity-audience" : rawStep;
+  const currentStep = rawStep === "extraction-review" ? "opportunity-audience" : rawStep === "updates" ? "generate" : rawStep;
   const isProjectFlow = Boolean(projectRouteMatch);
   const currentStepIndex = wizardSteps.findIndex((step) => step.path === currentStep);
 
   function isNavActive(path: string) {
     if (currentPath === path) return true;
+    if (isProjectFlow && (rawStep === "results" || rawStep === "updates")) return path === "/projects";
     if (isProjectFlow && currentStep === "task" && path === "/") return true;
     if (isProjectFlow && currentStep !== "task" && path === "/opportunity-library") return true;
     return false;
@@ -135,7 +136,7 @@ export function Shell({
           <div className="stepper" aria-label="Project workflow">
             {wizardSteps.map((step, index) => {
               const isActive = currentStep === step.path;
-              const isDone = currentStepIndex > index || currentStep === "results";
+              const isDone = currentStepIndex > index || rawStep === "results" || rawStep === "updates";
               return (
                 <div className="step-wrap" key={step.id}>
                   <button
