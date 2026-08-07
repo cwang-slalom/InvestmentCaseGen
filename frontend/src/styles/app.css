@@ -2305,16 +2305,71 @@ button.status-pill:hover {
 /* Review setup */
 .review-grid {
   display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1fr) minmax(330px, 1.05fr);
+  grid-template-columns: minmax(420px, 1.08fr) minmax(320px, 1fr) minmax(330px, 1fr);
   gap: 22px;
   align-items: start;
 }
 
+.system-suggestions-card > p,
 .approach-card > p,
 .review-plan-card > p,
 .source-plan-card > p {
   margin: 12px 0 24px;
   font-size: 13px;
+}
+
+.system-suggestions-card h3 small {
+  color: #34436a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.system-suggestion-list {
+  display: grid;
+  gap: 22px;
+}
+
+.system-suggestion-row {
+  display: grid;
+  grid-template-columns: 24px minmax(150px, 0.9fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  color: #07133d;
+}
+
+.system-suggestion-row > span {
+  color: #2d22ff;
+}
+
+.system-suggestion-row strong {
+  font-size: 13px;
+}
+
+.system-suggestion-row em {
+  min-width: 0;
+  overflow: hidden;
+  color: #283965;
+  font-size: 14px;
+  font-style: normal;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.system-suggestion-row button {
+  border: 0;
+  background: transparent;
+  color: #251cff;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.system-suggestion-row button:hover {
+  text-decoration: underline;
+}
+
+.system-suggestions-card .customize-button {
+  margin-top: 34px;
 }
 
 .approach-list {
@@ -2553,8 +2608,8 @@ button.status-pill:hover {
 /* Generate */
 .generation-grid {
   display: grid;
-  grid-template-columns: minmax(370px, 0.72fr) minmax(0, 1.28fr);
-  gap: 20px;
+  grid-template-columns: minmax(560px, 1.16fr) minmax(380px, 0.84fr);
+  gap: 24px;
 }
 
 .progress-content {
@@ -2842,7 +2897,7 @@ button.status-pill:hover {
 
 .generated-output-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 

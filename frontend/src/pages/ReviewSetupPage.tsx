@@ -13,20 +13,23 @@ type ReviewSetupPageProps = {
   onNavigate: (path: string) => void;
 };
 
-type ReviewSetupDrawerName = "approach" | "reviewers" | "sources" | "web-search" | null;
+type ReviewSetupDrawerName = "system-suggestions" | "approach" | "reviewers" | "sources" | "web-search" | null;
 
 export function ReviewSetupPage({ project, opportunities, onProject, onNavigate }: ReviewSetupPageProps) {
+  const [suggestionFields, setSuggestionFields] = useState<FieldValue[]>(project.opportunityAudience?.suggestions || []);
   const [approachFields, setApproachFields] = useState<FieldValue[]>(project.reviewSetup?.approachFields || []);
   const [roles, setRoles] = useState<ReviewRole[]>(project.reviewSetup?.roles || []);
   const [confirmed, setConfirmed] = useState(true);
   const [saving, setSaving] = useState(false);
   const [detailsDrawer, setDetailsDrawer] = useState<ReviewSetupDrawerName>(null);
+  const [activeSuggestionId, setActiveSuggestionId] = useState<string | null>(null);
 
   useEffect(() => {
+    setSuggestionFields(project.opportunityAudience?.suggestions || []);
     setApproachFields(project.reviewSetup?.approachFields || []);
     setRoles(project.reviewSetup?.roles || []);
     setConfirmed(true);
-  }, [project.id, project.reviewSetup]);
+  }, [project.id, project.opportunityAudience, project.reviewSetup]);
 
   const readiness = project.reviewSetup?.sourceReadiness;
   const validation = validateReviewSetup(approachFields, roles, confirmed, Boolean(readiness?.ready));
@@ -40,10 +43,20 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
   async function continueToGenerate() {
     if (!validation.valid) return;
     setSaving(true);
+    if (project.opportunityAudience) {
+      await api.updateOpportunityAudience(project.id, {
+        ...project.opportunityAudience,
+        suggestions: suggestionFields,
+      });
+    }
     const updated = await api.updateReviewSetup(project.id, { approachFields, roles, confirmed });
     onProject(updated);
     setSaving(false);
     onNavigate(`/projects/${project.id}/generate`);
+  }
+
+  function updateSuggestionField(fieldId: string, value: string) {
+    setSuggestionFields((current) => editField(current, fieldId, value));
   }
 
   function updateApproachField(fieldId: string, value: string) {
@@ -64,6 +77,16 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
     );
   }
 
+  function openSystemSuggestions(fieldId?: string) {
+    setActiveSuggestionId(fieldId || null);
+    setDetailsDrawer("system-suggestions");
+  }
+
+  function closeDetailsDrawer() {
+    setDetailsDrawer(null);
+    setActiveSuggestionId(null);
+  }
+
   return (
     <section className="wizard-page review-setup-page">
       <div className="page-title-row">
@@ -79,24 +102,22 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
       </div>
 
       <div className="review-grid">
-        <section className="panel approach-card">
-          <h3>System suggestions</h3>
+        <section className="panel system-suggestions-card">
+          <h3>3. System suggestions <small>(based on KB, opportunity, and past work)</small></h3>
           <p>Based on the selected opportunity, audience, and approved knowledge base.</p>
-          <div className="approach-list">
-            {approachFields.map((field) => (
-              <div className="approach-row" key={field.id}>
-                <span><Icon name={approachIcon(field.id)} /></span>
+          <div className="system-suggestion-list">
+            {suggestionFields.map((field) => (
+              <div className="system-suggestion-row" key={field.id}>
+                <span><Icon name={suggestionIcon(field.id)} /></span>
                 <strong>{field.label}</strong>
-                <em>{field.value}</em>
-                {field.id === "external_web_search" && (
-                  <small>{externalSearchEnabled ? "Recent data, trends, and case studies" : "No external web sources requested"}</small>
-                )}
+                <em title={field.value}>{field.value}</em>
+                <button type="button" onClick={() => openSystemSuggestions(field.id)}>Edit</button>
               </div>
             ))}
           </div>
-          <button className="ghost-link" type="button" onClick={() => setDetailsDrawer("approach")}>
-            View full customization details
-            <Icon name="arrow" />
+          <button className="soft-button customize-button" type="button" onClick={() => openSystemSuggestions()}>
+            Customize details
+            <Icon name="sliders" />
           </button>
         </section>
 
@@ -196,11 +217,14 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
       {detailsDrawer && (
         <ReviewSetupDrawer
           drawer={detailsDrawer}
+          suggestionFields={suggestionFields}
+          activeSuggestionId={activeSuggestionId}
           approachFields={approachFields}
           roles={roles}
           internalSources={internalSources}
           readiness={readiness}
-          onClose={() => setDetailsDrawer(null)}
+          onClose={closeDetailsDrawer}
+          onEditSuggestion={updateSuggestionField}
           onEditApproach={updateApproachField}
           onSetExternalSearch={updateExternalSearch}
           onToggleRole={toggleRole}
@@ -213,28 +237,35 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
 
 function ReviewSetupDrawer({
   drawer,
+  suggestionFields,
+  activeSuggestionId,
   approachFields,
   roles,
   internalSources,
   readiness,
   onClose,
+  onEditSuggestion,
   onEditApproach,
   onSetExternalSearch,
   onToggleRole,
   onOpenApproach,
 }: {
   drawer: Exclude<ReviewSetupDrawerName, null>;
+  suggestionFields: FieldValue[];
+  activeSuggestionId: string | null;
   approachFields: FieldValue[];
   roles: ReviewRole[];
   internalSources: SourceDocument[];
   readiness?: SourceReadiness;
   onClose: () => void;
+  onEditSuggestion: (fieldId: string, value: string) => void;
   onEditApproach: (fieldId: string, value: string) => void;
   onSetExternalSearch: (enabled: boolean) => void;
   onToggleRole: (roleId: string) => void;
   onOpenApproach: () => void;
 }) {
   const drawerTitle = {
+    "system-suggestions": "System suggestions",
     approach: "Full customization details",
     reviewers: "Reviewer setup",
     sources: "All internal sources",
@@ -250,6 +281,43 @@ function ReviewSetupDrawer({
       <button className="icon-button drawer-close" type="button" title="Close" onClick={onClose}>
         <Icon name="close" />
       </button>
+      {drawer === "system-suggestions" && (
+        <>
+          <p className="eyebrow">System suggestions</p>
+          <h3>Customize details</h3>
+          <div className="drawer-field-list">
+            {suggestionFields.map((field) => (
+              <label className={`drawer-field ${activeSuggestionId === field.id ? "active" : ""}`} key={field.id}>
+                <span>
+                  <strong>{field.label}</strong>
+                  <small>{field.provenanceLabel}</small>
+                </span>
+                <textarea
+                  value={field.value}
+                  autoFocus={activeSuggestionId === field.id}
+                  onChange={(event) => onEditSuggestion(field.id, event.currentTarget.value)}
+                />
+                <em>
+                  {sourceLabel(field.metadata.source)}
+                  {field.metadata.confidence ? ` · ${Math.round(field.metadata.confidence * 100)}% confidence` : ""}
+                </em>
+                {field.metadata.citations?.length ? (
+                  <div className="drawer-citation-list">
+                    {field.metadata.citations.map((citation) => (
+                      <span key={`${field.id}-${citation.sourceId}-${citation.locator}`}>
+                        {citation.label}{citation.locator ? `, ${citation.locator}` : ""}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </label>
+            ))}
+          </div>
+          <div className="drawer-actions">
+            <button className="primary-button" type="button" onClick={onClose}>Done</button>
+          </div>
+        </>
+      )}
       {drawer === "approach" && (
         <>
           <p className="eyebrow">Recommended setup</p>
@@ -415,14 +483,12 @@ function WebSearchToggle({ enabled, onChange }: { enabled: boolean; onChange: (e
   );
 }
 
-function approachIcon(id: string): IconName {
-  if (id.includes("narrative")) return "sparkles";
-  if (id.includes("tone")) return "home";
+function suggestionIcon(id: string): IconName {
+  if (id.includes("relationship")) return "document";
+  if (id.includes("geography")) return "profile";
+  if (id.includes("persona")) return "profile";
   if (id.includes("technical")) return "presentation";
-  if (id.includes("evidence")) return "document";
-  if (id.includes("ask")) return "flask";
-  if (id.includes("external")) return "target";
-  return "people";
+  return "target";
 }
 
 function roleIcon(id: string): IconName {
