@@ -472,6 +472,40 @@ def test_databricks_local_repair_handles_missing_comma_without_whitespace() -> N
     assert output == {"ok": True, "body": "Ready."}
 
 
+def test_databricks_local_repair_handles_comma_separated_quotes_in_body() -> None:
+    provider = DatabricksModelServingProvider(
+        Settings(
+            databricks_host="https://workspace.cloud.databricks.com",
+            databricks_model_serving_endpoint="system.ai.test-model",
+            databricks_token="token-1",
+        ),
+    )
+
+    output = provider._parse_locally_repaired_json_candidate(
+        '{"body": "Frame "funding", not "delivery", as the unresolved decision."}',
+    )
+
+    assert output == {
+        "body": 'Frame "funding", not "delivery", as the unresolved decision.',
+    }
+
+
+def test_databricks_local_repair_handles_missing_comma_after_string_value() -> None:
+    provider = DatabricksModelServingProvider(
+        Settings(
+            databricks_host="https://workspace.cloud.databricks.com",
+            databricks_model_serving_endpoint="system.ai.test-model",
+            databricks_token="token-1",
+        ),
+    )
+
+    output = provider._parse_locally_repaired_json_candidate(
+        '{"title": "Concept note" "body": "Ready."}',
+    )
+
+    assert output == {"title": "Concept note", "body": "Ready."}
+
+
 def test_databricks_provider_uses_configured_request_timeout(monkeypatch) -> None:  # type: ignore[no-untyped-def]
     seen: dict[str, int] = {}
 

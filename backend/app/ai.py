@@ -726,55 +726,143 @@ class DatabricksModelServingProvider:
 
     def _escape_unescaped_json_string_chars(self, text: str) -> str:
         output: list[str] = []
+        contexts: list[dict[str, str]] = []
         in_string = False
         escaped = False
+        string_role = "unknown"
+        index = 0
 
-        for index, char in enumerate(text):
+        while index < len(text):
+            char = text[index]
             if not in_string:
                 output.append(char)
                 if char == '"':
                     in_string = True
                     escaped = False
+                    string_role = self._json_string_role(contexts)
+                    index += 1
+                    continue
+
+                if char == "{":
+                    contexts.append({"kind": "object", "state": "key_or_end"})
+                    index += 1
+                    continue
+
+                if char == "[":
+                    contexts.append({"kind": "array", "state": "value_or_end"})
+                    index += 1
+                    continue
+
+                if char in "}]":
+                    self._close_json_context(contexts, char)
+                    index += 1
+                    continue
+
+                if char == ":":
+                    self._set_json_context_state(contexts, "object", "value")
+                    index += 1
+                    continue
+
+                if char == ",":
+                    self._advance_json_context_after_comma(contexts)
+                    index += 1
+                    continue
+
+                primitive_end = self._json_primitive_end_index(text, index)
+                if primitive_end > index:
+                    output.append(text[index + 1 : primitive_end])
+                    self._mark_json_value_complete(contexts)
+                    index = primitive_end
+                    continue
+
+                index += 1
                 continue
 
             if escaped:
                 output.append(char)
                 escaped = False
+                index += 1
                 continue
 
             if char == "\\":
                 output.append(char)
                 escaped = True
+                index += 1
                 continue
 
             if char == "\n":
                 output.append("\\n")
+                index += 1
                 continue
             if char == "\r":
                 output.append("\\r")
+                index += 1
                 continue
             if char == "\t":
                 output.append("\\t")
+                index += 1
                 continue
 
             if char == '"':
-                if self._json_quote_can_close_string(text, index):
+                if self._json_quote_can_close_string(text, index, string_role):
                     output.append(char)
                     in_string = False
+                    self._mark_json_string_complete(contexts, string_role)
+                    string_role = "unknown"
                 else:
                     output.append('\\"')
+                index += 1
                 continue
 
             output.append(char)
+            index += 1
 
         return "".join(output)
 
-    def _json_quote_can_close_string(self, text: str, quote_index: int) -> bool:
+    def _json_quote_can_close_string(
+        self,
+        text: str,
+        quote_index: int,
+        string_role: str = "unknown",
+    ) -> bool:
         next_index = self._next_non_whitespace_index(text, quote_index + 1)
         if next_index >= len(text):
             return True
 
         next_char = text[next_index]
+        if string_role == "object_key":
+            return next_char == ":"
+
+        if string_role == "object_value":
+            if next_char in "]}":
+                return True
+            if next_char == '"':
+                return self._json_string_followed_by_colon(text, next_index)
+            if next_char != ",":
+                return False
+
+            after_comma = self._next_non_whitespace_index(text, next_index + 1)
+            if after_comma >= len(text) or text[after_comma] == "}":
+                return True
+            return (
+                text[after_comma] == '"'
+                and self._json_string_followed_by_colon(text, after_comma)
+            )
+
+        if string_role == "array_value":
+            if next_char in "]}":
+                return True
+            if next_char == '"':
+                return True
+            if next_char != ",":
+                return False
+
+            after_comma = self._next_non_whitespace_index(text, next_index + 1)
+            return after_comma >= len(text) or self._json_value_can_start_at(
+                text,
+                after_comma,
+            )
+
         if next_char == ":":
             after_colon = self._next_non_whitespace_index(text, next_index + 1)
             return after_colon >= len(text) or text[after_colon] in '"{[-0123456789tfn'
@@ -789,7 +877,123 @@ class DatabricksModelServingProvider:
         if after_comma >= len(text):
             return True
 
-        return text[after_comma] in '"{[-0123456789tfn'
+        return self._json_value_can_start_at(text, after_comma)
+
+    def _json_string_role(self, contexts: list[dict[str, str]]) -> str:
+        if not contexts:
+            return "unknown"
+
+        context = contexts[-1]
+        kind = context.get("kind")
+        state = context.get("state")
+        if kind == "object":
+            if state in {"key_or_end", "comma_or_end"}:
+                return "object_key"
+            if state == "value":
+                return "object_value"
+        if kind == "array":
+            return "array_value"
+        return "unknown"
+
+    def _mark_json_string_complete(
+        self,
+        contexts: list[dict[str, str]],
+        string_role: str,
+    ) -> None:
+        if string_role == "object_key":
+            self._set_json_context_state(contexts, "object", "colon")
+            return
+        self._mark_json_value_complete(contexts)
+
+    def _mark_json_value_complete(self, contexts: list[dict[str, str]]) -> None:
+        if not contexts:
+            return
+        contexts[-1]["state"] = "comma_or_end"
+
+    def _set_json_context_state(
+        self,
+        contexts: list[dict[str, str]],
+        kind: str,
+        state: str,
+    ) -> None:
+        if contexts and contexts[-1].get("kind") == kind:
+            contexts[-1]["state"] = state
+
+    def _advance_json_context_after_comma(
+        self,
+        contexts: list[dict[str, str]],
+    ) -> None:
+        if not contexts:
+            return
+        context = contexts[-1]
+        if context.get("kind") == "object":
+            context["state"] = "key_or_end"
+        elif context.get("kind") == "array":
+            context["state"] = "value_or_end"
+
+    def _close_json_context(
+        self,
+        contexts: list[dict[str, str]],
+        char: str,
+    ) -> None:
+        expected_kind = "object" if char == "}" else "array"
+        if contexts and contexts[-1].get("kind") == expected_kind:
+            contexts.pop()
+        self._mark_json_value_complete(contexts)
+
+    def _json_string_followed_by_colon(self, text: str, start_index: int) -> bool:
+        end_index = self._json_string_end_index(text, start_index)
+        if end_index <= start_index:
+            return False
+        next_index = self._next_non_whitespace_index(text, end_index + 1)
+        return next_index < len(text) and text[next_index] == ":"
+
+    def _json_string_end_index(self, text: str, start_index: int) -> int:
+        index = start_index + 1
+        escaped = False
+        while index < len(text):
+            char = text[index]
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                return index
+            index += 1
+        return -1
+
+    def _json_value_can_start_at(self, text: str, start_index: int) -> bool:
+        if start_index >= len(text):
+            return True
+        char = text[start_index]
+        if char in '"{[-0123456789':
+            return True
+        return self._json_literal_end_index(text, start_index) > start_index
+
+    def _json_literal_end_index(self, text: str, start_index: int) -> int:
+        for literal in ("true", "false", "null"):
+            end_index = start_index + len(literal)
+            if not text.startswith(literal, start_index):
+                continue
+            if end_index >= len(text):
+                return end_index
+            next_index = self._next_non_whitespace_index(text, end_index)
+            if next_index >= len(text) or text[next_index] in ',]}"{[':
+                return end_index
+        return start_index
+
+    def _json_primitive_end_index(self, text: str, start_index: int) -> int:
+        literal_end = self._json_literal_end_index(text, start_index)
+        if literal_end > start_index:
+            return literal_end
+
+        if text[start_index] not in "-0123456789":
+            return start_index
+
+        index = start_index + 1
+        while index < len(text) and text[index] in "0123456789+-.eE":
+            index += 1
+        return index
 
     def _insert_missing_json_commas(self, text: str) -> str:
         output: list[str] = []
