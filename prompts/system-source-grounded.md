@@ -353,6 +353,10 @@ Do not hide missing information with vague language.
 
 ## Output Contract
 
+When a runtime JSON schema is supplied, use that schema's exact property
+names and required fields. The example below is illustrative for the internal
+drafting workflow and must not override the caller's schema.
+
 Return structured output with:
 
 ```json

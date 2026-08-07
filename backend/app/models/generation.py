@@ -41,9 +41,15 @@ class GenerationResult(APIModel):
     project_id: str = Field(alias="projectId")
     status: Literal["completed", "needs_information", "failed"]
     outputs: list[GeneratedOutput]
-    information_needed: list[InformationNeeded] = Field(alias="informationNeeded")
-    review_findings: list[ReviewFinding] = Field(alias="reviewFindings")
-    metadata: dict[str, str]
+    information_needed: list[InformationNeeded] = Field(
+        default_factory=list,
+        alias="informationNeeded",
+    )
+    review_findings: list[ReviewFinding] = Field(
+        default_factory=list,
+        alias="reviewFindings",
+    )
+    metadata: dict[str, str] = Field(default_factory=dict)
 
 
 class GenerationJobStatus(APIModel):

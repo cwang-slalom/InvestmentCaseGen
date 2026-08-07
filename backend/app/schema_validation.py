@@ -1,8 +1,18 @@
+import re
 from typing import Any
 
 
 class JsonSchemaValidationError(ValueError):
     pass
+
+
+_CAMEL_BOUNDARY_1 = re.compile(r"(.)([A-Z][a-z]+)")
+_CAMEL_BOUNDARY_2 = re.compile(r"([a-z0-9])([A-Z])")
+
+
+def _to_snake_case(value: str) -> str:
+    with_acronyms = _CAMEL_BOUNDARY_1.sub(r"\1_\2", value)
+    return _CAMEL_BOUNDARY_2.sub(r"\1_\2", with_acronyms).lower()
 
 
 def _type_matches(value: Any, expected_type: str) -> bool:
@@ -38,6 +48,112 @@ def _resolve_ref(schema: dict[str, Any], root_schema: dict[str, Any]) -> dict[st
     if not isinstance(target, dict):
         raise JsonSchemaValidationError(f"JSON schema ref {ref!r} does not target an object.")
     return target
+
+
+def _schema_may_apply_to_value(
+    value: Any,
+    schema: dict[str, Any],
+    root_schema: dict[str, Any],
+) -> bool:
+    schema = _resolve_ref(schema, root_schema)
+    expected_type = schema.get("type")
+    if isinstance(expected_type, list):
+        return any(
+            _type_matches(value, item)
+            for item in expected_type
+            if isinstance(item, str)
+        )
+    if isinstance(expected_type, str):
+        return _type_matches(value, expected_type)
+    if "properties" in schema:
+        return isinstance(value, dict)
+    if "items" in schema:
+        return isinstance(value, list)
+    return True
+
+
+def normalize_json_schema_output_property_names(
+    value: Any,
+    schema: dict[str, Any],
+    *,
+    root_schema: dict[str, Any] | None = None,
+) -> Any:
+    """Rename snake_case output keys to schema property aliases before validation."""
+    root = root_schema or schema
+    schema = _resolve_ref(schema, root)
+    normalized = value
+
+    all_of = schema.get("allOf")
+    if isinstance(all_of, list):
+        for variant in all_of:
+            if isinstance(variant, dict):
+                normalized = normalize_json_schema_output_property_names(
+                    normalized,
+                    variant,
+                    root_schema=root,
+                )
+
+    for combinator in ("anyOf", "oneOf"):
+        variants = schema.get(combinator)
+        if isinstance(variants, list):
+            for variant in variants:
+                if isinstance(variant, dict) and _schema_may_apply_to_value(
+                    normalized,
+                    variant,
+                    root,
+                ):
+                    normalized = normalize_json_schema_output_property_names(
+                        normalized,
+                        variant,
+                        root_schema=root,
+                    )
+
+    if isinstance(normalized, dict):
+        properties = schema.get("properties")
+        if not isinstance(properties, dict):
+            return normalized
+
+        mapped = dict(normalized)
+        for property_name in properties:
+            if property_name in mapped:
+                continue
+            snake_name = _to_snake_case(property_name)
+            if snake_name != property_name and snake_name in mapped:
+                mapped[property_name] = mapped.pop(snake_name)
+
+        for property_name, nested_schema in properties.items():
+            if property_name in mapped and isinstance(nested_schema, dict):
+                mapped[property_name] = normalize_json_schema_output_property_names(
+                    mapped[property_name],
+                    nested_schema,
+                    root_schema=root,
+                )
+
+        additional = schema.get("additionalProperties")
+        if isinstance(additional, dict):
+            for key, nested_value in mapped.items():
+                if key not in properties:
+                    mapped[key] = normalize_json_schema_output_property_names(
+                        nested_value,
+                        additional,
+                        root_schema=root,
+                    )
+
+        return mapped
+
+    if isinstance(normalized, list):
+        items_schema = schema.get("items")
+        if isinstance(items_schema, dict):
+            return [
+                normalize_json_schema_output_property_names(
+                    item,
+                    items_schema,
+                    root_schema=root,
+                )
+                for item in normalized
+            ]
+
+    return normalized
 
 
 def validate_json_schema_output(

@@ -1,3 +1,4 @@
+import json
 import urllib.request
 
 from fastapi import HTTPException
@@ -13,6 +14,7 @@ from app.ai import (
 )
 from app.config import Settings
 from app.main import app
+from app.models.generation import GenerationResult
 from app.prompts import load_prompt
 
 
@@ -283,6 +285,111 @@ def test_databricks_provider_loads_backend_prompt_bundle() -> None:
     assert response.redacted_response_json["externalWebSearchRequested"] is True
     assert response.redacted_response_json["externalWebSearchApplied"] is False
     assert response.redacted_response_json["jsonRepairAttempted"] is False
+
+
+def test_databricks_provider_normalizes_generation_result_aliases() -> None:
+    prompt = load_prompt("generate-investment-case")
+    provider = CapturingDatabricksProvider(
+        json.dumps(
+            {
+                "generation_id": "gen-1",
+                "project_id": "project-1",
+                "status": "needs_information",
+                "outputs": [
+                    {
+                        "id": "out-source-appendix",
+                        "type": "source_appendix",
+                        "title": "Source Appendix",
+                        "status": "Model generated",
+                        "sections": [
+                            {
+                                "id": "source-summary",
+                                "type": "diligence",
+                                "heading": "Evidence gaps",
+                                "body": "Funding recipient remains unresolved.",
+                                "citations": [
+                                    {
+                                        "source_id": "src-1",
+                                        "label": "Strategy source",
+                                        "locator": "p. 1",
+                                        "excerpt": "Funding recipient is not specified.",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ],
+                "information_needed": [
+                    {
+                        "id": "info-1",
+                        "message": "Confirm funding recipient.",
+                        "related_section": "source-summary",
+                    }
+                ],
+                "review_findings": [
+                    {
+                        "id": "finding-1",
+                        "severity": "blocking",
+                        "type": "missing_funding_recipient",
+                        "message": "Funding recipient is unresolved.",
+                        "resolved": False,
+                    }
+                ],
+                "metadata": {"model_provider": "backend-databricks-model-serving"},
+            }
+        )
+    )
+
+    response = provider.generate_structured(
+        StructuredGenerationRequest(
+            operation="render_executive_investment_case",
+            promptVersion=prompt.version,
+            input={"value": "hello"},
+            jsonSchema=GenerationResult.model_json_schema(by_alias=True),
+            metadata={"promptName": "generate-investment-case"},
+        ),
+    )
+
+    assert response.output["generationId"] == "gen-1"
+    assert response.output["projectId"] == "project-1"
+    assert (
+        response.output["informationNeeded"][0]["relatedSection"] == "source-summary"
+    )
+    assert (
+        response.output["outputs"][0]["sections"][0]["citations"][0]["sourceId"]
+        == "src-1"
+    )
+    assert "information_needed" not in response.output
+
+
+def test_databricks_provider_allows_omitted_empty_generation_review_collections() -> None:
+    prompt = load_prompt("generate-investment-case")
+    provider = CapturingDatabricksProvider(
+        json.dumps(
+            {
+                "generationId": "gen-1",
+                "projectId": "project-1",
+                "status": "completed",
+                "outputs": [],
+            }
+        )
+    )
+
+    response = provider.generate_structured(
+        StructuredGenerationRequest(
+            operation="render_executive_investment_case",
+            promptVersion=prompt.version,
+            input={"value": "hello"},
+            jsonSchema=GenerationResult.model_json_schema(by_alias=True),
+            metadata={"promptName": "generate-investment-case"},
+        ),
+    )
+
+    result = GenerationResult.model_validate(response.output)
+
+    assert result.information_needed == []
+    assert result.review_findings == []
+    assert result.metadata == {}
 
 
 def test_databricks_provider_omits_temperature_for_claude_models() -> None:

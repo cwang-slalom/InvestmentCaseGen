@@ -102,4 +102,6 @@ Return the structured output required by the system prompt.
 ## Output
 
 Return only valid JSON matching the structured output schema supplied by the
-caller.
+caller. Use the exact JSON property names from that schema; for the Phase 1 UI
+generation package this includes camelCase names such as `generationId`,
+`projectId`, `informationNeeded`, and `reviewFindings`.

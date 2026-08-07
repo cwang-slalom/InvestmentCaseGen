@@ -11,7 +11,11 @@ from pydantic import BaseModel, Field
 
 from .config import Settings, get_settings
 from .prompts import PromptError, load_operation_prompt, load_system_prompt
-from .schema_validation import JsonSchemaValidationError, validate_json_schema_output
+from .schema_validation import (
+    JsonSchemaValidationError,
+    normalize_json_schema_output_property_names,
+    validate_json_schema_output,
+)
 
 
 class StructuredGenerationRequest(BaseModel):
@@ -88,6 +92,7 @@ class VertexGeminiProvider:
             raise ValueError("Vertex Gemini returned no text candidate.")
 
         output = self._parse_json_candidate(text)
+        output = normalize_json_schema_output_property_names(output, request.json_schema)
         validate_json_schema_output(output, request.json_schema)
 
         return StructuredGenerationResponse(
@@ -181,6 +186,7 @@ class VertexGeminiProvider:
                 task_prompt,
                 "",
                 "Return only valid JSON for this operation.",
+                "Use the exact JSON property names from the schema.",
                 f"Operation: {request.operation}",
                 "",
                 "Structured output schema:",
@@ -343,6 +349,7 @@ class DatabricksModelServingProvider:
             request,
             text,
         )
+        output = normalize_json_schema_output_property_names(output, request.json_schema)
         validate_json_schema_output(output, request.json_schema)
 
         redacted_response_json = {
@@ -433,6 +440,11 @@ class DatabricksModelServingProvider:
                 "",
                 "Return only valid JSON for this operation.",
                 "Do not include Markdown fences or explanatory prose.",
+                (
+                    "Use the exact JSON property names from the schema, including "
+                    "camelCase names such as informationNeeded and reviewFindings "
+                    "when present."
+                ),
                 "Encode markdown section bodies as JSON strings. Escape line breaks as \\n and escape internal quotes.",
                 "Never use raw multi-line strings inside JSON values.",
                 f"Operation: {request.operation}",
@@ -1161,6 +1173,7 @@ class AnthropicClaudeProvider:
             raise ValueError("Claude returned no text content block.")
 
         output = self._parse_json_candidate(text)
+        output = normalize_json_schema_output_property_names(output, request.json_schema)
         validate_json_schema_output(output, request.json_schema)
 
         return StructuredGenerationResponse(
@@ -1217,6 +1230,7 @@ class AnthropicClaudeProvider:
                 task_prompt,
                 "",
                 "Return only valid JSON for this operation.",
+                "Use the exact JSON property names from the schema.",
                 "Do not include Markdown fences or explanatory prose.",
                 f"Operation: {request.operation}",
                 "",
