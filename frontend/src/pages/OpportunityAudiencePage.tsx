@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../api/client";
 import { Icon, type IconName } from "../components/Icons";
-import { defaultSelectedOutputs, functionalOutputs, futureOutputs, intendedOutcomes } from "../state/options";
-import { editField, suggestionFromSelection, toggleOutput } from "../state/workflow";
+import { defaultSelectedOutputs, intendedOutcomes } from "../state/options";
+import { suggestionFromSelection } from "../state/workflow";
 import { validateOpportunityAudience } from "../state/validation";
 import type { AppConfig, AudienceProfile, FieldValue, Opportunity, OutputType, Project } from "../types";
 
@@ -18,7 +18,7 @@ type OpportunityAudiencePageProps = {
 
 type SourceInputMode = "file" | "knowledge";
 type NewSourceProgressStage = "idle" | "saving" | "analyzing" | "preparing";
-type DetailsDrawer = "opportunities" | "donor-profile" | "customize-details" | "output-options" | null;
+type DetailsDrawer = "opportunities" | "donor-profile" | null;
 
 const SOURCE_PROGRESS_MIN_STAGE_MS = {
   saving: 800,
@@ -39,7 +39,7 @@ export function OpportunityAudiencePage({
   const [opportunityId, setOpportunityId] = useState(existingState?.opportunityId || opportunities[0]?.id || "");
   const [audienceId, setAudienceId] = useState(existingState?.audienceId || audiences[0]?.id || "");
   const [intendedOutcome, setIntendedOutcome] = useState(existingState?.intendedOutcome || intendedOutcomes[0]);
-  const [selectedOutputs, setSelectedOutputs] = useState<OutputType[]>(
+  const [selectedOutputs] = useState<OutputType[]>(
     existingState?.selectedOutputs?.length ? existingState.selectedOutputs : defaultSelectedOutputs,
   );
   const [suggestions, setSuggestions] = useState<FieldValue[]>(existingState?.suggestions || []);
@@ -51,7 +51,6 @@ export function OpportunityAudiencePage({
   const [newSourceProgressStage, setNewSourceProgressStage] = useState<NewSourceProgressStage>("idle");
   const [error, setError] = useState("");
   const [detailsDrawer, setDetailsDrawer] = useState<DetailsDrawer>(null);
-  const [activeSuggestionId, setActiveSuggestionId] = useState<string | null>(null);
 
   const selectedOpportunity = opportunities.find((opportunity) => opportunity.id === opportunityId) || null;
   const selectedAudience = audiences.find((audience) => audience.id === audienceId) || null;
@@ -198,14 +197,8 @@ export function OpportunityAudiencePage({
     }
   }
 
-  function openCustomizeDetails(suggestionId?: string) {
-    setActiveSuggestionId(suggestionId || null);
-    setDetailsDrawer("customize-details");
-  }
-
   function closeDetailsDrawer() {
     setDetailsDrawer(null);
-    setActiveSuggestionId(null);
   }
 
   return (
@@ -220,12 +213,6 @@ export function OpportunityAudiencePage({
               : "Search for an approved opportunity from our library."}
           </p>
         </div>
-        {sourceMode === "existing" && (
-          <button className="outline-action" type="button">
-            <Icon name="sparkles" />
-            Why these suggestions?
-          </button>
-        )}
       </div>
 
       <div className="tab-strip" role="tablist" aria-label="Opportunity source mode">
@@ -260,14 +247,6 @@ export function OpportunityAudiencePage({
             onAudience={updateAudience}
             onOutcome={setIntendedOutcome}
             onViewProfile={() => setDetailsDrawer("donor-profile")}
-          />
-          <SetupPanel
-            suggestions={suggestions}
-            selectedOutputs={selectedOutputs}
-            onEditSuggestion={(id, value) => setSuggestions((current) => editField(current, id, value))}
-            onToggleOutput={(output) => setSelectedOutputs((current) => toggleOutput(current, output))}
-            onCustomizeDetails={openCustomizeDetails}
-            onViewOutputOptions={() => setDetailsDrawer("output-options")}
           />
         </div>
       ) : (
@@ -370,16 +349,11 @@ export function OpportunityAudiencePage({
           opportunities={opportunities}
           selectedOpportunity={selectedOpportunity}
           selectedAudience={selectedAudience}
-          suggestions={suggestions}
-          activeSuggestionId={activeSuggestionId}
-          selectedOutputs={selectedOutputs}
           onClose={closeDetailsDrawer}
           onSelectOpportunity={(id) => {
             updateSelection(id);
             closeDetailsDrawer();
           }}
-          onEditSuggestion={(id, value) => setSuggestions((current) => editField(current, id, value))}
-          onToggleOutput={(output) => setSelectedOutputs((current) => toggleOutput(current, output))}
         />
       )}
     </section>
@@ -600,116 +574,24 @@ function AudiencePanel({
   );
 }
 
-function SetupPanel({
-  suggestions,
-  selectedOutputs,
-  onEditSuggestion,
-  onToggleOutput,
-  onCustomizeDetails,
-  onViewOutputOptions,
-}: {
-  suggestions: FieldValue[];
-  selectedOutputs: OutputType[];
-  onEditSuggestion: (id: string, value: string) => void;
-  onToggleOutput: (output: OutputType) => void;
-  onCustomizeDetails: (suggestionId?: string) => void;
-  onViewOutputOptions: () => void;
-}) {
-  return (
-    <section className="setup-stack">
-      <div className="panel suggestions-panel">
-        <h3>3. System suggestions <small>(based on KB, opportunity, and past work)</small></h3>
-        <div className="suggestion-list">
-          {suggestions.map((field) => (
-            <label className="suggestion-row" key={field.id}>
-              <span className="suggestion-icon"><Icon name={suggestionIcon(field.id)} /></span>
-              <strong>{field.label}</strong>
-              <input value={field.value} onChange={(event) => onEditSuggestion(field.id, event.currentTarget.value)} />
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.preventDefault();
-                  onCustomizeDetails(field.id);
-                }}
-              >
-                Edit
-              </button>
-            </label>
-          ))}
-        </div>
-        <button className="soft-button customize-button" type="button" onClick={() => onCustomizeDetails()}>
-          Customize details
-          <Icon name="sliders" />
-        </button>
-      </div>
-      <div className="panel outputs-panel">
-        <h3>4. Outputs to generate</h3>
-        <p>You can generate multiple coordinated outputs from this opportunity.</p>
-        <div className="output-grid">
-          {functionalOutputs.map((output) => {
-            const lockedAsLastSelection = selectedOutputs.length === 1 && selectedOutputs.includes(output.id);
-            return (
-              <label
-                className={`output-tile ${selectedOutputs.includes(output.id) ? "selected" : ""}`}
-                key={output.id}
-                title={lockedAsLastSelection ? "At least one output is required." : undefined}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedOutputs.includes(output.id)}
-                  onChange={() => onToggleOutput(output.id)}
-                  disabled={lockedAsLastSelection}
-                />
-                <strong>{output.label}</strong>
-                <small>{output.description}</small>
-              </label>
-            );
-          })}
-          {futureOutputs.slice(0, 2).map((label) => (
-            <label className="output-tile disabled" key={label} title="Reserved for a later workflow.">
-              <input type="checkbox" disabled />
-              <strong>{label}</strong>
-              <small>Coming soon</small>
-            </label>
-          ))}
-        </div>
-        <p className="output-selection-hint">At least one functional output must stay selected. Disabled roadmap outputs are shown for context.</p>
-        <button className="ghost-link" type="button" onClick={onViewOutputOptions}>View all output options</button>
-      </div>
-    </section>
-  );
-}
-
 function OpportunityAudienceDrawer({
   drawer,
   opportunities,
   selectedOpportunity,
   selectedAudience,
-  suggestions,
-  activeSuggestionId,
-  selectedOutputs,
   onClose,
   onSelectOpportunity,
-  onEditSuggestion,
-  onToggleOutput,
 }: {
   drawer: Exclude<DetailsDrawer, null>;
   opportunities: Opportunity[];
   selectedOpportunity: Opportunity | null;
   selectedAudience: AudienceProfile | null;
-  suggestions: FieldValue[];
-  activeSuggestionId: string | null;
-  selectedOutputs: OutputType[];
   onClose: () => void;
   onSelectOpportunity: (id: string) => void;
-  onEditSuggestion: (id: string, value: string) => void;
-  onToggleOutput: (output: OutputType) => void;
 }) {
   const drawerTitle = {
     opportunities: "All opportunities",
     "donor-profile": "Donor profile",
-    "customize-details": "Customize details",
-    "output-options": "All output options",
   }[drawer];
 
   return (
@@ -794,83 +676,6 @@ function OpportunityAudienceDrawer({
           ) : (
             <p className="muted">No donor profile is selected.</p>
           )}
-        </>
-      )}
-      {drawer === "customize-details" && (
-        <>
-          <p className="eyebrow">System suggestions</p>
-          <h3>Customize details</h3>
-          <div className="drawer-field-list">
-            {suggestions.map((field) => (
-              <label className={`drawer-field ${activeSuggestionId === field.id ? "active" : ""}`} key={field.id}>
-                <span>
-                  <strong>{field.label}</strong>
-                  <small>{field.provenanceLabel}</small>
-                </span>
-                <textarea
-                  value={field.value}
-                  autoFocus={activeSuggestionId === field.id}
-                  onChange={(event) => onEditSuggestion(field.id, event.currentTarget.value)}
-                />
-                <em>
-                  {sourceLabel(field.metadata.source)}
-                  {field.metadata.confidence ? ` · ${Math.round(field.metadata.confidence * 100)}% confidence` : ""}
-                </em>
-                {field.metadata.citations?.length ? (
-                  <div className="drawer-citation-list">
-                    {field.metadata.citations.map((citation) => (
-                      <span key={`${field.id}-${citation.sourceId}-${citation.locator}`}>
-                        {citation.label}{citation.locator ? `, ${citation.locator}` : ""}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </label>
-            ))}
-          </div>
-          <div className="drawer-actions">
-            <button className="primary-button" type="button" onClick={onClose}>Done</button>
-          </div>
-        </>
-      )}
-      {drawer === "output-options" && (
-        <>
-          <p className="eyebrow">Output package</p>
-          <h3>All output options</h3>
-          <div className="output-option-list">
-            {functionalOutputs.map((output) => {
-              const lockedAsLastSelection = selectedOutputs.length === 1 && selectedOutputs.includes(output.id);
-              return (
-                <label
-                  className={`drawer-card output-option ${selectedOutputs.includes(output.id) ? "selected" : ""}`}
-                  key={output.id}
-                  title={lockedAsLastSelection ? "At least one output is required." : undefined}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedOutputs.includes(output.id)}
-                    disabled={lockedAsLastSelection}
-                    onChange={() => onToggleOutput(output.id)}
-                  />
-                  <span>
-                    <strong>{output.label}</strong>
-                    <small>{output.description}</small>
-                  </span>
-                  <em>{lockedAsLastSelection ? "Required" : "Available"}</em>
-                </label>
-              );
-            })}
-            {futureOutputs.map((label) => (
-              <div className="drawer-card output-option disabled" key={label}>
-                <input type="checkbox" disabled />
-                <span>
-                  <strong>{label}</strong>
-                  <small>Reserved for a later workflow.</small>
-                </span>
-                <em>Coming soon</em>
-              </div>
-            ))}
-          </div>
         </>
       )}
     </div>
@@ -966,23 +771,6 @@ function opportunityIcon(opportunity: Opportunity): IconName {
   if (opportunity.title.includes("Nutrition")) return "pin";
   if (opportunity.title.includes("Education")) return "book";
   return "heart";
-}
-
-function suggestionIcon(id: string): IconName {
-  if (id.includes("relationship")) return "document";
-  if (id.includes("geography")) return "profile";
-  if (id.includes("persona")) return "profile";
-  if (id.includes("technical")) return "presentation";
-  return "target";
-}
-
-function sourceLabel(source: FieldValue["metadata"]["source"]) {
-  if (source === "audience_profile") return "Audience profile";
-  if (source === "ai_suggestion") return "Model suggestion";
-  if (source === "system_setup") return "Setup default";
-  if (source === "opportunity") return "Opportunity";
-  if (source === "extracted_source") return "Extracted source";
-  return "User edited";
 }
 
 function initials(name: string) {

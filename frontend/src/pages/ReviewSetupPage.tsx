@@ -70,7 +70,7 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
         <div className="page-title">
           <p className="eyebrow">Step 3 of 4</p>
           <h2>Review setup</h2>
-          <p>Review the recommended approach and confirm before generating.</p>
+          <p>Review the system suggestions and recommended approach before generating.</p>
         </div>
         <button className="outline-action" type="button" onClick={() => setDetailsDrawer("approach")}>
           <Icon name="edit" />
@@ -80,8 +80,8 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
 
       <div className="review-grid">
         <section className="panel approach-card">
-          <h3>Approach summary</h3>
-          <p>Here's how we will approach your request.</p>
+          <h3>System suggestions</h3>
+          <p>Based on the selected opportunity, audience, and approved knowledge base.</p>
           <div className="approach-list">
             {approachFields.map((field) => (
               <div className="approach-row" key={field.id}>
@@ -177,8 +177,8 @@ export function ReviewSetupPage({ project, opportunities, onProject, onNavigate 
         <Icon name="info" />
         <div>
           <strong>What happens next?</strong>
-          <p>Once you continue, we'll generate your content package based on this setup.</p>
-          <p>You'll be able to review and approve each output.</p>
+          <p>Next, you'll review selected outputs and start generation only when you're ready.</p>
+          <p>You'll be able to review and approve each output after materials are generated.</p>
         </div>
       </div>
 

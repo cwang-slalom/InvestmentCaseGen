@@ -213,18 +213,6 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
   }, [canEditOutputs, onProject, project.id, project.opportunityAudience, selectedOutputs]);
 
   useEffect(() => {
-    if (!liveModelReady) return;
-    if (project.generationId) return;
-    timerRef.current = window.setTimeout(() => {
-      void runGeneration();
-    }, 18000);
-
-    return () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-    };
-  }, [liveModelReady, project.generationId, runGeneration]);
-
-  useEffect(() => {
     if (!generating || generationStartedAt === null) return;
 
     const updateElapsed = () => {
@@ -248,10 +236,18 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
   async function viewResults() {
     if (timerRef.current) window.clearTimeout(timerRef.current);
     if (!project.generationId && !currentGeneration?.generationId) {
-      const nextGeneration = await runGeneration();
-      if (!nextGeneration) return;
+      setError("Generate materials before viewing results.");
+      return;
     }
     onNavigate(`/projects/${project.id}/results`);
+  }
+
+  async function primaryGenerateAction() {
+    if (hasGeneration) {
+      await viewResults();
+      return;
+    }
+    await runGeneration();
   }
 
   return (
@@ -260,7 +256,7 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
         <div className="page-title">
           <p className="eyebrow">Step 4 of 4</p>
           <h2>Generate materials</h2>
-          <p>We're generating your content package. You can track progress below.</p>
+          <p>{generating ? "We're generating your content package. You can track progress below." : "Review the selected outputs, then generate when you're ready."}</p>
         </div>
         <button className="outline-action" type="button" onClick={() => onNavigate(`/projects/${project.id}/review-setup`)}>
           <Icon name="sliders" />
@@ -408,8 +404,8 @@ export function GeneratePage({ project, config, generation, onProject, onGenerat
           <button className="secondary-button large" type="button" onClick={() => onNavigate("/projects")}>
             Save and exit
           </button>
-          <button className="primary-button large" type="button" disabled={(!liveModelReady && !hasGeneration) || generating || selectionSaving} onClick={viewResults}>
-            {hasGeneration ? "View results" : !liveModelReady ? "Configure model to generate" : generating ? "Generating results..." : generationFailed || generationCanceled ? "Retry generation" : "View results"}
+          <button className="primary-button large" type="button" disabled={(!liveModelReady && !hasGeneration) || generating || selectionSaving} onClick={() => void primaryGenerateAction()}>
+            {hasGeneration ? "View results" : !liveModelReady ? "Configure model to generate" : generating ? "Generating results..." : generationFailed || generationCanceled ? "Retry generation" : "Generate materials"}
           </button>
         </div>
       </div>
@@ -482,7 +478,7 @@ function progressHeadline(
   if (!liveModelReady) return "Connect a live model before generation can start.";
   if (generationFailed) return "Generation failed before completion.";
   if (generationCanceled) return "Generation was canceled before completion.";
-  if (!generating) return "Generation will start automatically, or when you view results.";
+  if (!generating) return "Ready when you confirm generation.";
   return generationStages[activeStageIndex];
 }
 
@@ -506,7 +502,7 @@ function progressCalloutLabel(complete: boolean, generationCanceled: boolean, ge
   if (complete) return "Your materials are ready. Continue to results for human review and edits.";
   if (generationCanceled) return "The canceled run did not save results. Starting again will create a new generation job.";
   if (generating) return "Keep this page open while the model works; progress will continue updating here.";
-  return "You can still adjust selected outputs until generation starts.";
+  return "You can still adjust selected outputs, then click Generate materials when ready.";
 }
 
 function outputCardStatus(
@@ -663,21 +659,7 @@ function generationOutputCards(
     };
   });
 
-  const futureCards = futureOutputs.map((label) => ({
-    label,
-    description: label === "Technical annex (Internal)" ? "" : undefined,
-    checked: false,
-    disabled: true,
-    disabledReason: "Reserved for a later workflow.",
-    icon: "document",
-    tone: "blue",
-    status: "not-selected",
-    statusLabel: "Coming soon",
-    percent: "",
-    done: false,
-  }));
-
-  return [...functionalCards, ...futureCards] as Array<{
+  return functionalCards as Array<{
     id?: OutputType;
     label: string;
     description?: string;
